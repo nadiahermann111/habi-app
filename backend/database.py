@@ -253,17 +253,17 @@ CREATE_TABLES_SQL = """
                         ); \
                     """
 
-# Przykładowe nagrody
 DEFAULT_REWARDS = [
-    ("Banan", 5, 10, 15, "food"),
-    ("Jabłko", 3, 8, 12, "food"),
-    ("Orzeszki", 8, 15, 20, "food"),
-    ("Smoothie", 12, 20, 25, "food"),
-    ("Ciasteczko", 10, 25, 10, "food")
+    ("Banan", 1, 5, 10, "food"),
+    ("Jabłko", 1, 5, 10, "food"),
+    ("Orzech", 5, 10, 20, "food"),
+    ("Kawa", 10, 20, 30, "food"),
+    ("Mięso", 10, 20, 25, "food"),
+    ("Sałatka", 20, 50, 50, "food")
 ]
 
 
-async def init_database():
+async def init_db():
     """Inicjalizuje bazę danych i tworzy tabele"""
     async with aiosqlite.connect(DATABASE_PATH) as db:
         # Włącz foreign keys
