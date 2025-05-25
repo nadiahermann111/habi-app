@@ -1,0 +1,107 @@
+/* Dodaj te style do swojego głównego pliku CSS (src/index.css) */
+
+/* PWA Safe Areas - dla telefońow z notch */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+    padding-top: max(0px, env(safe-area-inset-top));
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Zapobiegaj zoom na iOS Safari */
+input, select, textarea, button {
+  font-size: 16px; /* iOS nie zoomuje jeśli font-size >= 16px */
+}
+
+/* Touch-friendly elementy */
+button, .action-btn, .logout-btn {
+  min-height: 44px; /* Apple HIG minimum touch target */
+  min-width: 44px;
+  touch-action: manipulation; /* Zapobiega delay na touch */
+}
+
+/* PWA Display mode detection */
+@media (display-mode: standalone) {
+  /* Style gdy aplikacja działa jako PWA */
+  body {
+    background-color: #FFF8DC;
+  }
+  
+  /* Ukryj scroll bar w standalone mode */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Orientacja landscape na mobile */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  .dashboard {
+    margin: 10px auto;
+  }
+  
+  .menu-header-content {
+    padding: 8px 16px;
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .habi-logo {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Prevent text selection on touch devices */
+.action-btn, .logout-btn, button {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Loading states dla PWA */
+.pwa-loading {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+}
+
+/* Install prompt button (opcjonalnie) */
+.install-prompt {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #FFD23F;
+  color: #5D4037;
+  padding: 12px 24px;
+  border-radius: 25px;
+  border: none;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(255, 210, 63, 0.4);
+  z-index: 1000;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 100px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
