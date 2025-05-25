@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { authAPI, tokenUtils } from "C:\\Users\\nadula\\Pulpit\\habi-app\\frontend\\src\\services\\api.jsx";
+import { authAPI, tokenUtils } from "../../services/api.jsx";
 import MenuHeader from '../MenuHeader/MenuHeader';
 import './Dashboard.css';
 

@@ -3,7 +3,7 @@ import Login from '../Login/Login';
 import Register from '../Register/Register';
 import Dashboard from '../Dashboard/Dashboard';
 import PWAInstallPrompt from '../PWAInstallPrompt/PWAInstallPrompt';
-import { authAPI, tokenUtils } from "C:\\Users\\nadula\\Pulpit\\habi-app\\frontend\\src\\services\\api.jsx";
+import { authAPI, tokenUtils } from "../../services/api.jsx";
 import './App.css';
 
 function App() {
