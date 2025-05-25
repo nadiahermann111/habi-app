@@ -5,6 +5,7 @@ from database import init_db
 import aiosqlite
 from schemas import UserRegister, UserLogin, UserResponse, LoginResponse
 from auth import hash_password, verify_password, create_token, verify_token
+import os
 
 
 @asynccontextmanager
@@ -24,10 +25,15 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS
+# CORS - dodaj URL Render i GitHub Pages
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://nadiahermann111.github.io",  # GitHub Pages
+        "http://localhost:3000",  # Local dev
+        "http://localhost:5173",  # Vite dev
+        "*"  # Tymczasowo wszystkie
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -270,4 +276,6 @@ async def get_users():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    # Port dla Render (lub lokalny)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
