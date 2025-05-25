@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { authAPI, tokenUtils } from "../../services/api.jsx";
-import './Register.css';
-const Register = ({ onRegisterSuccess, switchToLogin }) => {
+import { authAPI, tokenUtils } from '../../services/api.jsx';
+
+function Register({ onRegisterSuccess, switchToLogin }) {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
-    confirmPassword: '',
+    confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -14,51 +14,60 @@ const Register = ({ onRegisterSuccess, switchToLogin }) => {
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]: e.target.value
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    setLoading(true);
 
-    // Walidacja haseł
+    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError('Hasła nie są identyczne');
       setLoading(false);
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Hasło musi mieć co najmniej 6 znaków');
-      setLoading(false);
-      return;
-    }
-
     try {
-      const { confirmPassword, ...registerData } = formData;
-      const response = await authAPI.register(registerData);
+      console.log('Starting registration process...');
 
-      // Zapisz token
-      tokenUtils.saveToken(response.token);
+      // Call the registration API
+      const response = await authAPI.register({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password
+      });
 
-      // Wywołaj callback sukcesu
-      onRegisterSuccess(response.user);
+      console.log('Registration successful:', response);
 
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Błąd rejestracji');
+      // Store the token
+      if (response.token) {
+        tokenUtils.setToken(response.token);
+        console.log('Token stored successfully');
+      }
+
+      // Call the success callback with user data
+      if (onRegisterSuccess && response.user) {
+        console.log('Calling onRegisterSuccess with user data:', response.user);
+        onRegisterSuccess(response.user);
+      } else {
+        console.error('Missing onRegisterSuccess callback or user data');
+      }
+
+    } catch (error) {
+      console.error('Registration failed:', error);
+      setError(error.message || 'Rejestracja nie powiodła się');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h2>Rejestracja w Habi</h2>
-
-        {error && <div className="error-message">{error}</div>}
+    <div className="register-container">
+      <div className="register-form">
+        <h2>Rejestracja</h2>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -70,7 +79,7 @@ const Register = ({ onRegisterSuccess, switchToLogin }) => {
               value={formData.username}
               onChange={handleChange}
               required
-              placeholder="Wprowadź nazwę użytkownika"
+              disabled={loading}
             />
           </div>
 
@@ -83,7 +92,7 @@ const Register = ({ onRegisterSuccess, switchToLogin }) => {
               value={formData.email}
               onChange={handleChange}
               required
-              placeholder="Wprowadź swój email"
+              disabled={loading}
             />
           </div>
 
@@ -96,7 +105,7 @@ const Register = ({ onRegisterSuccess, switchToLogin }) => {
               value={formData.password}
               onChange={handleChange}
               required
-              placeholder="Wprowadź hasło (min. 6 znaków)"
+              disabled={loading}
             />
           </div>
 
@@ -109,31 +118,26 @@ const Register = ({ onRegisterSuccess, switchToLogin }) => {
               value={formData.confirmPassword}
               onChange={handleChange}
               required
-              placeholder="Potwierdź hasło"
+              disabled={loading}
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="auth-button"
-          >
-            {loading ? 'Rejestracja...' : 'Zarejestruj się'}
+          {error && <div className="error-message">{error}</div>}
+
+          <button type="submit" disabled={loading}>
+            {loading ? 'Rejestrowanie...' : 'Zarejestruj się'}
           </button>
         </form>
 
-        <p className="switch-auth">
+        <p>
           Masz już konto?{' '}
-          <button
-            onClick={switchToLogin}
-            className="link-button"
-          >
+          <button type="button" onClick={switchToLogin} disabled={loading}>
             Zaloguj się
           </button>
         </p>
       </div>
     </div>
   );
-};
+}
 
 export default Register;
