@@ -1,11 +1,14 @@
 // frontend/src/services/api.jsx
 
-const API_BASE_URL = 'https://habi-backend.onrender.com';
+// ZMIEŃ NA SWÓJ URL Z RENDER!
+const API_BASE_URL = 'https://habi-backend.onrender.com';  // ← TWÓJ RENDER URL
+
 // Token utilities
 export const tokenUtils = {
   getToken: () => localStorage.getItem('token'),
   setToken: (token) => localStorage.setItem('token', token),
   removeToken: () => localStorage.removeItem('token'),
+  isLoggedIn: () => !!localStorage.getItem('token'), // ← DODANA FUNKCJA
   getAuthHeaders: () => {
     const token = tokenUtils.getToken();
     return token ? { 'Authorization': `Bearer ${token}` } : {};

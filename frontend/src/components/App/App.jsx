@@ -16,7 +16,7 @@ function App() {
   }, []);
 
   const checkAuthStatus = async () => {
-    if (tokenUtils.isLoggedIn()) {
+    if (tokenUtils.getToken()) {
       try {
         const profile = await authAPI.getProfile();
         setUser(profile);
