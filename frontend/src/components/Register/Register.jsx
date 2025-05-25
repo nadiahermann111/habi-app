@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { authAPI, tokenUtils } from '../../services/api.jsx';
-
+import './Register.css';
 function Register({ onRegisterSuccess, switchToLogin }) {
   const [formData, setFormData] = useState({
     username: '',
