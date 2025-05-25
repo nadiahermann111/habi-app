@@ -1,0 +1,95 @@
+import { useState, useEffect } from 'react';
+import Login from '../Login/Login';
+import Register from '../Register/Register';
+import Dashboard from '../Dashboard/Dashboard';
+import PWAInstallPrompt from '../PWAInstallPrompt/PWAInstallPrompt';
+import { authAPI, tokenUtils } from "C:\\Users\\nadula\\Pulpit\\habi-app\\frontend\\src\\services\\api.jsx";
+import './App.css';
+
+function App() {
+  const [currentView, setCurrentView] = useState('login'); // 'login', 'register', 'dashboard'
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    if (tokenUtils.isLoggedIn()) {
+      try {
+        const profile = await authAPI.getProfile();
+        setUser(profile);
+        setCurrentView('dashboard');
+      } catch (error) {
+        // Token wygasł lub jest nieprawidłowy
+        tokenUtils.removeToken();
+        setCurrentView('login');
+      }
+    } else {
+      setCurrentView('login');
+    }
+    setLoading(false);
+  };
+
+  const handleLoginSuccess = (userData) => {
+    setUser(userData);
+    setCurrentView('dashboard');
+  };
+
+  const handleRegisterSuccess = (userData) => {
+    setUser(userData);
+    setCurrentView('dashboard');
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setCurrentView('login');
+  };
+
+  const switchToRegister = () => {
+    setCurrentView('register');
+  };
+
+  const switchToLogin = () => {
+    setCurrentView('login');
+  };
+
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="loading-spinner">🐵</div>
+        <p>Ładowanie Habi...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="App">
+      <PWAInstallPrompt />
+
+      {currentView === 'login' && (
+        <Login
+          onLoginSuccess={handleLoginSuccess}
+          switchToRegister={switchToRegister}
+        />
+      )}
+
+      {currentView === 'register' && (
+        <Register
+          onRegisterSuccess={handleRegisterSuccess}
+          switchToLogin={switchToLogin}
+        />
+      )}
+
+      {currentView === 'dashboard' && (
+        <Dashboard
+          user={user}
+          onLogout={handleLogout}
+        />
+      )}
+    </div>
+  );
+}
+
+export default App;
