@@ -23,16 +23,31 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
     setError('');
 
     try {
+      console.log('Starting login process...', formData);
+
+      // Call the login API
       const response = await authAPI.login(formData);
 
-      // Zapisz token
-      tokenUtils.saveToken(response.token);
+      console.log('Login successful:', response);
 
-      // Wywołaj callback sukcesu
-      onLoginSuccess(response.user);
+      // Store the token using the correct function name
+      if (response.token) {
+        tokenUtils.setToken(response.token);
+        console.log('Token stored successfully');
+      }
+
+      // Call the success callback with user data
+      if (onLoginSuccess && response.user) {
+        console.log('Calling onLoginSuccess with user data:', response.user);
+        onLoginSuccess(response.user);
+      } else {
+        console.error('Missing onLoginSuccess callback or user data');
+      }
 
     } catch (err) {
-      setError(err.response?.data?.detail || 'Błąd logowania');
+      console.error('Login failed:', err);
+      // Handle error properly - fetch API throws Error objects, not axios-style responses
+      setError(err.message || 'Błąd logowania');
     } finally {
       setLoading(false);
     }
@@ -55,6 +70,7 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
               value={formData.email}
               onChange={handleChange}
               required
+              disabled={loading}
               placeholder="Wprowadź swój email"
             />
           </div>
@@ -68,6 +84,7 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
               value={formData.password}
               onChange={handleChange}
               required
+              disabled={loading}
               placeholder="Wprowadź hasło"
             />
           </div>
@@ -86,6 +103,7 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
           <button
             onClick={switchToRegister}
             className="login-link-button"
+            disabled={loading}
           >
             Zarejestruj się
           </button>
