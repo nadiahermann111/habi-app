@@ -8,6 +8,27 @@ from auth import hash_password, verify_password, create_token, verify_token
 import os
 
 
+@app.get("/debug/files")
+async def debug_files():
+    """Debug - sprawdź jakie pliki widzi Render"""
+    current_dir = os.getcwd()
+    files = []
+
+    try:
+        for item in os.listdir(current_dir):
+            if os.path.isfile(item):
+                files.append(f"FILE: {item}")
+            else:
+                files.append(f"DIR: {item}")
+    except Exception as e:
+        files.append(f"ERROR: {str(e)}")
+
+    return {
+        "current_directory": current_dir,
+        "files": files,
+        "python_path": os.environ.get("PYTHONPATH", "Not set")
+    }
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
@@ -279,3 +300,4 @@ if __name__ == "__main__":
     # Port dla Render (lub lokalny)
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
+

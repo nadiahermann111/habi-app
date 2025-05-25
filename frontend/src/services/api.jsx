@@ -1,8 +1,6 @@
 // frontend/src/services/api.jsx
 
-// Zmień na swój URL z Render
-const API_BASE_URL = 'https://habi-backend.onrender.com';  // ← TWÓJ URL RENDER
-
+const API_BASE_URL = 'https://habi-backend.onrender.com';
 // Token utilities
 export const tokenUtils = {
   getToken: () => localStorage.getItem('token'),
