@@ -1,44 +1,53 @@
+import os
+import sys
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from database import init_db
-import aiosqlite
-from schemas import UserRegister, UserLogin, UserResponse, LoginResponse
-from auth import hash_password, verify_password, create_token, verify_token
-import os
 
+# Importy
+try:
+    from database import init_db
 
-@app.get("/debug/files")
-async def debug_files():
-    """Debug - sprawdź jakie pliki widzi Render"""
-    current_dir = os.getcwd()
-    files = []
+    print("✅ database.py imported successfully")
+except Exception as e:
+    print(f"❌ Failed to import database.py: {e}")
 
-    try:
-        for item in os.listdir(current_dir):
-            if os.path.isfile(item):
-                files.append(f"FILE: {item}")
-            else:
-                files.append(f"DIR: {item}")
-    except Exception as e:
-        files.append(f"ERROR: {str(e)}")
+try:
+    import aiosqlite
 
-    return {
-        "current_directory": current_dir,
-        "files": files,
-        "python_path": os.environ.get("PYTHONPATH", "Not set")
-    }
+    print("✅ aiosqlite imported successfully")
+except Exception as e:
+    print(f"❌ Failed to import aiosqlite: {e}")
+
+try:
+    from schemas import UserRegister, UserLogin, UserResponse, LoginResponse
+
+    print("✅ schemas.py imported successfully")
+except Exception as e:
+    print(f"❌ Failed to import schemas.py: {e}")
+
+try:
+    from auth import hash_password, verify_password, create_token, verify_token
+
+    print("✅ auth.py imported successfully")
+except Exception as e:
+    print(f"❌ Failed to import auth.py: {e}")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    await init_db()
-    print("✅ Database initialized")
+    try:
+        await init_db()
+        print("✅ Database initialized")
+    except Exception as e:
+        print(f"❌ Database initialization failed: {e}")
     yield
     # Shutdown
     print("👋 Shutting down")
 
 
+# TUTAJ tworzymy app PRZED użyciem @app
 app = FastAPI(
     title="Habi API",
     description="API dla aplikacji do śledzenia nawyków z wirtualną małpką",
@@ -46,14 +55,14 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS - dodaj URL Render i GitHub Pages
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://nadiahermann111.github.io",  # GitHub Pages
-        "http://localhost:3000",  # Local dev
-        "http://localhost:5173",  # Vite dev
-        "*"  # Tymczasowo wszystkie
+        "https://nadiahermann111.github.io",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "*"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -61,6 +70,7 @@ app.add_middleware(
 )
 
 
+# TERAZ możemy używać @app (app jest już zdefiniowane)
 @app.get("/")
 async def root():
     return {"message": "Habi API działa!", "version": "1.0.0"}
@@ -74,30 +84,18 @@ async def health():
 @app.get("/api/test-db")
 async def test_db():
     """Test bazy danych"""
-    async with aiosqlite.connect("database.db") as db:
-        cursor = await db.execute("SELECT name FROM sqlite_master WHERE type='table'")
-        tables = await cursor.fetchall()
+    try:
+        async with aiosqlite.connect("database.db") as db:
+            cursor = await db.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            tables = await cursor.fetchall()
+            return {
+                "message": "Database works!",
+                "tables": [table[0] for table in tables]
+            }
+    except Exception as e:
         return {
-            "message": "Database works!",
-            "tables": [table[0] for table in tables]
-        }
-
-
-@app.post("/api/users")
-async def create_user(username: str, email: str):
-    """Utwórz użytkownika (prosty test)"""
-    async with aiosqlite.connect("database.db") as db:
-        await db.execute("PRAGMA foreign_keys = ON")
-        cursor = await db.execute(
-            "INSERT INTO users (username, email, password_hash, coins) VALUES (?, ?, ?, ?)",
-            (username, email, "dummy_hash", 20)
-        )
-        await db.commit()
-        return {
-            "message": "User created",
-            "id": cursor.lastrowid,
-            "username": username,
-            "coins": 20
+            "message": "Database error",
+            "error": str(e)
         }
 
 
@@ -297,7 +295,6 @@ async def get_users():
 if __name__ == "__main__":
     import uvicorn
 
-    # Port dla Render (lub lokalny)
-    port = int(os.environ.get("PORT", 8000))
+    # Port dla Render
+    port = int(os.environ.get("PORT", 10000))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
-
