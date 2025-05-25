@@ -1,0 +1,185 @@
+.menu-header {
+  width: 100%;
+  background: var(--cream);
+  border-bottom: 2px solid var(--golden-yellow);
+  box-shadow: 0 2px 12px rgba(244, 185, 66, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+}
+
+.menu-header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+/* Wylogowanie */
+.logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(244, 185, 66, 0.1);
+  border: 2px solid var(--golden-yellow);
+  color: var(--text-primary);
+  padding: 8px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+}
+
+.logout-btn:hover {
+  background: var(--golden-yellow);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(244, 185, 66, 0.3);
+}
+
+.logout-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.logout-btn:hover svg {
+  transform: translateX(2px);
+}
+
+/* Logo */
+.logo-container {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  flex-grow: 1;
+  justify-content: center;
+}
+
+.habi-logo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.habi-logo:hover {
+  transform: scale(1.05);
+}
+
+.logo-fallback {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.logo-fallback span {
+  font-size: 20px;
+  letter-spacing: -0.5px;
+}
+
+/* Monety */
+.coins-container {
+  display: flex;
+  align-items: center;
+  background: var(--butter-yellow);
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 2px solid var(--golden-yellow);
+  box-shadow: 0 2px 8px rgba(244, 185, 66, 0.2);
+  flex-shrink: 0;
+}
+
+.coins-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.coin-icon {
+  font-size: 18px;
+  animation: coinSpin 2s linear infinite;
+}
+
+@keyframes coinSpin {
+  0% { transform: rotateY(0deg); }
+  50% { transform: rotateY(90deg); }
+  100% { transform: rotateY(0deg); }
+}
+
+.coins-amount {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text-primary);
+  min-width: 40px;
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .menu-header-content {
+    padding: 10px 16px;
+    gap: 12px;
+  }
+
+  .habi-logo {
+    height: 32px;
+  }
+
+  .logo-fallback {
+    font-size: 20px;
+  }
+
+  .logo-fallback span {
+    font-size: 16px;
+  }
+
+  .logout-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .coins-container {
+    padding: 6px 12px;
+  }
+
+  .coins-amount {
+    font-size: 14px;
+    min-width: 30px;
+  }
+
+  .coin-icon {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .menu-header-content {
+    gap: 8px;
+  }
+
+  .logout-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .logout-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .habi-logo {
+    height: 28px;
+  }
+
+  .coins-container {
+    padding: 4px 8px;
+  }
+}

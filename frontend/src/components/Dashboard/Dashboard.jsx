@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { authAPI, tokenUtils } from "C:\\Users\\nadula\\Pulpit\\habi-app\\frontend\\src\\services\\api.jsx";
+import MenuHeader from '../MenuHeader/MenuHeader';
+import './Dashboard.css';
 
 const Dashboard = ({ user, onLogout }) => {
   const [profile, setProfile] = useState(user || null);
@@ -28,30 +30,52 @@ const Dashboard = ({ user, onLogout }) => {
     onLogout();
   };
 
+  const handleAddTestCoins = async () => {
+    try {
+      const result = await authAPI.addCoins(10);
+
+      // Zaktualizuj lokalny stan profilu
+      setProfile(prev => ({
+        ...prev,
+        coins: result.coins
+      }));
+
+      // Wyślij event żeby MenuHeader się odświeżył
+      window.dispatchEvent(new CustomEvent('coinsUpdated'));
+
+      alert(`${result.message}! Masz teraz ${result.coins} monet.`);
+    } catch (error) {
+      alert('Błąd dodawania monet');
+    }
+  };
+
+  const handleCoinsUpdate = (newCoinsAmount) => {
+    // Callback z MenuHeader - aktualizuj lokalny stan
+    setProfile(prev => ({
+      ...prev,
+      coins: newCoinsAmount
+    }));
+  };
+
   if (loading) {
     return <div className="loading">Ładowanie profilu...</div>;
   }
 
   return (
     <div className="dashboard">
-      <header className="dashboard-header">
-        <h1>🐵 Witaj w Habi!</h1>
-        <button onClick={handleLogout} className="logout-button">
-          Wyloguj
-        </button>
-      </header>
+      <MenuHeader
+        onLogout={handleLogout}
+        initialCoins={profile?.coins || 0}
+        onCoinsUpdate={handleCoinsUpdate}
+      />
 
       {error && <div className="error-message">{error}</div>}
 
       {profile && (
         <div className="profile-section">
-          <div className="profile-card">
-            <h2>Twój profil</h2>
-            <div className="profile-info">
-              <p><strong>Nazwa użytkownika:</strong> {profile.username}</p>
-              <p><strong>Email:</strong> {profile.email}</p>
-              <p><strong>💰 Monety:</strong> {profile.coins}</p>
-            </div>
+          {/* Powitanie użytkownika */}
+          <div className="welcome-section">
+            <h1 className="welcome-message">Cześć {profile.username}! 👋</h1>
           </div>
 
           <div className="habi-section">
@@ -71,6 +95,9 @@ const Dashboard = ({ user, onLogout }) => {
               <button className="action-btn">➕ Dodaj nawyk</button>
               <button className="action-btn">🍌 Nakarm Habi</button>
               <button className="action-btn">📊 Zobacz statystyki</button>
+              <button className="action-btn" onClick={handleAddTestCoins}>
+                🪙 Dodaj 10 monet (test)
+              </button>
             </div>
           </div>
         </div>

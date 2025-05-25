@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-
+import './PWAInstallPrompt.css';
 const PWAInstallPrompt = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);

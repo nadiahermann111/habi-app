@@ -1,0 +1,193 @@
+.login-container {
+  --login-butter-yellow: #FFF8DC;
+  --login-golden-yellow: #FFEB9C;
+  --login-warm-yellow: #FFD23F;
+  --login-honey-yellow: #F4B942;
+  --login-deep-gold: #E6A23C;
+  --login-cream: #FFFEF7;
+  --login-light-cream: #FEFDF8;
+  --login-soft-shadow: rgba(244, 185, 66, 0.2);
+  --login-text-primary: #5D4037;
+  --login-text-secondary: #8D6E63;
+  --login-success: #81C784;
+  --login-error: #E57373;
+  --login-button-gradient: linear-gradient(135deg, #FFD23F 0%, #F4B942 100%);
+}
+
+.login-container {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.login-card {
+  background: var(--login-cream);
+  padding: 40px;
+  border-radius: 24px;
+  box-shadow:
+    0 10px 40px var(--login-soft-shadow),
+    0 2px 8px rgba(244, 185, 66, 0.1);
+  animation: loginSlideIn 0.6s ease-out;
+  border: 1px solid var(--login-golden-yellow);
+  backdrop-filter: blur(10px);
+}
+
+@keyframes loginSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.login-card h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: var(--login-text-primary);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+}
+
+.login-form-group {
+  margin-bottom: 24px;
+}
+
+.login-form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--login-text-primary);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+}
+
+.login-form-group input {
+  width: 100%;
+  padding: 16px 20px;
+  border: 2px solid var(--login-golden-yellow);
+  border-radius: 16px;
+  font-size: 16px;
+  background: var(--login-light-cream);
+  color: var(--login-text-primary);
+  transition: all 0.3s ease;
+  font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+  box-sizing: border-box;
+}
+
+.login-form-group input:focus {
+  outline: none;
+  border-color: var(--login-warm-yellow);
+  box-shadow: 0 0 0 4px rgba(255, 210, 63, 0.2);
+  background: white;
+  transform: translateY(-2px);
+}
+
+.login-form-group input::placeholder {
+  color: var(--login-text-secondary);
+}
+
+.login-button {
+  width: 100%;
+  padding: 16px 24px;
+  background: var(--login-button-gradient);
+  color: var(--login-text-primary);
+  border: none;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 16px var(--login-soft-shadow);
+  font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+  box-sizing: border-box;
+}
+
+.login-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px var(--login-soft-shadow);
+  background: linear-gradient(135deg, #F4B942 0%, #E6A23C 100%);
+}
+
+.login-button:active {
+  transform: translateY(-1px);
+}
+
+.login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.login-switch-auth {
+  text-align: center;
+  margin-top: 24px;
+  color: var(--login-text-secondary);
+  font-size: 14px;
+  font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+}
+
+.login-link-button {
+  background: none;
+  border: none;
+  color: var(--login-honey-yellow);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: inherit;
+  text-decoration: underline;
+  transition: color 0.3s ease;
+  font-family: inherit;
+}
+
+.login-link-button:hover {
+  color: var(--login-deep-gold);
+}
+
+.login-error-message {
+  background: rgba(229, 115, 115, 0.1);
+  color: var(--login-error);
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  text-align: center;
+  border: 1px solid rgba(229, 115, 115, 0.2);
+  font-weight: 500;
+  font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+  animation: loginErrorShake 0.5s ease-out;
+}
+
+@keyframes loginErrorShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .login-card {
+    padding: 28px 24px;
+    border-radius: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 24px 20px;
+  }
+
+  .login-form-group input {
+    padding: 14px 16px;
+  }
+
+  .login-button {
+    padding: 14px 20px;
+  }
+}

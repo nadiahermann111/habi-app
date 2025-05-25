@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { authAPI, tokenUtils } from "C:\\Users\\nadula\\Pulpit\\habi-app\\frontend\\src\\services\\api.jsx";
+import './Register.css';
 const Register = ({ onRegisterSuccess, switchToLogin }) => {
   const [formData, setFormData] = useState({
     username: '',

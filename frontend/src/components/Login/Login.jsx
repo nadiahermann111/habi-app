@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { authAPI, tokenUtils } from "C:\\Users\\nadula\\Pulpit\\habi-app\\frontend\\src\\services\\api.jsx";
+import './Login.css';
 
 const Login = ({ onLoginSuccess, switchToRegister }) => {
   const [formData, setFormData] = useState({
@@ -38,14 +39,14 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
+    <div className="login-container">
+      <div className="login-card">
         <h2>Logowanie do Habi</h2>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && <div className="login-error-message">{error}</div>}
 
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
+          <div className="login-form-group">
             <label htmlFor="email">Email:</label>
             <input
               type="email"
@@ -58,7 +59,7 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
             />
           </div>
 
-          <div className="form-group">
+          <div className="login-form-group">
             <label htmlFor="password">Hasło:</label>
             <input
               type="password"
@@ -74,17 +75,17 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
           <button
             type="submit"
             disabled={loading}
-            className="auth-button"
+            className="login-button"
           >
             {loading ? 'Logowanie...' : 'Zaloguj się'}
           </button>
         </form>
 
-        <p className="switch-auth">
+        <p className="login-switch-auth">
           Nie masz konta?{' '}
           <button
             onClick={switchToRegister}
-            className="link-button"
+            className="login-link-button"
           >
             Zarejestruj się
           </button>
