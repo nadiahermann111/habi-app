@@ -10,6 +10,10 @@ permissions:
   pages: write
   id-token: write
 
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,16 +22,30 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     
+    - name: Verify structure
+      run: |
+        echo "Checking frontend folder..."
+        ls -la ./frontend/
+        echo "Checking for package.json..."
+        ls -la ./frontend/package.json
+    
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
     
     - name: Install dependencies
+      working-directory: ./frontend
       run: npm install
     
     - name: Build
+      working-directory: ./frontend
       run: npm run build
+    
+    - name: Verify build output
+      run: |
+        echo "Checking build output..."
+        ls -la ./frontend/dist/
     
     - name: Setup Pages
       uses: actions/configure-pages@v4
@@ -35,7 +53,7 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
       with:
-        path: './dist'
+        path: './frontend/dist'
 
   deploy:
     environment:
