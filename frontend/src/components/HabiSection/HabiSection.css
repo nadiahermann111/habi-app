@@ -1,0 +1,89 @@
+.habi-section {
+  margin: 20px 0;
+}
+
+.habi-card {
+  background: linear-gradient(135deg, #f4d03f 0%, #f7dc6f 100%);
+  border-radius: 15px;
+  padding: 40px 25px;
+  color: #6c5b2f;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  min-height: 300px;
+}
+
+.habi-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+}
+
+.habi-card h3 {
+  margin: 0 0 20px 0;
+  font-size: 1.4em;
+  text-align: center;
+  font-weight: 600;
+}
+
+.habi-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  width: 100%;
+}
+
+.habi-status {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.habi-avatar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.habi-avatar img {
+  max-width: 200px;
+  max-height: 200px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  animation: bounce 2s infinite;
+}
+
+.habi-status p {
+  margin: 5px 0;
+  opacity: 0.9;
+  line-height: 1.4;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .habi-content {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .habi-avatar img {
+    max-width: 150px;
+    max-height: 150px;
+  }
+}

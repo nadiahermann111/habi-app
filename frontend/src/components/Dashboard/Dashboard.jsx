@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { authAPI, tokenUtils } from "../../services/api.jsx";
 import MenuHeader from '../MenuHeader/MenuHeader';
+import HabiSection from '../HabiSection/HabiSection';
 import './Dashboard.css';
 
 const Dashboard = ({ user, onLogout }) => {
@@ -78,16 +79,7 @@ const Dashboard = ({ user, onLogout }) => {
             <h1 className="welcome-message">Cześć {profile.username}! 👋</h1>
           </div>
 
-          <div className="habi-section">
-            <div className="habi-card">
-              <h3>Twoja małpka Habi</h3>
-              <div className="habi-status">
-                <div className="habi-avatar">🐵</div>
-                <p>Czeka na implementację!</p>
-                <p>Tutaj będzie status małpki, nawyki i więcej funkcji...</p>
-              </div>
-            </div>
-          </div>
+          <HabiSection />
 
           <div className="quick-actions">
             <h3>Szybkie akcje</h3>
