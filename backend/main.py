@@ -3,6 +3,9 @@ import sys
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from datetime import date, datetime
+from typing import List, Optional
+from pydantic import BaseModel
 
 # Importy
 try:
@@ -32,6 +35,23 @@ try:
     print("✅ auth.py imported successfully")
 except Exception as e:
     print(f"❌ Failed to import auth.py: {e}")
+
+
+# Habit schemas (dodaj je do schemas.py lub tutaj)
+class HabitCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    reward_coins: int = 1
+
+
+class HabitResponse(BaseModel):
+    id: int
+    name: str
+    description: Optional[str]
+    reward_coins: int
+    is_active: bool
+    created_at: str
+    completed_today: bool = False
 
 
 @asynccontextmanager
@@ -290,6 +310,190 @@ async def get_users():
         return {
             "users": [dict(user) for user in users]
         }
+
+
+# ========== HABIT ENDPOINTS ==========
+
+@app.get("/api/habits", response_model=List[HabitResponse])
+async def get_user_habits(authorization: str = Header(None)):
+    """Pobierz wszystkie nawyki użytkownika"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
+
+    token = authorization.replace("Bearer ", "")
+    user_id = verify_token(token)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+
+    async with aiosqlite.connect("database.db") as db:
+        db.row_factory = aiosqlite.Row
+
+        # Pobierz nawyki użytkownika
+        cursor = await db.execute(
+            """SELECT h.*,
+                      CASE WHEN hc.id IS NOT NULL THEN 1 ELSE 0 END as completed_today
+               FROM habits h
+                        LEFT JOIN habit_completions hc ON h.id = hc.habit_id
+                   AND hc.user_id = ? AND hc.completed_at = date ('now')
+               WHERE h.user_id = ? AND h.is_active = 1
+               ORDER BY h.created_at DESC""",
+            (user_id, user_id)
+        )
+        habits = await cursor.fetchall()
+
+        return [
+            HabitResponse(
+                id=habit["id"],
+                name=habit["name"],
+                description=habit["description"],
+                reward_coins=habit["reward_coins"],
+                is_active=bool(habit["is_active"]),
+                created_at=habit["created_at"],
+                completed_today=bool(habit["completed_today"])
+            )
+            for habit in habits
+        ]
+
+
+@app.post("/api/habits", response_model=HabitResponse)
+async def create_habit(habit_data: HabitCreate, authorization: str = Header(None)):
+    """Utwórz nowy nawyk"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
+
+    token = authorization.replace("Bearer ", "")
+    user_id = verify_token(token)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+
+    async with aiosqlite.connect("database.db") as db:
+        await db.execute("PRAGMA foreign_keys = ON")
+
+        # Dodaj nawyk
+        cursor = await db.execute(
+            "INSERT INTO habits (user_id, name, description, reward_coins) VALUES (?, ?, ?, ?)",
+            (user_id, habit_data.name, habit_data.description, habit_data.reward_coins)
+        )
+        await db.commit()
+
+        habit_id = cursor.lastrowid
+
+        # Pobierz utworzony nawyk
+        cursor = await db.execute(
+            "SELECT * FROM habits WHERE id = ?",
+            (habit_id,)
+        )
+        habit = await cursor.fetchone()
+
+        return HabitResponse(
+            id=habit["id"],
+            name=habit["name"],
+            description=habit["description"],
+            reward_coins=habit["reward_coins"],
+            is_active=bool(habit["is_active"]),
+            created_at=habit["created_at"],
+            completed_today=False
+        )
+
+
+@app.post("/api/habits/{habit_id}/complete")
+async def complete_habit(habit_id: int, authorization: str = Header(None)):
+    """Oznacz nawyk jako wykonany dzisiaj"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
+
+    token = authorization.replace("Bearer ", "")
+    user_id = verify_token(token)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+
+    async with aiosqlite.connect("database.db") as db:
+        await db.execute("PRAGMA foreign_keys = ON")
+
+        # Sprawdź czy nawyk należy do użytkownika
+        cursor = await db.execute(
+            "SELECT reward_coins FROM habits WHERE id = ? AND user_id = ? AND is_active = 1",
+            (habit_id, user_id)
+        )
+        habit = await cursor.fetchone()
+
+        if not habit:
+            raise HTTPException(status_code=404, detail="Nawyk nie znaleziony")
+
+        # Sprawdź czy nawyk nie został już wykonany dzisiaj
+        cursor = await db.execute(
+            "SELECT id FROM habit_completions WHERE habit_id = ? AND user_id = ? AND completed_at = date('now')",
+            (habit_id, user_id)
+        )
+        existing_completion = await cursor.fetchone()
+
+        if existing_completion:
+            raise HTTPException(status_code=400, detail="Nawyk już został wykonany dzisiaj")
+
+        # Dodaj wykonanie nawyku
+        await db.execute(
+            "INSERT INTO habit_completions (habit_id, user_id, coins_earned) VALUES (?, ?, ?)",
+            (habit_id, user_id, habit["reward_coins"])
+        )
+
+        # Dodaj monety użytkownikowi
+        await db.execute(
+            "UPDATE users SET coins = coins + ? WHERE id = ?",
+            (habit["reward_coins"], user_id)
+        )
+
+        await db.commit()
+
+        # Pobierz nową liczbę monet
+        cursor = await db.execute(
+            "SELECT coins FROM users WHERE id = ?",
+            (user_id,)
+        )
+        user = await cursor.fetchone()
+
+        return {
+            "message": f"Nawyk wykonany! Otrzymałeś {habit['reward_coins']} monet",
+            "coins_earned": habit["reward_coins"],
+            "total_coins": user["coins"] if user else 0
+        }
+
+
+@app.delete("/api/habits/{habit_id}")
+async def delete_habit(habit_id: int, authorization: str = Header(None)):
+    """Usuń nawyk (oznacz jako nieaktywny)"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
+
+    token = authorization.replace("Bearer ", "")
+    user_id = verify_token(token)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+
+    async with aiosqlite.connect("database.db") as db:
+        await db.execute("PRAGMA foreign_keys = ON")
+
+        # Sprawdź czy nawyk należy do użytkownika
+        cursor = await db.execute(
+            "SELECT id FROM habits WHERE id = ? AND user_id = ?",
+            (habit_id, user_id)
+        )
+        habit = await cursor.fetchone()
+
+        if not habit:
+            raise HTTPException(status_code=404, detail="Nawyk nie znaleziony")
+
+        # Oznacz jako nieaktywny zamiast usuwać
+        await db.execute(
+            "UPDATE habits SET is_active = 0 WHERE id = ? AND user_id = ?",
+            (habit_id, user_id)
+        )
+        await db.commit()
+
+        return {"message": "Nawyk został usunięty"}
 
 
 if __name__ == "__main__":

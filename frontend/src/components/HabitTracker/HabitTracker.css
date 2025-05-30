@@ -1,0 +1,342 @@
+.habit-tracker {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #faf5cc 0%, #fff9c3 100%);
+  padding: 20px;
+}
+
+.habit-tracker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.habit-tracker-header h1 {
+  color: #6c5b2f;
+  font-size: 2em;
+  margin: 0;
+  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.3);
+  font-weight: 600;
+}
+
+.back-btn, .add-habit-btn {
+  background: linear-gradient(135deg, #f4d03f 0%, #f7dc6f 100%);
+  color: #6c5b2f;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.back-btn:hover, .add-habit-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%);
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 1.2em;
+  color: #6c5b2f;
+}
+
+.message {
+  max-width: 1200px;
+  margin: 0 auto 20px auto;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.error-message {
+  background-color: #ff6b6b;
+  color: white;
+}
+
+.success-message {
+  background-color: #51cf66;
+  color: white;
+}
+
+.add-habit-form {
+  background: white;
+  border-radius: 15px;
+  padding: 30px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  margin: 0 auto 30px auto;
+  max-width: 600px;
+}
+
+.add-habit-form h3 {
+  margin: 0 0 25px 0;
+  color: #333;
+  font-size: 1.5em;
+  font-weight: 600;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-weight: 500;
+  font-size: 1em;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1em;
+  transition: border-color 0.3s ease;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #f4d03f;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 25px;
+}
+
+.submit-btn, .cancel-btn {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.submit-btn {
+  background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+  color: white;
+}
+
+.submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(64, 192, 87, 0.3);
+}
+
+.cancel-btn {
+  background: #f8f9fa;
+  color: #6c757d;
+  border: 2px solid #e9ecef;
+}
+
+.cancel-btn:hover {
+  background: #e9ecef;
+  transform: translateY(-2px);
+}
+
+.habits-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.no-habits {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.no-habits-icon {
+  font-size: 4em;
+  margin-bottom: 20px;
+}
+
+.no-habits h3 {
+  color: #333;
+  font-size: 1.5em;
+  margin: 0 0 10px 0;
+}
+
+.no-habits p {
+  color: #666;
+  font-size: 1.1em;
+  margin: 0;
+}
+
+.habits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.habit-card {
+  background: white;
+  border-radius: 15px;
+  padding: 25px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  border: 3px solid transparent;
+}
+
+.habit-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+}
+
+.habit-card.completed {
+  border-color: #51cf66;
+  background: linear-gradient(135deg, #f8fff9 0%, #f0fff1 100%);
+}
+
+.habit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+}
+
+.habit-name {
+  color: #333;
+  font-size: 1.3em;
+  font-weight: 600;
+  margin: 0;
+  flex: 1;
+  line-height: 1.3;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+  opacity: 0.7;
+}
+
+.delete-btn:hover {
+  background-color: #ffebee;
+  opacity: 1;
+}
+
+.habit-description {
+  color: #666;
+  font-size: 0.95em;
+  margin: 0 0 15px 0;
+  line-height: 1.4;
+}
+
+.habit-reward {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-weight: 500;
+  color: #6c5b2f;
+}
+
+.coins-icon {
+  font-size: 1.2em;
+}
+
+.habit-actions {
+  margin-bottom: 15px;
+}
+
+.complete-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #f4d03f 0%, #f7dc6f 100%);
+  color: #6c5b2f;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.complete-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%);
+}
+
+.completed-badge {
+  background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: 500;
+  box-shadow: 0 4px 15px rgba(81, 207, 102, 0.3);
+}
+
+.habit-date {
+  color: #999;
+  font-size: 0.85em;
+  text-align: center;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .habit-tracker {
+    padding: 15px;
+  }
+
+  .habit-tracker-header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+
+  .habit-tracker-header h1 {
+    font-size: 1.8em;
+  }
+
+  .habits-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .add-habit-form {
+    margin: 0 10px 30px 10px;
+    padding: 20px;
+  }
+
+  .form-buttons {
+    flex-direction: column;
+  }
+
+  .back-btn, .add-habit-btn {
+    width: 100%;
+    max-width: 200px;
+  }
+}

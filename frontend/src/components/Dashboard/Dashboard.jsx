@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { authAPI, tokenUtils } from "../../services/api.jsx";
 import MenuHeader from '../MenuHeader/MenuHeader';
 import HabiSection from '../HabiSection/HabiSection';
+import HabitTracker from '../HabitTracker/HabitTracker';
 import './Dashboard.css';
 
 const Dashboard = ({ user, onLogout }) => {
   const [profile, setProfile] = useState(user || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' or 'habits'
 
   useEffect(() => {
     fetchProfile();
@@ -58,10 +60,24 @@ const Dashboard = ({ user, onLogout }) => {
     }));
   };
 
+  const handleNavigateToHabits = () => {
+    setCurrentView('habits');
+  };
+
+  const handleBackToDashboard = () => {
+    setCurrentView('dashboard');
+  };
+
   if (loading) {
     return <div className="loading">Ładowanie profilu...</div>;
   }
 
+  // Render HabitTracker jeśli wybrano ten widok
+  if (currentView === 'habits') {
+    return <HabitTracker onBack={handleBackToDashboard} />;
+  }
+
+  // Render głównego Dashboard
   return (
     <div className="dashboard">
       <MenuHeader
@@ -84,7 +100,9 @@ const Dashboard = ({ user, onLogout }) => {
           <div className="quick-actions">
             <h3>Szybkie akcje</h3>
             <div className="action-buttons">
-              <button className="action-btn">➕ Dodaj nawyk</button>
+              <button className="action-btn" onClick={handleNavigateToHabits}>
+                ➕ Dodaj nawyk
+              </button>
               <button className="action-btn">🍌 Nakarm Habi</button>
               <button className="action-btn">📊 Zobacz statystyki</button>
               <button className="action-btn" onClick={handleAddTestCoins}>

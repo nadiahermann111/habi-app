@@ -56,11 +56,11 @@ const FoodControl = () => {
   };
 
   const getFoodStatus = () => {
-    if (foodLevel > 70) return 'Bardzo najedzony! 😋';
-    if (foodLevel > 50) return 'Najedzony 😊';
-    if (foodLevel > 20) return 'Głodny 😐';
-    if (foodLevel > 0) return 'Bardzo głodny! 😟';
-    return 'Skrajnie głodny! 🚨';
+    if (foodLevel > 70) return 'Jestem z Ciebie dumny!';
+    if (foodLevel > 50) return 'Nie zapominaj o swoich celach';
+    if (foodLevel > 20) return 'Pamiętaj o zanotowaniu nawyków 😐';
+    if (foodLevel > 0) return 'Nie poddawaj się 😟';
+    return 'Dasz radę to zrobić!';
   };
 
   const feedHabi = () => {
@@ -74,7 +74,6 @@ const FoodControl = () => {
   return (
     <div className="food-control">
       <div className="food-header">
-        <h4>Poziom najedzenia</h4>
         <span className="food-status">{getFoodStatus()}</span>
       </div>
 
@@ -91,13 +90,6 @@ const FoodControl = () => {
         <span className="food-percentage">{foodLevel}%</span>
       </div>
 
-      <button
-        className="feed-button"
-        onClick={feedHabi}
-        disabled={foodLevel >= 100}
-      >
-        🍌 Nakarm (+20)
-      </button>
     </div>
   );
 };
