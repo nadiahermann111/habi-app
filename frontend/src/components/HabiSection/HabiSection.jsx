@@ -1,5 +1,5 @@
 import './HabiSection.css';
-import HabiHappyAdult from './HabiHappyAdult.png';
+import HabiHappyAdult from './HabiAdultHappy.png';
 import FoodControl from '../FoodControl/FoodControl';
 
 const HabiSection = () => {
