@@ -37,7 +37,32 @@ except Exception as e:
     print(f"❌ Failed to import auth.py: {e}")
 
 
-# Habit schemas (dodaj je do schemas.py lub tutaj)
+# Podstawowe schematy (jeśli nie działają importy)
+class UserRegisterLocal(BaseModel):
+    username: str
+    email: str
+    password: str
+
+
+class UserLoginLocal(BaseModel):
+    email: str
+    password: str
+
+
+class UserResponseLocal(BaseModel):
+    id: int
+    username: str
+    email: str
+    coins: int
+
+
+class LoginResponseLocal(BaseModel):
+    message: str
+    token: str
+    user: UserResponseLocal
+
+
+# Habit schemas
 class HabitCreate(BaseModel):
     name: str
     description: Optional[str] = None
@@ -119,8 +144,8 @@ async def test_db():
         }
 
 
-@app.post("/api/register", response_model=LoginResponse)
-async def register(user_data: UserRegister):
+@app.post("/api/register", response_model=LoginResponseLocal)
+async def register(user_data: UserRegisterLocal):
     """Rejestracja użytkownika"""
     async with aiosqlite.connect("database.db") as db:
         await db.execute("PRAGMA foreign_keys = ON")
@@ -156,10 +181,10 @@ async def register(user_data: UserRegister):
         # Utwórz token
         token = create_token(user_id)
 
-        return LoginResponse(
+        return LoginResponseLocal(
             message="Rejestracja udana",
             token=token,
-            user=UserResponse(
+            user=UserResponseLocal(
                 id=user["id"],
                 username=user["username"],
                 email=user["email"],
@@ -168,8 +193,8 @@ async def register(user_data: UserRegister):
         )
 
 
-@app.post("/api/login", response_model=LoginResponse)
-async def login(login_data: UserLogin):
+@app.post("/api/login", response_model=LoginResponseLocal)
+async def login(login_data: UserLoginLocal):
     """Logowanie użytkownika"""
     async with aiosqlite.connect("database.db") as db:
         await db.execute("PRAGMA foreign_keys = ON")
@@ -192,10 +217,10 @@ async def login(login_data: UserLogin):
         # Utwórz token
         token = create_token(user["id"])
 
-        return LoginResponse(
+        return LoginResponseLocal(
             message="Logowanie udane",
             token=token,
-            user=UserResponse(
+            user=UserResponseLocal(
                 id=user["id"],
                 username=user["username"],
                 email=user["email"],
@@ -269,7 +294,7 @@ async def add_coins(amount: int, authorization: str = Header(None)):
         }
 
 
-@app.get("/api/profile", response_model=UserResponse)
+@app.get("/api/profile", response_model=UserResponseLocal)
 async def get_profile(authorization: str = Header(None)):
     """Pobierz profil użytkownika (wymaga tokenu)"""
     if not authorization or not authorization.startswith("Bearer "):
@@ -292,7 +317,7 @@ async def get_profile(authorization: str = Header(None)):
         if not user:
             raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
 
-        return UserResponse(
+        return UserResponseLocal(
             id=user["id"],
             username=user["username"],
             email=user["email"],
