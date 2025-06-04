@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from datetime import date, datetime
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, validator, Field
 
 # Importy
 try:
@@ -40,14 +40,35 @@ except Exception as e:
 
 # Podstawowe schematy (jeśli nie działają importy)
 class UserRegisterLocal(BaseModel):
-    username: str
-    email: str
-    password: str
+    username: str = Field(..., min_length=3, max_length=50)
+    email: str = Field(..., regex=r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
+    password: str = Field(..., min_length=6)
+
+    @validator('username')
+    def validate_username(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Username cannot be empty')
+        v = v.strip()
+        if not v.replace('_', '').replace('-', '').isalnum():
+            raise ValueError('Username can only contain letters, numbers, underscores and hyphens')
+        return v
+
+    @validator('email')
+    def validate_email(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Email cannot be empty')
+        return v.strip().lower()
 
 
 class UserLoginLocal(BaseModel):
-    email: str
-    password: str
+    email: str = Field(..., min_length=1)
+    password: str = Field(..., min_length=1)
+
+    @validator('email')
+    def validate_email(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Email cannot be empty')
+        return v.strip().lower()
 
 
 class UserResponseLocal(BaseModel):
@@ -63,11 +84,32 @@ class LoginResponseLocal(BaseModel):
     user: UserResponseLocal
 
 
-# Habit schemas
+# Habit schemas with proper validation
 class HabitCreate(BaseModel):
-    name: str
-    description: Optional[str] = None
-    reward_coins: int = 1
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = Field(None, max_length=500)
+    reward_coins: int = Field(default=1, ge=1, le=10)
+
+    @validator('name')
+    def validate_name(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Habit name cannot be empty')
+        return v.strip()
+
+    @validator('description', pre=True)
+    def validate_description(cls, v):
+        if v is None or v == "":
+            return None
+        if isinstance(v, str):
+            v = v.strip()
+            return v if v else None
+        return v
+
+    @validator('reward_coins')
+    def validate_reward_coins(cls, v):
+        if v < 1 or v > 10:
+            raise ValueError('Reward coins must be between 1 and 10')
+        return v
 
 
 class HabitResponse(BaseModel):
@@ -329,71 +371,6 @@ async def get_user_coins(authorization: str = Header(None)):
         if not user:
             raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
 
-        return {"coins": user["coins"], "user_id": user_id}
-
-
-@app.post("/api/coins/add")
-async def add_coins(amount: int, authorization: str = Header(None)):
-    """Dodaj monety użytkownikowi (dla testów)"""
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
-
-    token = authorization.replace("Bearer ", "")
-    user_id = verify_token(token)
-
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
-
-    if amount <= 0:
-        raise HTTPException(status_code=400, detail="Kwota musi być większa od 0")
-
-    async with aiosqlite.connect("database.db") as db:
-        await db.execute("PRAGMA foreign_keys = ON")
-
-        # Dodaj monety
-        await db.execute(
-            "UPDATE users SET coins = coins + ? WHERE id = ?",
-            (amount, user_id)
-        )
-        await db.commit()
-
-        # Pobierz nową liczbę monet
-        cursor = await db.execute(
-            "SELECT coins FROM users WHERE id = ?",
-            (user_id,)
-        )
-        user = await cursor.fetchone()
-
-        return {
-            "message": f"Dodano {amount} monet",
-            "coins": user["coins"] if user else 0,
-            "added": amount
-        }
-
-
-@app.get("/api/profile", response_model=UserResponseLocal)
-async def get_profile(authorization: str = Header(None)):
-    """Pobierz profil użytkownika (wymaga tokenu)"""
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
-
-    token = authorization.replace("Bearer ", "")
-    user_id = verify_token(token)
-
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
-
-    async with aiosqlite.connect("database.db") as db:
-        db.row_factory = aiosqlite.Row
-        cursor = await db.execute(
-            "SELECT id, username, email, coins FROM users WHERE id = ?",
-            (user_id,)
-        )
-        user = await cursor.fetchone()
-
-        if not user:
-            raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
-
         return UserResponseLocal(
             id=user["id"],
             username=user["username"],
@@ -466,6 +443,7 @@ async def get_user_habits(authorization: str = Header(None)):
 async def create_habit(habit_data: HabitCreate, authorization: str = Header(None)):
     """Utwórz nowy nawyk"""
     print(f"➕ Creating habit: {habit_data.name}")
+    print(f"📋 Full habit data: {habit_data}")
 
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
@@ -476,35 +454,52 @@ async def create_habit(habit_data: HabitCreate, authorization: str = Header(None
     if not user_id:
         raise HTTPException(status_code=401, detail="Nieprawidłowy token")
 
-    async with aiosqlite.connect("database.db") as db:
-        await db.execute("PRAGMA foreign_keys = ON")
+    try:
+        async with aiosqlite.connect("database.db") as db:
+            await db.execute("PRAGMA foreign_keys = ON")
 
-        # Dodaj nawyk
-        cursor = await db.execute(
-            "INSERT INTO habits (user_id, name, description, reward_coins) VALUES (?, ?, ?, ?)",
-            (user_id, habit_data.name, habit_data.description, habit_data.reward_coins)
-        )
-        await db.commit()
+            # Sprawdź limit nawyków dla użytkownika (opcjonalnie)
+            cursor = await db.execute(
+                "SELECT COUNT(*) as count FROM habits WHERE user_id = ? AND is_active = 1",
+                (user_id,)
+            )
+            habit_count = await cursor.fetchone()
 
-        habit_id = cursor.lastrowid
-        print(f"✅ Habit created with ID: {habit_id}")
+            if habit_count and habit_count["count"] >= 20:  # Limit 20 aktywnych nawyków
+                raise HTTPException(status_code=400, detail="Osiągnięto maksymalną liczbę nawyków (20)")
 
-        # Pobierz utworzony nawyk
-        cursor = await db.execute(
-            "SELECT * FROM habits WHERE id = ?",
-            (habit_id,)
-        )
-        habit = await cursor.fetchone()
+            # Dodaj nawyk
+            cursor = await db.execute(
+                "INSERT INTO habits (user_id, name, description, reward_coins) VALUES (?, ?, ?, ?)",
+                (user_id, habit_data.name, habit_data.description, habit_data.reward_coins)
+            )
+            await db.commit()
 
-        return HabitResponse(
-            id=habit["id"],
-            name=habit["name"],
-            description=habit["description"],
-            reward_coins=habit["reward_coins"],
-            is_active=bool(habit["is_active"]),
-            created_at=habit["created_at"],
-            completed_today=False
-        )
+            habit_id = cursor.lastrowid
+            print(f"✅ Habit created with ID: {habit_id}")
+
+            # Pobierz utworzony nawyk
+            cursor = await db.execute(
+                "SELECT * FROM habits WHERE id = ?",
+                (habit_id,)
+            )
+            habit = await cursor.fetchone()
+
+            return HabitResponse(
+                id=habit["id"],
+                name=habit["name"],
+                description=habit["description"],
+                reward_coins=habit["reward_coins"],
+                is_active=bool(habit["is_active"]),
+                created_at=habit["created_at"],
+                completed_today=False
+            )
+
+    except Exception as e:
+        print(f"❌ Error creating habit: {str(e)}")
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=f"Błąd podczas tworzenia nawyku: {str(e)}")
 
 
 @app.post("/api/habits/{habit_id}/complete")
@@ -521,58 +516,68 @@ async def complete_habit(habit_id: int, authorization: str = Header(None)):
     if not user_id:
         raise HTTPException(status_code=401, detail="Nieprawidłowy token")
 
-    async with aiosqlite.connect("database.db") as db:
-        await db.execute("PRAGMA foreign_keys = ON")
+    if habit_id <= 0:
+        raise HTTPException(status_code=400, detail="Nieprawidłowe ID nawyku")
 
-        # Sprawdź czy nawyk należy do użytkownika
-        cursor = await db.execute(
-            "SELECT reward_coins FROM habits WHERE id = ? AND user_id = ? AND is_active = 1",
-            (habit_id, user_id)
-        )
-        habit = await cursor.fetchone()
+    try:
+        async with aiosqlite.connect("database.db") as db:
+            await db.execute("PRAGMA foreign_keys = ON")
 
-        if not habit:
-            print(f"❌ Habit not found: {habit_id} for user {user_id}")
-            raise HTTPException(status_code=404, detail="Nawyk nie znaleziony")
+            # Sprawdź czy nawyk należy do użytkownika
+            cursor = await db.execute(
+                "SELECT reward_coins FROM habits WHERE id = ? AND user_id = ? AND is_active = 1",
+                (habit_id, user_id)
+            )
+            habit = await cursor.fetchone()
 
-        # Sprawdź czy nawyk nie został już wykonany dzisiaj
-        cursor = await db.execute(
-            "SELECT id FROM habit_completions WHERE habit_id = ? AND user_id = ? AND completed_at = date('now')",
-            (habit_id, user_id)
-        )
-        existing_completion = await cursor.fetchone()
+            if not habit:
+                print(f"❌ Habit not found: {habit_id} for user {user_id}")
+                raise HTTPException(status_code=404, detail="Nawyk nie znaleziony")
 
-        if existing_completion:
-            print(f"❌ Habit already completed today: {habit_id}")
-            raise HTTPException(status_code=400, detail="Nawyk już został wykonany dzisiaj")
+            # Sprawdź czy nawyk nie został już wykonany dzisiaj
+            cursor = await db.execute(
+                "SELECT id FROM habit_completions WHERE habit_id = ? AND user_id = ? AND completed_at = date('now')",
+                (habit_id, user_id)
+            )
+            existing_completion = await cursor.fetchone()
 
-        # Dodaj wykonanie nawyku
-        await db.execute(
-            "INSERT INTO habit_completions (habit_id, user_id, coins_earned) VALUES (?, ?, ?)",
-            (habit_id, user_id, habit["reward_coins"])
-        )
+            if existing_completion:
+                print(f"❌ Habit already completed today: {habit_id}")
+                raise HTTPException(status_code=400, detail="Nawyk już został wykonany dzisiaj")
 
-        # Dodaj monety użytkownikowi
-        await db.execute(
-            "UPDATE users SET coins = coins + ? WHERE id = ?",
-            (habit["reward_coins"], user_id)
-        )
+            # Dodaj wykonanie nawyku
+            await db.execute(
+                "INSERT INTO habit_completions (habit_id, user_id, coins_earned) VALUES (?, ?, ?)",
+                (habit_id, user_id, habit["reward_coins"])
+            )
 
-        await db.commit()
-        print(f"✅ Habit completed! User {user_id} earned {habit['reward_coins']} coins")
+            # Dodaj monety użytkownikowi
+            await db.execute(
+                "UPDATE users SET coins = coins + ? WHERE id = ?",
+                (habit["reward_coins"], user_id)
+            )
 
-        # Pobierz nową liczbę monet
-        cursor = await db.execute(
-            "SELECT coins FROM users WHERE id = ?",
-            (user_id,)
-        )
-        user = await cursor.fetchone()
+            await db.commit()
+            print(f"✅ Habit completed! User {user_id} earned {habit['reward_coins']} coins")
 
-        return {
-            "message": f"Nawyk wykonany! Otrzymałeś {habit['reward_coins']} monet",
-            "coins_earned": habit["reward_coins"],
-            "total_coins": user["coins"] if user else 0
-        }
+            # Pobierz nową liczbę monet
+            cursor = await db.execute(
+                "SELECT coins FROM users WHERE id = ?",
+                (user_id,)
+            )
+            user = await cursor.fetchone()
+
+            return {
+                "message": f"Nawyk wykonany! Otrzymałeś {habit['reward_coins']} monet",
+                "coins_earned": habit["reward_coins"],
+                "total_coins": user["coins"] if user else 0
+            }
+
+    except Exception as e:
+        print(f"❌ Error completing habit: {str(e)}")
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=f"Błąd podczas oznaczania nawyku: {str(e)}")
 
 
 @app.delete("/api/habits/{habit_id}")
@@ -589,29 +594,53 @@ async def delete_habit(habit_id: int, authorization: str = Header(None)):
     if not user_id:
         raise HTTPException(status_code=401, detail="Nieprawidłowy token")
 
+    if habit_id <= 0:
+        raise HTTPException(status_code=400, detail="Nieprawidłowe ID nawyku")
+
+    try:
+        async with aiosqlite.connect("database.db") as db:
+            await db.execute("PRAGMA foreign_keys = ON")
+
+            # Sprawdź czy nawyk należy do użytkownika
+            cursor = await db.execute(
+                "SELECT id FROM habits WHERE id = ? AND user_id = ?",
+                (habit_id, user_id)
+            )
+            habit = await cursor.fetchone()
+
+            if not habit:
+                print(f"❌ Habit not found: {habit_id} for user {user_id}")
+                raise HTTPException(status_code=404, detail="Nawyk nie znaleziony")
+
+            # Oznacz jako nieaktywny zamiast usuwać
+            await db.execute(
+                "UPDATE habits SET is_active = 0 WHERE id = ? AND user_id = ?",
+                (habit_id, user_id)
+            )
+            await db.commit()
+
+            print(f"✅ Habit deleted: {habit_id}")
+            return {"message": "Nawyk został usunięty"}
+
+    except Exception as e:
+        print(f"❌ Error deleting habit: {str(e)}")
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=f"Błąd podczas usuwania nawyku: {str(e)}")
+
+
+# Additional debug endpoint for habits
+@app.get("/api/debug/habits")
+async def debug_habits():
+    """Debug endpoint - sprawdź wszystkie nawyki"""
     async with aiosqlite.connect("database.db") as db:
-        await db.execute("PRAGMA foreign_keys = ON")
-
-        # Sprawdź czy nawyk należy do użytkownika
-        cursor = await db.execute(
-            "SELECT id FROM habits WHERE id = ? AND user_id = ?",
-            (habit_id, user_id)
-        )
-        habit = await cursor.fetchone()
-
-        if not habit:
-            print(f"❌ Habit not found: {habit_id} for user {user_id}")
-            raise HTTPException(status_code=404, detail="Nawyk nie znaleziony")
-
-        # Oznacz jako nieaktywny zamiast usuwać
-        await db.execute(
-            "UPDATE habits SET is_active = 0 WHERE id = ? AND user_id = ?",
-            (habit_id, user_id)
-        )
-        await db.commit()
-
-        print(f"✅ Habit deleted: {habit_id}")
-        return {"message": "Nawyk został usunięty"}
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute("SELECT * FROM habits ORDER BY created_at DESC")
+        habits = await cursor.fetchall()
+        return {
+            "habits": [dict(habit) for habit in habits],
+            "count": len(habits)
+        }
 
 
 if __name__ == "__main__":
@@ -619,4 +648,69 @@ if __name__ == "__main__":
 
     # Port dla Render
     port = int(os.environ.get("PORT", 10000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False), detail = "Użytkownik nie znaleziony")
+
+    return {"coins": user["coins"], "user_id": user_id}
+
+
+@app.post("/api/coins/add")
+async def add_coins(amount: int, authorization: str = Header(None)):
+    """Dodaj monety użytkownikowi (dla testów)"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
+
+    token = authorization.replace("Bearer ", "")
+    user_id = verify_token(token)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="Kwota musi być większa od 0")
+
+    async with aiosqlite.connect("database.db") as db:
+        await db.execute("PRAGMA foreign_keys = ON")
+
+        # Dodaj monety
+        await db.execute(
+            "UPDATE users SET coins = coins + ? WHERE id = ?",
+            (amount, user_id)
+        )
+        await db.commit()
+
+        # Pobierz nową liczbę monet
+        cursor = await db.execute(
+            "SELECT coins FROM users WHERE id = ?",
+            (user_id,)
+        )
+        user = await cursor.fetchone()
+
+        return {
+            "message": f"Dodano {amount} monet",
+            "coins": user["coins"] if user else 0,
+            "added": amount
+        }
+
+
+@app.get("/api/profile", response_model=UserResponseLocal)
+async def get_profile(authorization: str = Header(None)):
+    """Pobierz profil użytkownika (wymaga tokenu)"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
+
+    token = authorization.replace("Bearer ", "")
+    user_id = verify_token(token)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+
+    async with aiosqlite.connect("database.db") as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            "SELECT id, username, email, coins FROM users WHERE id = ?",
+            (user_id,)
+        )
+        user = await cursor.fetchone()
+
+        if not user:
+            raise HTTPException(status_code=404

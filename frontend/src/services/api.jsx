@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://habi-backend.onrender.com';  // ← TWÓJ RENDER URL
+const API_BASE_URL = 'https://habi-backend.onrender.com';
 
 // Helper function for making requests with better error handling
 const makeRequest = async (url, options = {}) => {
@@ -23,10 +23,32 @@ const makeRequest = async (url, options = {}) => {
       let errorMessage;
       try {
         const errorData = await response.json();
-        errorMessage = errorData.detail || errorData.message || `HTTP ${response.status}`;
-      } catch {
+        console.log('Full error response:', errorData);
+
+        // Handle Pydantic validation errors (array format)
+        if (Array.isArray(errorData)) {
+          errorMessage = errorData.map(err => {
+            const field = err.loc ? err.loc.join('.') : 'field';
+            return `${field}: ${err.msg}`;
+          }).join(', ');
+        } else if (errorData.detail) {
+          // Handle FastAPI HTTPException detail
+          if (Array.isArray(errorData.detail)) {
+            errorMessage = errorData.detail.map(err => {
+              const field = err.loc ? err.loc.join('.') : 'field';
+              return `${field}: ${err.msg}`;
+            }).join(', ');
+          } else {
+            errorMessage = errorData.detail;
+          }
+        } else {
+          errorMessage = errorData.message || `HTTP ${response.status}`;
+        }
+      } catch (parseError) {
+        console.error('Error parsing response:', parseError);
         errorMessage = `HTTP ${response.status}: ${response.statusText}`;
       }
+
       console.error('Error response:', errorMessage);
       throw new Error(errorMessage);
     }
@@ -90,13 +112,26 @@ export const authAPI = {
       email: userData.email
     }); // Don't log password
 
+    // Validate registration data
+    if (!userData.username || !userData.username.trim()) {
+      throw new Error('Nazwa użytkownika jest wymagana');
+    }
+    if (!userData.email || !userData.email.trim()) {
+      throw new Error('Email jest wymagany');
+    }
+    if (!userData.password || userData.password.length < 6) {
+      throw new Error('Hasło musi mieć co najmniej 6 znaków');
+    }
+
+    const requestData = {
+      username: userData.username.trim(),
+      email: userData.email.trim(),
+      password: userData.password
+    };
+
     const response = await makeRequest(`${API_BASE_URL}/api/register`, {
       method: 'POST',
-      body: JSON.stringify({
-        username: userData.username,
-        email: userData.email,
-        password: userData.password
-      }),
+      body: JSON.stringify(requestData),
     });
 
     const data = await response.json();
@@ -107,12 +142,22 @@ export const authAPI = {
   async login(credentials) {
     console.log('Sending login data:', { email: credentials.email }); // Don't log password
 
+    // Validate login data
+    if (!credentials.email || !credentials.email.trim()) {
+      throw new Error('Email jest wymagany');
+    }
+    if (!credentials.password) {
+      throw new Error('Hasło jest wymagane');
+    }
+
+    const requestData = {
+      email: credentials.email.trim(),
+      password: credentials.password
+    };
+
     const response = await makeRequest(`${API_BASE_URL}/api/login`, {
       method: 'POST',
-      body: JSON.stringify({
-        email: credentials.email,
-        password: credentials.password
-      }),
+      body: JSON.stringify(requestData),
     });
 
     const data = await response.json();
@@ -122,6 +167,10 @@ export const authAPI = {
 
   async getProfile() {
     console.log('Fetching user profile...');
+
+    if (!tokenUtils.isLoggedIn()) {
+      throw new Error('Brak tokenu autoryzacji');
+    }
 
     const response = await makeRequest(`${API_BASE_URL}/api/profile`, {
       headers: {
@@ -137,6 +186,10 @@ export const authAPI = {
   async getCoins() {
     console.log('Fetching user coins...');
 
+    if (!tokenUtils.isLoggedIn()) {
+      throw new Error('Brak tokenu autoryzacji');
+    }
+
     const response = await makeRequest(`${API_BASE_URL}/api/coins`, {
       headers: {
         ...tokenUtils.getAuthHeaders(),
@@ -151,11 +204,15 @@ export const authAPI = {
   async addCoins(amount) {
     console.log('Adding coins:', amount);
 
+    if (!tokenUtils.isLoggedIn()) {
+      throw new Error('Brak tokenu autoryzacji');
+    }
+
     if (!amount || amount <= 0) {
       throw new Error('Kwota musi być większa od 0');
     }
 
-    const response = await makeRequest(`${API_BASE_URL}/api/coins/add?amount=${amount}`, {
+    const response = await makeRequest(`${API_BASE_URL}/api/coins/add?amount=${encodeURIComponent(amount)}`, {
       method: 'POST',
       headers: {
         ...tokenUtils.getAuthHeaders(),
@@ -193,6 +250,10 @@ export const habitsAPI = {
   async getHabits() {
     console.log('Fetching habits...');
 
+    if (!tokenUtils.isLoggedIn()) {
+      throw new Error('Brak tokenu autoryzacji');
+    }
+
     const response = await makeRequest(`${API_BASE_URL}/api/habits`, {
       headers: {
         ...tokenUtils.getAuthHeaders(),
@@ -212,27 +273,53 @@ export const habitsAPI = {
   },
 
   async createHabit(habitData) {
-    console.log('Creating habit:', habitData);
+    console.log('Creating habit with data:', habitData);
 
-    // Validate habit data
+    if (!tokenUtils.isLoggedIn()) {
+      throw new Error('Brak tokenu autoryzacji');
+    }
+
+    // Validate habit data on frontend
     if (!habitData.name || !habitData.name.trim()) {
       throw new Error('Nazwa nawyku jest wymagana');
     }
 
-    if (habitData.reward_coins && (habitData.reward_coins < 1 || habitData.reward_coins > 10)) {
-      throw new Error('Nagroda musi być między 1 a 10 monetami');
+    if (habitData.name.trim().length > 100) {
+      throw new Error('Nazwa nawyku nie może być dłuższa niż 100 znaków');
     }
+
+    // Prepare clean request data
+    const requestData = {
+      name: habitData.name.trim()
+    };
+
+    // Only add description if it's provided and not empty
+    if (habitData.description && typeof habitData.description === 'string' && habitData.description.trim()) {
+      if (habitData.description.trim().length > 500) {
+        throw new Error('Opis nawyku nie może być dłuższy niż 500 znaków');
+      }
+      requestData.description = habitData.description.trim();
+    }
+
+    // Handle reward_coins
+    if (habitData.reward_coins !== undefined && habitData.reward_coins !== null) {
+      const coins = parseInt(habitData.reward_coins, 10);
+      if (isNaN(coins) || coins < 1 || coins > 10) {
+        throw new Error('Nagroda musi być liczbą między 1 a 10');
+      }
+      requestData.reward_coins = coins;
+    } else {
+      requestData.reward_coins = 1; // Default value
+    }
+
+    console.log('Sending clean habit data:', requestData);
 
     const response = await makeRequest(`${API_BASE_URL}/api/habits`, {
       method: 'POST',
       headers: {
         ...tokenUtils.getAuthHeaders(),
       },
-      body: JSON.stringify({
-        name: habitData.name.trim(),
-        description: habitData.description ? habitData.description.trim() : null,
-        reward_coins: habitData.reward_coins || 1
-      }),
+      body: JSON.stringify(requestData),
     });
 
     const data = await response.json();
@@ -243,11 +330,15 @@ export const habitsAPI = {
   async completeHabit(habitId) {
     console.log('Completing habit:', habitId);
 
-    if (!habitId) {
-      throw new Error('ID nawyku jest wymagane');
+    if (!tokenUtils.isLoggedIn()) {
+      throw new Error('Brak tokenu autoryzacji');
     }
 
-    const response = await makeRequest(`${API_BASE_URL}/api/habits/${habitId}/complete`, {
+    if (!habitId || habitId <= 0) {
+      throw new Error('Nieprawidłowe ID nawyku');
+    }
+
+    const response = await makeRequest(`${API_BASE_URL}/api/habits/${encodeURIComponent(habitId)}/complete`, {
       method: 'POST',
       headers: {
         ...tokenUtils.getAuthHeaders(),
@@ -262,11 +353,15 @@ export const habitsAPI = {
   async deleteHabit(habitId) {
     console.log('Deleting habit:', habitId);
 
-    if (!habitId) {
-      throw new Error('ID nawyku jest wymagane');
+    if (!tokenUtils.isLoggedIn()) {
+      throw new Error('Brak tokenu autoryzacji');
     }
 
-    const response = await makeRequest(`${API_BASE_URL}/api/habits/${habitId}`, {
+    if (!habitId || habitId <= 0) {
+      throw new Error('Nieprawidłowe ID nawyku');
+    }
+
+    const response = await makeRequest(`${API_BASE_URL}/api/habits/${encodeURIComponent(habitId)}`, {
       method: 'DELETE',
       headers: {
         ...tokenUtils.getAuthHeaders(),
@@ -283,6 +378,10 @@ export const habitsAPI = {
 export const usersAPI = {
   async getAllUsers() {
     console.log('Fetching all users...');
+
+    if (!tokenUtils.isLoggedIn()) {
+      throw new Error('Brak tokenu autoryzacji');
+    }
 
     const response = await makeRequest(`${API_BASE_URL}/api/users`, {
       headers: {
@@ -338,13 +437,36 @@ export const apiUtils = {
         'Unauthorized': 'Brak autoryzacji',
         'Forbidden': 'Brak uprawnień',
         'Not Found': 'Nie znaleziono',
-        'Internal Server Error': 'Błąd serwera'
+        'Internal Server Error': 'Błąd serwera',
+        'Bad Request': 'Nieprawidłowe żądanie',
+        'Unprocessable Entity': 'Nieprawidłowe dane'
       };
 
       return translations[error.message] || error.message;
     }
 
     return 'Wystąpił nieoczekiwany błąd';
+  },
+
+  // Validate email format
+  isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  },
+
+  // Validate username format
+  isValidUsername(username) {
+    return username &&
+           typeof username === 'string' &&
+           username.trim().length >= 3 &&
+           username.trim().length <= 50 &&
+           /^[a-zA-Z0-9_-]+$/.test(username.trim());
+  },
+
+  // Sanitize text input
+  sanitizeText(text, maxLength = 255) {
+    if (!text || typeof text !== 'string') return '';
+    return text.trim().slice(0, maxLength);
   }
 };
 
