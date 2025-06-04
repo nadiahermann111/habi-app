@@ -712,5 +712,6 @@ async def get_profile(authorization: str = Header(None)):
         )
         user = await cursor.fetchone()
 
+
         if not user:
             raise HTTPException(status_code=404
