@@ -1,7 +1,8 @@
 import os
 import sys
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from datetime import date, datetime
 from typing import List, Optional
@@ -92,7 +93,6 @@ async def lifespan(app: FastAPI):
     print("👋 Shutting down")
 
 
-# TUTAJ tworzymy app PRZED użyciem @app
 app = FastAPI(
     title="Habi API",
     description="API dla aplikacji do śledzenia nawyków z wirtualną małpką",
@@ -100,6 +100,28 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+
+# DODAJ MIDDLEWARE CORS HEADERS PRZED CORS MIDDLEWARE
+@app.middleware("http")
+async def add_cors_headers(request: Request, call_next):
+    print(f"🌐 Request from origin: {request.headers.get('origin')}")
+    print(f"🌐 Request method: {request.method}")
+    print(f"🌐 Request URL: {request.url}")
+
+    response = await call_next(request)
+
+    # Dodaj CORS headers do każdej odpowiedzi
+    response.headers["Access-Control-Allow-Origin"] = "https://nadiahermann111.github.io"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Expose-Headers"] = "*"
+
+    print(f"✅ Added CORS headers to response")
+    return response
+
+
+# CORS MIDDLEWARE
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -115,12 +137,24 @@ app.add_middleware(
     expose_headers=["*"]
 )
 
+
+# EXPLICIT OPTIONS HANDLER
 @app.options("/{path:path}")
 async def options_handler(path: str):
-    return {"message": "OK"}
+    print(f"🔧 OPTIONS request for path: {path}")
+    return JSONResponse(
+        content={"message": "OK"},
+        headers={
+            "Access-Control-Allow-Origin": "https://nadiahermann111.github.io",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Expose-Headers": "*"
+        }
+    )
 
 
-# TERAZ możemy używać @app (app jest już zdefiniowane)
+# ROOT ENDPOINTS
 @app.get("/")
 async def root():
     return {"message": "Habi API działa!", "version": "1.0.0"}
@@ -128,7 +162,7 @@ async def root():
 
 @app.get("/api/health")
 async def health():
-    return {"status": "OK"}
+    return {"status": "OK", "cors": "enabled"}
 
 
 @app.get("/api/test-db")
@@ -149,9 +183,40 @@ async def test_db():
         }
 
 
+# DEBUG ENDPOINTS
+@app.get("/api/debug/users")
+async def debug_users():
+    """Debug endpoint - sprawdź wszystkich użytkowników"""
+    async with aiosqlite.connect("database.db") as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute("SELECT id, username, email, created_at FROM users")
+        users = await cursor.fetchall()
+        return {
+            "users": [dict(user) for user in users],
+            "count": len(users)
+        }
+
+
+@app.get("/api/debug/check-email/{email}")
+async def debug_check_email(email: str):
+    """Debug endpoint - sprawdź czy email istnieje"""
+    async with aiosqlite.connect("database.db") as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute("SELECT id, username, email FROM users WHERE email = ?", (email,))
+        user = await cursor.fetchone()
+        return {
+            "email": email,
+            "exists": user is not None,
+            "user": dict(user) if user else None
+        }
+
+
+# AUTH ENDPOINTS
 @app.post("/api/register", response_model=LoginResponseLocal)
 async def register(user_data: UserRegisterLocal):
     """Rejestracja użytkownika"""
+    print(f"🔐 Registration attempt for: {user_data.email}")
+
     async with aiosqlite.connect("database.db") as db:
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
@@ -175,6 +240,7 @@ async def register(user_data: UserRegisterLocal):
         await db.commit()
 
         user_id = cursor.lastrowid
+        print(f"✅ User registered with ID: {user_id}")
 
         # Pobierz utworzonego użytkownika
         cursor = await db.execute(
@@ -201,6 +267,8 @@ async def register(user_data: UserRegisterLocal):
 @app.post("/api/login", response_model=LoginResponseLocal)
 async def login(login_data: UserLoginLocal):
     """Logowanie użytkownika"""
+    print(f"🔐 Login attempt for: {login_data.email}")
+
     async with aiosqlite.connect("database.db") as db:
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
@@ -213,11 +281,15 @@ async def login(login_data: UserLoginLocal):
         user = await cursor.fetchone()
 
         if not user:
+            print(f"❌ User not found: {login_data.email}")
             raise HTTPException(status_code=401, detail="Nieprawidłowy email lub hasło")
 
         # Sprawdź hasło
         if not verify_password(login_data.password, user["password_hash"]):
+            print(f"❌ Invalid password for: {login_data.email}")
             raise HTTPException(status_code=401, detail="Nieprawidłowy email lub hasło")
+
+        print(f"✅ Login successful for: {login_data.email}")
 
         # Utwórz token
         token = create_token(user["id"])
@@ -347,6 +419,8 @@ async def get_users():
 @app.get("/api/habits", response_model=List[HabitResponse])
 async def get_user_habits(authorization: str = Header(None)):
     """Pobierz wszystkie nawyki użytkownika"""
+    print("📋 Getting user habits...")
+
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -372,6 +446,8 @@ async def get_user_habits(authorization: str = Header(None)):
         )
         habits = await cursor.fetchall()
 
+        print(f"📋 Found {len(habits)} habits for user {user_id}")
+
         return [
             HabitResponse(
                 id=habit["id"],
@@ -389,6 +465,8 @@ async def get_user_habits(authorization: str = Header(None)):
 @app.post("/api/habits", response_model=HabitResponse)
 async def create_habit(habit_data: HabitCreate, authorization: str = Header(None)):
     """Utwórz nowy nawyk"""
+    print(f"➕ Creating habit: {habit_data.name}")
+
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -409,6 +487,7 @@ async def create_habit(habit_data: HabitCreate, authorization: str = Header(None
         await db.commit()
 
         habit_id = cursor.lastrowid
+        print(f"✅ Habit created with ID: {habit_id}")
 
         # Pobierz utworzony nawyk
         cursor = await db.execute(
@@ -431,6 +510,8 @@ async def create_habit(habit_data: HabitCreate, authorization: str = Header(None
 @app.post("/api/habits/{habit_id}/complete")
 async def complete_habit(habit_id: int, authorization: str = Header(None)):
     """Oznacz nawyk jako wykonany dzisiaj"""
+    print(f"✅ Completing habit: {habit_id}")
+
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -451,6 +532,7 @@ async def complete_habit(habit_id: int, authorization: str = Header(None)):
         habit = await cursor.fetchone()
 
         if not habit:
+            print(f"❌ Habit not found: {habit_id} for user {user_id}")
             raise HTTPException(status_code=404, detail="Nawyk nie znaleziony")
 
         # Sprawdź czy nawyk nie został już wykonany dzisiaj
@@ -461,6 +543,7 @@ async def complete_habit(habit_id: int, authorization: str = Header(None)):
         existing_completion = await cursor.fetchone()
 
         if existing_completion:
+            print(f"❌ Habit already completed today: {habit_id}")
             raise HTTPException(status_code=400, detail="Nawyk już został wykonany dzisiaj")
 
         # Dodaj wykonanie nawyku
@@ -476,6 +559,7 @@ async def complete_habit(habit_id: int, authorization: str = Header(None)):
         )
 
         await db.commit()
+        print(f"✅ Habit completed! User {user_id} earned {habit['reward_coins']} coins")
 
         # Pobierz nową liczbę monet
         cursor = await db.execute(
@@ -494,6 +578,8 @@ async def complete_habit(habit_id: int, authorization: str = Header(None)):
 @app.delete("/api/habits/{habit_id}")
 async def delete_habit(habit_id: int, authorization: str = Header(None)):
     """Usuń nawyk (oznacz jako nieaktywny)"""
+    print(f"🗑️ Deleting habit: {habit_id}")
+
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -514,6 +600,7 @@ async def delete_habit(habit_id: int, authorization: str = Header(None)):
         habit = await cursor.fetchone()
 
         if not habit:
+            print(f"❌ Habit not found: {habit_id} for user {user_id}")
             raise HTTPException(status_code=404, detail="Nawyk nie znaleziony")
 
         # Oznacz jako nieaktywny zamiast usuwać
@@ -523,6 +610,7 @@ async def delete_habit(habit_id: int, authorization: str = Header(None)):
         )
         await db.commit()
 
+        print(f"✅ Habit deleted: {habit_id}")
         return {"message": "Nawyk został usunięty"}
 
 
