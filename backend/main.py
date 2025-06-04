@@ -371,6 +371,71 @@ async def get_user_coins(authorization: str = Header(None)):
         if not user:
             raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
 
+        return {"coins": user["coins"], "user_id": user_id}
+
+
+@app.post("/api/coins/add")
+async def add_coins(amount: int, authorization: str = Header(None)):
+    """Dodaj monety użytkownikowi (dla testów)"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
+
+    token = authorization.replace("Bearer ", "")
+    user_id = verify_token(token)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="Kwota musi być większa od 0")
+
+    async with aiosqlite.connect("database.db") as db:
+        await db.execute("PRAGMA foreign_keys = ON")
+
+        # Dodaj monety
+        await db.execute(
+            "UPDATE users SET coins = coins + ? WHERE id = ?",
+            (amount, user_id)
+        )
+        await db.commit()
+
+        # Pobierz nową liczbę monet
+        cursor = await db.execute(
+            "SELECT coins FROM users WHERE id = ?",
+            (user_id,)
+        )
+        user = await cursor.fetchone()
+
+        return {
+            "message": f"Dodano {amount} monet",
+            "coins": user["coins"] if user else 0,
+            "added": amount
+        }
+
+
+@app.get("/api/profile", response_model=UserResponseLocal)
+async def get_profile(authorization: str = Header(None)):
+    """Pobierz profil użytkownika (wymaga tokenu)"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
+
+    token = authorization.replace("Bearer ", "")
+    user_id = verify_token(token)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+
+    async with aiosqlite.connect("database.db") as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            "SELECT id, username, email, coins FROM users WHERE id = ?",
+            (user_id,)
+        )
+        user = await cursor.fetchone()
+
+        if not user:
+            raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
+
         return UserResponseLocal(
             id=user["id"],
             username=user["username"],
@@ -646,72 +711,5 @@ async def debug_habits():
 if __name__ == "__main__":
     import uvicorn
 
-    # Port dla Render
     port = int(os.environ.get("PORT", 10000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False), detail = "Użytkownik nie znaleziony")
-
-    return {"coins": user["coins"], "user_id": user_id}
-
-
-@app.post("/api/coins/add")
-async def add_coins(amount: int, authorization: str = Header(None)):
-    """Dodaj monety użytkownikowi (dla testów)"""
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
-
-    token = authorization.replace("Bearer ", "")
-    user_id = verify_token(token)
-
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
-
-    if amount <= 0:
-        raise HTTPException(status_code=400, detail="Kwota musi być większa od 0")
-
-    async with aiosqlite.connect("database.db") as db:
-        await db.execute("PRAGMA foreign_keys = ON")
-
-        # Dodaj monety
-        await db.execute(
-            "UPDATE users SET coins = coins + ? WHERE id = ?",
-            (amount, user_id)
-        )
-        await db.commit()
-
-        # Pobierz nową liczbę monet
-        cursor = await db.execute(
-            "SELECT coins FROM users WHERE id = ?",
-            (user_id,)
-        )
-        user = await cursor.fetchone()
-
-        return {
-            "message": f"Dodano {amount} monet",
-            "coins": user["coins"] if user else 0,
-            "added": amount
-        }
-
-
-@app.get("/api/profile", response_model=UserResponseLocal)
-async def get_profile(authorization: str = Header(None)):
-    """Pobierz profil użytkownika (wymaga tokenu)"""
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
-
-    token = authorization.replace("Bearer ", "")
-    user_id = verify_token(token)
-
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
-
-    async with aiosqlite.connect("database.db") as db:
-        db.row_factory = aiosqlite.Row
-        cursor = await db.execute(
-            "SELECT id, username, email, coins FROM users WHERE id = ?",
-            (user_id,)
-        )
-        user = await cursor.fetchone()
-
-
-        if not user:
-            raise HTTPException(status_code=404
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
