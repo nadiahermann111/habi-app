@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { authAPI, tokenUtils } from "../../services/api.jsx";
 import MenuHeader from '../MenuHeader/MenuHeader';
 import HabiSection from '../HabiSection/HabiSection';
-import HabitTracker from '../HabitTracker/HabitTracker';
 import './Dashboard.css';
 
 const Dashboard = ({ user, onLogout }) => {
