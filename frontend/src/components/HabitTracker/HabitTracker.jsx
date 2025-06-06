@@ -485,10 +485,6 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           <div className="offline-indicator">
             📶 Tryb offline - zmiany będą zsynchronizowane gdy połączenie wróci
           </div>
-        )}led={loading}>
-              Odśwież
-            </button>
-          </div>
         )}
 
         {/* Przycisk dodania nawyku */}
@@ -528,7 +524,10 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
                   <div className="habit-card-header">
                     <span className="habit-icon">{habit.icon}</span>
                     <div className="habit-info">
-                      <h3 className="habit-title">{habit.name}</h3>
+                      <h3 className="habit-title">
+                        {habit.name}
+                        {habit.isLocal && <span className="local-badge">📱</span>}
+                      </h3>
                       {habit.description && (
                         <p className="habit-description">{habit.description}</p>
                       )}
