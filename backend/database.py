@@ -40,45 +40,17 @@ CREATE_TABLES_SQL = """
                     );
 
 -- Tabela nawyków
-                    CREATE TABLE IF NOT EXISTS habits \
-                    ( \
-                        id \
-                        INTEGER \
-                        PRIMARY \
-                        KEY \
-                        AUTOINCREMENT, \
-                        user_id \
-                        INTEGER \
-                        NOT \
-                        NULL, \
-                        name \
-                        TEXT \
-                        NOT \
-                        NULL, \
-                        description \
-                        TEXT, \
-                        reward_coins \
-                        INTEGER \
-                        DEFAULT \
-                        10, \
-                        is_active \
-                        BOOLEAN \
-                        DEFAULT \
-                        TRUE, \
-                        created_at \
-                        TIMESTAMP \
-                        DEFAULT \
-                        CURRENT_TIMESTAMP, \
-                        FOREIGN \
-                        KEY \
-                    ( \
-                        user_id \
-                    ) REFERENCES users \
-                    ( \
-                        id \
-                    ) ON DELETE CASCADE
-                        );
-
+                    CREATE TABLE IF NOT EXISTS habits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    reward_coins INTEGER DEFAULT 1,
+    icon TEXT DEFAULT '🎯',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 -- Tabela wykonań nawyków
                     CREATE TABLE IF NOT EXISTS habit_completions \
                     ( \

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { authAPI, tokenUtils } from "../../services/api.jsx";
 import MenuHeader from '../MenuHeader/MenuHeader';
+import HabitTracker from '../HabitTracker/HabitTracker.jsx';
 import HabiSection from '../HabiSection/HabiSection';
 import './Dashboard.css';
 
@@ -13,6 +14,7 @@ const Dashboard = ({ user, onLogout }) => {
   useEffect(() => {
     fetchProfile();
   }, []);
+
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -104,8 +106,8 @@ const Dashboard = ({ user, onLogout }) => {
               </button>
               <button className="action-btn">🍌 Nakarm Habi</button>
               <button className="action-btn">📊 Zobacz statystyki</button>
-              <button className="action-btn" onClick={handleAddTestCoins}>
-                🪙 Dodaj 10 monet (test)
+              <button className="action-btn">
+                Personalizuj Habi
               </button>
             </div>
           </div>

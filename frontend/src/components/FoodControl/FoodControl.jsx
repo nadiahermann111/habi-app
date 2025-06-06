@@ -26,28 +26,36 @@ const FoodControl = () => {
       localStorage.setItem('habiLastUpdate', currentTime.toString());
     } else {
       // Pierwszy raz - ustaw pełny poziom
+      const currentTime = Date.now();
+      setLastUpdate(currentTime);
       localStorage.setItem('habiFoodLevel', '100');
-      localStorage.setItem('habiLastUpdate', Date.now().toString());
+      localStorage.setItem('habiLastUpdate', currentTime.toString());
     }
+  }, []); // Usuń lastUpdate z dependency array - uruchom tylko raz przy mount
 
+  useEffect(() => {
     // Ustaw interval do sprawdzania co minutę
     const interval = setInterval(() => {
       const currentTime = Date.now();
-      const timeDiff = currentTime - lastUpdate;
+      const savedLastUpdate = localStorage.getItem('habiLastUpdate');
 
-      if (timeDiff >= 1000 * 60 * 60) { // Jeśli minęła godzina
-        setFoodLevel(prevLevel => {
-          const newLevel = Math.max(0, prevLevel - 5);
-          localStorage.setItem('habiFoodLevel', newLevel.toString());
-          localStorage.setItem('habiLastUpdate', currentTime.toString());
+      if (savedLastUpdate) {
+        const timeDiff = currentTime - parseInt(savedLastUpdate);
+
+        if (timeDiff >= 1000 * 60 * 60) { // Jeśli minęła godzina
+          setFoodLevel(prevLevel => {
+            const newLevel = Math.max(0, prevLevel - 5);
+            localStorage.setItem('habiFoodLevel', newLevel.toString());
+            localStorage.setItem('habiLastUpdate', currentTime.toString());
+            return newLevel;
+          });
           setLastUpdate(currentTime);
-          return newLevel;
-        });
+        }
       }
     }, 60000); // Sprawdzaj co minutę
 
     return () => clearInterval(interval);
-  }, [lastUpdate]);
+  }, []); // Dependency array puste - uruchom tylko raz
 
   const getFoodBarColor = () => {
     if (foodLevel > 50) return '#4CAF50'; // Zielony
@@ -66,8 +74,11 @@ const FoodControl = () => {
   const feedHabi = () => {
     if (foodLevel < 100) {
       const newLevel = Math.min(100, foodLevel + 20);
+      const currentTime = Date.now();
       setFoodLevel(newLevel);
+      setLastUpdate(currentTime);
       localStorage.setItem('habiFoodLevel', newLevel.toString());
+      localStorage.setItem('habiLastUpdate', currentTime.toString());
     }
   };
 
@@ -90,6 +101,9 @@ const FoodControl = () => {
         <span className="food-percentage">{foodLevel}%</span>
       </div>
 
+      <button onClick={feedHabi} className="feed-button">
+        Nakarm Habi (+20%)
+      </button>
     </div>
   );
 };

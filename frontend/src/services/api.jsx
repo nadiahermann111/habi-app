@@ -99,3 +99,153 @@ export const authAPI = {
     return response.json();
   }
 };
+
+export const habitAPI = {
+  // Pobierz wszystkie nawyki użytkownika
+  async getHabits() {
+    const response = await fetch(`${API_BASE_URL}/api/habits`, {
+      headers: {
+        ...tokenUtils.getAuthHeaders(),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch habits');
+    }
+
+    return response.json();
+  },
+
+  // Stwórz nowy nawyk
+  async createHabit(habitData) {
+    const response = await fetch(`${API_BASE_URL}/api/habits`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...tokenUtils.getAuthHeaders(),
+      },
+      body: JSON.stringify({
+        name: habitData.name,
+        description: habitData.description,
+        coin_value: habitData.coinValue,
+        icon: habitData.icon
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to create habit');
+    }
+
+    return response.json();
+  },
+
+  // Wykonaj nawyk
+  async completeHabit(habitId) {
+    const response = await fetch(`${API_BASE_URL}/api/habits/${habitId}/complete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...tokenUtils.getAuthHeaders(),
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to complete habit');
+    }
+
+    return response.json();
+  },
+
+  // Pobierz szczegóły nawyku
+  async getHabit(habitId) {
+    const response = await fetch(`${API_BASE_URL}/api/habits/${habitId}`, {
+      headers: {
+        ...tokenUtils.getAuthHeaders(),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch habit');
+    }
+
+    return response.json();
+  },
+
+  // Zaktualizuj nawyk
+  async updateHabit(habitId, habitData) {
+    const response = await fetch(`${API_BASE_URL}/api/habits/${habitId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...tokenUtils.getAuthHeaders(),
+      },
+      body: JSON.stringify(habitData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to update habit');
+    }
+
+    return response.json();
+  },
+
+  // Usuń nawyk
+  async deleteHabit(habitId) {
+    const response = await fetch(`${API_BASE_URL}/api/habits/${habitId}`, {
+      method: 'DELETE',
+      headers: {
+        ...tokenUtils.getAuthHeaders(),
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to delete habit');
+    }
+
+    return response.json();
+  },
+
+  // Pobierz statystyki nawyków
+  async getHabitStats() {
+    const response = await fetch(`${API_BASE_URL}/api/habits/stats`, {
+      headers: {
+        ...tokenUtils.getAuthHeaders(),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch habit stats');
+    }
+
+    return response.json();
+  }
+};
+
+// Zaktualizuj authAPI dodając metodę do aktualizacji monet
+export const authAPI = {
+  // ... existing methods ...
+
+  // Aktualizuj monety użytkownika (po wykonaniu nawyku)
+  async updateCoins(newAmount) {
+    // Ta funkcja może być używana do synchronizacji stanu monet
+    // bez wysyłania requestu - lokalnie aktualizujemy stan
+    return { coins: newAmount };
+  },
+
+  // Dodaj funkcję do sprawdzania czy nawyk był już wykonany dzisiaj
+  async checkTodayCompletion(habitId) {
+    const today = new Date().toISOString().split('T')[0];
+    const habits = await habitAPI.getHabits();
+    const habit = habits.find(h => h.id === habitId);
+
+    if (habit && habit.completion_dates) {
+      return habit.completion_dates.includes(today);
+    }
+
+    return false;
+  }
+};
