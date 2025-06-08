@@ -567,6 +567,64 @@ async def spend_coins(data: dict, authorization: str = Header(None)):
             "spent": amount
         }
 
+# Dodaj ten kod do swojego main.py, tuż po endpoincie @app.post("/api/coins/add")
+
+@app.post("/api/coins/spend")
+async def spend_coins(data: dict, authorization: str = Header(None)):
+    """Wydaj monety użytkownika (dla FeedHabi)"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
+
+    token = authorization.replace("Bearer ", "")
+    user_id = verify_token(token)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+
+    amount = data.get('amount', 0)
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="Kwota musi być większa od 0")
+
+    async with aiosqlite.connect("database.db") as db:
+        await db.execute("PRAGMA foreign_keys = ON")
+        db.row_factory = aiosqlite.Row
+
+        # Sprawdź czy użytkownik ma wystarczająco monet
+        cursor = await db.execute(
+            "SELECT coins FROM users WHERE id = ?",
+            (user_id,)
+        )
+        user = await cursor.fetchone()
+
+        if not user:
+            raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
+
+        if user["coins"] < amount:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Niewystarczająco monet. Potrzebujesz {amount}, masz {user['coins']}"
+            )
+
+        # Odejmij monety
+        await db.execute(
+            "UPDATE users SET coins = coins - ? WHERE id = ?",
+            (amount, user_id)
+        )
+        await db.commit()
+
+        # Pobierz nową liczbę monet
+        cursor = await db.execute(
+            "SELECT coins FROM users WHERE id = ?",
+            (user_id,)
+        )
+        updated_user = await cursor.fetchone()
+
+        return {
+            "message": f"Wydano {amount} monet",
+            "remaining_coins": updated_user["coins"],
+            "spent": amount
+        }
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 10000))
