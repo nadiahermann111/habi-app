@@ -87,7 +87,7 @@
 }
 
 /* Responsive design */
-@media (max-width: 790px) {
+@media (max-width: 810px) {
   .welcome-message {
     font-size: 2em;
   }

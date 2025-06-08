@@ -103,7 +103,7 @@
   white-space: nowrap;
   box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
   border: 3px solid white;
-  animation: messageSlideUp 3s ease-out forwards;
+  animation: messageSlideUp 4s ease-out forwards;
   text-align: center;
   min-width: 140px;
   position: relative;
