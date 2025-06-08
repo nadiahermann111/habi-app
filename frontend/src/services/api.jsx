@@ -13,22 +13,6 @@ export const tokenUtils = {
   }
 };
 
-// Helper function for better error handling
-const handleApiResponse = async (response) => {
-  if (!response.ok) {
-    let errorMessage = `HTTP ${response.status}`;
-    try {
-      const errorData = await response.json();
-      errorMessage = errorData.detail || errorData.message || errorMessage;
-    } catch (e) {
-      // Jeśli nie można sparsować JSON, użyj status text
-      errorMessage = response.statusText || errorMessage;
-    }
-    throw new Error(errorMessage);
-  }
-  return response.json();
-};
-
 // API functions
 export const authAPI = {
   async register(userData) {
@@ -40,7 +24,12 @@ export const authAPI = {
       body: JSON.stringify(userData),
     });
 
-    return handleApiResponse(response);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Registration failed');
+    }
+
+    return response.json();
   },
 
   async login(credentials) {
@@ -52,7 +41,12 @@ export const authAPI = {
       body: JSON.stringify(credentials),
     });
 
-    return handleApiResponse(response);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Login failed');
+    }
+
+    return response.json();
   },
 
   async getProfile() {
@@ -62,9 +56,14 @@ export const authAPI = {
       },
     });
 
-    return handleApiResponse(response);
+    if (!response.ok) {
+      throw new Error('Failed to fetch profile');
+    }
+
+    return response.json();
   },
 
+  // POPRAWKA: Dodaj metodę getUserCoins zgodną z HabitTracker
   async getUserCoins() {
     const response = await fetch(`${API_BASE_URL}/api/coins`, {
       headers: {
@@ -72,7 +71,11 @@ export const authAPI = {
       },
     });
 
-    return handleApiResponse(response);
+    if (!response.ok) {
+      throw new Error('Failed to fetch coins');
+    }
+
+    return response.json();
   },
 
   async getCoins() {
@@ -89,18 +92,17 @@ export const authAPI = {
       body: JSON.stringify({ amount }),
     });
 
-    return handleApiResponse(response);
+    if (!response.ok) {
+      throw new Error('Failed to add coins');
+    }
+
+    return response.json();
   },
 
   // Health check
   async healthCheck() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/health`);
-      return handleApiResponse(response);
-    } catch (error) {
-      console.warn('Health check failed:', error);
-      return { status: 'ERROR', error: error.message };
-    }
+    const response = await fetch(`${API_BASE_URL}/api/health`);
+    return response.json();
   },
 
   // Aktualizuj monety użytkownika (po wykonaniu nawyku)
@@ -112,20 +114,15 @@ export const authAPI = {
 
   // Dodaj funkcję do sprawdzania czy nawyk był już wykonany dzisiaj
   async checkTodayCompletion(habitId) {
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const habits = await habitAPI.getHabits();
-      const habit = habits.find(h => h.id === habitId);
+    const today = new Date().toISOString().split('T')[0];
+    const habits = await habitAPI.getHabits();
+    const habit = habits.find(h => h.id === habitId);
 
-      if (habit && habit.completion_dates) {
-        return habit.completion_dates.includes(today);
-      }
-
-      return false;
-    } catch (error) {
-      console.error('Error checking today completion:', error);
-      return false;
+    if (habit && habit.completion_dates) {
+      return habit.completion_dates.includes(today);
     }
+
+    return false;
   }
 };
 
@@ -138,17 +135,22 @@ export const habitAPI = {
       },
     });
 
-    return handleApiResponse(response);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to fetch habits');
+    }
+
+    return response.json();
   },
 
-  // Stwórz nowy nawyk z właściwym mapowaniem pól
+  // POPRAWKA: Stwórz nowy nawyk z właściwym mapowaniem pól
   async createHabit(habitData) {
     // Mapuj coinValue na coin_value zgodnie z backend API
     const payload = {
       name: habitData.name,
       description: habitData.description,
       coin_value: habitData.coinValue || habitData.coin_value, // Obsłuż oba formaty
-      icon: habitData.icon || '🎯'
+      icon: habitData.icon
     };
 
     const response = await fetch(`${API_BASE_URL}/api/habits`, {
@@ -160,10 +162,15 @@ export const habitAPI = {
       body: JSON.stringify(payload),
     });
 
-    return handleApiResponse(response);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to create habit');
+    }
+
+    return response.json();
   },
 
-  // Wykonaj nawyk z lepszą obsługą błędów
+  // POPRAWKA: Wykonaj nawyk z lepszą obsługą błędów
   async completeHabit(habitId) {
     const response = await fetch(`${API_BASE_URL}/api/habits/${habitId}/complete`, {
       method: 'POST',
@@ -173,7 +180,12 @@ export const habitAPI = {
       },
     });
 
-    const result = await handleApiResponse(response);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to complete habit');
+    }
+
+    const result = await response.json();
 
     // Upewnij się, że odpowiedź zawiera wszystkie potrzebne pola
     if (!result.total_coins && result.coins_earned) {
@@ -189,7 +201,7 @@ export const habitAPI = {
     return result;
   },
 
-  // Dodaj metodę getUserCoins dla kompatybilności z HabitTracker
+  // POPRAWKA: Dodaj metodę getUserCoins dla kompatybilności z HabitTracker
   async getUserCoins() {
     return authAPI.getUserCoins();
   },
@@ -202,7 +214,12 @@ export const habitAPI = {
       },
     });
 
-    return handleApiResponse(response);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to fetch habit');
+    }
+
+    return response.json();
   },
 
   // Zaktualizuj nawyk
@@ -223,7 +240,12 @@ export const habitAPI = {
       body: JSON.stringify(payload),
     });
 
-    return handleApiResponse(response);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to update habit');
+    }
+
+    return response.json();
   },
 
   // Usuń nawyk
@@ -235,7 +257,12 @@ export const habitAPI = {
       },
     });
 
-    return handleApiResponse(response);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to delete habit');
+    }
+
+    return response.json();
   },
 
   // Pobierz statystyki nawyków
@@ -246,10 +273,15 @@ export const habitAPI = {
       },
     });
 
-    return handleApiResponse(response);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to fetch habit stats');
+    }
+
+    return response.json();
   },
 
-  // Synchronizuj offline completions
+  // NOWA FUNKCJA: Synchronizuj offline completions
   async syncOfflineCompletions() {
     const offlineCompletions = JSON.parse(localStorage.getItem('offline_completions') || '[]');
     const results = [];
@@ -275,154 +307,10 @@ export const habitAPI = {
     return results;
   },
 
-  // Sprawdź czy są offline changes do synchronizacji
+  // NOWA FUNKCJA: Sprawdź czy są offline changes do synchronizacji
   hasOfflineChanges() {
     const offlineCompletions = JSON.parse(localStorage.getItem('offline_completions') || '[]');
     const offlineCoins = localStorage.getItem('offline_coins');
     return offlineCompletions.length > 0 || offlineCoins !== null;
-  }
-};
-
-// API dla karmienia Habi
-export const feedAPI = {
-  // Pobierz dostępne jedzenie
-  async getFoods() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/foods`, {
-        headers: {
-          ...tokenUtils.getAuthHeaders(),
-        },
-      });
-
-      return handleApiResponse(response);
-    } catch (error) {
-      console.error('Error fetching foods:', error);
-
-      // Fallback do cache jeśli API nie działa
-      const cachedFoods = localStorage.getItem('foods_cache');
-      if (cachedFoods) {
-        console.log('Using cached foods data');
-        return JSON.parse(cachedFoods);
-      }
-
-      // Ostatnia deska ratunku - hardcoded foods
-      return [
-        { id: 1, name: "Woda", cost: 1, nutrition: 5, iconImage: "🥤" },
-        { id: 2, name: "Banan", cost: 3, nutrition: 15, iconImage: "🍌" },
-        { id: 3, name: "Jabłko", cost: 3, nutrition: 15, iconImage: "🍎" },
-        { id: 4, name: "Mięso", cost: 8, nutrition: 25, iconImage: "🥩" },
-        { id: 5, name: "Sałatka", cost: 8, nutrition: 25, iconImage: "🥗" },
-        { id: 6, name: "Kawa", cost: 20, nutrition: 40, iconImage: "☕" }
-      ];
-    }
-  },
-
-  // Kup jedzenie i nakarm Habi
-  async feedHabi(foodId) {
-    const response = await fetch(`${API_BASE_URL}/api/feed-habi`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...tokenUtils.getAuthHeaders(),
-      },
-      body: JSON.stringify({ food_id: foodId }),
-    });
-
-    return handleApiResponse(response);
-  },
-
-  // Pobierz aktualny stan Habi
-  async getHabiStatus() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/habi-status`, {
-        headers: {
-          ...tokenUtils.getAuthHeaders(),
-        },
-      });
-
-      return handleApiResponse(response);
-    } catch (error) {
-      console.error('Error fetching Habi status:', error);
-
-      // Fallback do localStorage
-      const savedFoodLevel = localStorage.getItem('habiFoodLevel');
-      const savedLastUpdate = localStorage.getItem('habiLastUpdate');
-
-      return {
-        food_level: savedFoodLevel ? parseInt(savedFoodLevel) : 100,
-        last_update: savedLastUpdate || new Date().toISOString(),
-        user_id: null
-      };
-    }
-  },
-
-  // Pobierz historię karmienia
-  async getFeedHistory() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/feed-history`, {
-        headers: {
-          ...tokenUtils.getAuthHeaders(),
-        },
-      });
-
-      return handleApiResponse(response);
-    } catch (error) {
-      console.error('Error fetching feed history:', error);
-      return []; // Pusta historia jeśli błąd
-    }
-  },
-
-  // Synchronizuj offline purchases
-  async syncOfflinePurchases() {
-    const offlinePurchases = JSON.parse(localStorage.getItem('offline_purchases') || '[]');
-    if (offlinePurchases.length === 0) {
-      return [];
-    }
-
-    const results = [];
-
-    for (const purchase of offlinePurchases) {
-      try {
-        const result = await this.feedHabi(purchase.foodId);
-        results.push({ success: true, foodId: purchase.foodId, result });
-        console.log(`Successfully synced purchase for food ${purchase.foodId}`);
-      } catch (error) {
-        console.error(`Failed to sync purchase for food ${purchase.foodId}:`, error);
-        results.push({ success: false, foodId: purchase.foodId, error: error.message });
-      }
-    }
-
-    // Usuń zsynchronizowane purchases
-    const failedPurchases = results
-      .filter(r => !r.success)
-      .map(r => offlinePurchases.find(p => p.foodId === r.foodId))
-      .filter(Boolean);
-
-    localStorage.setItem('offline_purchases', JSON.stringify(failedPurchases));
-
-    if (failedPurchases.length === 0) {
-      console.log('All offline purchases synced successfully');
-    } else {
-      console.log(`${failedPurchases.length} purchases failed to sync`);
-    }
-
-    return results;
-  },
-
-  // Sprawdź czy są offline changes
-  hasOfflinePurchases() {
-    const offlinePurchases = JSON.parse(localStorage.getItem('offline_purchases') || '[]');
-    return offlinePurchases.length > 0;
-  },
-
-  // Test API connectivity
-  async testConnection() {
-    try {
-      const health = await authAPI.healthCheck();
-      return health.status === 'OK';
-    } catch (error) {
-      console.error('API connection test failed:', error);
-      return false;
-    }
   }
 };
