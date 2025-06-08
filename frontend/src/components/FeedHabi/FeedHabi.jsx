@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import FoodControl from '../FoodControl/FoodControl';
 import HabiHappyAdult from './HabiAdultHappy.png';
 import HabiLogo from './habi-logo.png';
-import { feedAPI } from '../../services/api.jsx'; // Dodaj import
+import { feedAPI } from '../../services/api.jsx';
 import './FeedHabi.css';
 
 const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
@@ -43,6 +43,7 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
     setCurrentCoins(userCoins);
   }, [userCoins]);
 
+  // Funkcja ładowania jedzenia z API
   const loadFoods = async () => {
     try {
       setLoading(true);
@@ -78,28 +79,110 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
     }
   };
 
+  // Synchronizuj offline purchases
   const syncOfflinePurchases = async () => {
     try {
       if (feedAPI.hasOfflinePurchases()) {
         await feedAPI.syncOfflinePurchases();
-        // Odśwież dane po synchronizacji
         await loadFoods();
       }
     } catch (error) {
       console.error('Błąd synchronizacji offline:', error);
     }
   };
-    if (currentCoins >= item.cost) {
-      const newAmount = currentCoins - item.cost;
-      setCurrentCoins(newAmount);
-      onCoinsUpdate(newAmount);
 
-      // Nakarm Habi
+  // Funkcja kupowania jedzenia
+  const handlePurchase = async (item) => {
+    if (currentCoins < item.cost) {
+      alert(`Potrzebujesz ${item.cost} monet, ale masz tylko ${currentCoins}!`);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+
+      if (isOnline) {
+        // Online - użyj API
+        const result = await feedAPI.feedHabi(item.id);
+
+        // Aktualizuj monety z odpowiedzi serwera
+        setCurrentCoins(result.total_coins);
+        if (onCoinsUpdate) {
+          onCoinsUpdate(result.total_coins);
+        }
+
+        // Nakarm Habi
+        if (foodControlRef.current) {
+          foodControlRef.current.feedHabi(result.nutrition_gained);
+        }
+
+        // Pokaż animację
+        setPurchaseAnimation({
+          itemName: result.food_name,
+          nutrition: result.nutrition_gained,
+          icon: item.iconImage
+        });
+        setTimeout(() => setPurchaseAnimation(null), 2000);
+
+      } else {
+        // Offline - zapisz do synchronizacji później
+        const newCoins = currentCoins - item.cost;
+        setCurrentCoins(newCoins);
+        if (onCoinsUpdate) {
+          onCoinsUpdate(newCoins);
+        }
+
+        // Nakarm Habi lokalnie
+        if (foodControlRef.current) {
+          foodControlRef.current.feedHabi(item.nutrition);
+        }
+
+        // Zapisz offline purchase
+        const offlinePurchases = JSON.parse(localStorage.getItem('offline_purchases') || '[]');
+        offlinePurchases.push({
+          foodId: item.id,
+          cost: item.cost,
+          nutrition: item.nutrition,
+          purchasedAt: new Date().toISOString()
+        });
+        localStorage.setItem('offline_purchases', JSON.stringify(offlinePurchases));
+
+        // Pokaż animację
+        setPurchaseAnimation({
+          itemName: item.name,
+          nutrition: item.nutrition,
+          icon: item.iconImage
+        });
+        setTimeout(() => setPurchaseAnimation(null), 2000);
+
+        setError('Zakup zapisany offline - zostanie zsynchronizowany gdy połączenie wróci');
+      }
+
+    } catch (error) {
+      console.error('Błąd zakupu:', error);
+      setError('Błąd: ' + error.message);
+
+      // Fallback - offline purchase
+      const newCoins = currentCoins - item.cost;
+      setCurrentCoins(newCoins);
+      if (onCoinsUpdate) {
+        onCoinsUpdate(newCoins);
+      }
+
       if (foodControlRef.current) {
         foodControlRef.current.feedHabi(item.nutrition);
       }
 
-      // Pokaż animację
+      const offlinePurchases = JSON.parse(localStorage.getItem('offline_purchases') || '[]');
+      offlinePurchases.push({
+        foodId: item.id,
+        cost: item.cost,
+        nutrition: item.nutrition,
+        purchasedAt: new Date().toISOString()
+      });
+      localStorage.setItem('offline_purchases', JSON.stringify(offlinePurchases));
+
       setPurchaseAnimation({
         itemName: item.name,
         nutrition: item.nutrition,
@@ -107,14 +190,10 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
       });
       setTimeout(() => setPurchaseAnimation(null), 2000);
 
-    } else {
-      alert(`Potrzebujesz ${item.cost} monet, ale masz tylko ${currentCoins}!`);
+    } finally {
+      setLoading(false);
     }
   };
-
-  useEffect(() => {
-    setCurrentCoins(userCoins);
-  }, [userCoins]);
 
   return (
     <div className="feed-habi">
@@ -180,6 +259,9 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
             <div className="empty-state-icon">🍽️</div>
             <h3>Brak jedzenia</h3>
             <p>Nie udało się wczytać dostępnego jedzenia dla Habi.</p>
+            <button onClick={loadFoods} className="retry-btn">
+              Spróbuj ponownie
+            </button>
           </div>
         ) : (
           <div className="food-items-grid-redesigned">

@@ -10,14 +10,12 @@ from pydantic import BaseModel
 # Importy
 try:
     from database import init_db
-
     print("✅ database.py imported successfully")
 except Exception as e:
     print(f"❌ Failed to import database.py: {e}")
 
 try:
     import aiosqlite
-
     print("✅ aiosqlite imported successfully")
 except Exception as e:
     print(f"❌ Failed to import aiosqlite: {e}")
@@ -27,14 +25,12 @@ try:
         UserRegister, UserLogin, UserResponse, LoginResponse,
         HabitCreate, HabitResponse, HabitUpdate, HabitCompletionResponse
     )
-
     print("✅ schemas.py imported successfully")
 except Exception as e:
     print(f"❌ Failed to import schemas.py: {e}")
 
 try:
     from auth import hash_password, verify_password, create_token, verify_token
-
     print("✅ auth.py imported successfully")
 except Exception as e:
     print(f"❌ Failed to import auth.py: {e}")
@@ -44,14 +40,12 @@ except Exception as e:
 class FoodPurchase(BaseModel):
     food_id: int
 
-
 class FoodResponse(BaseModel):
     id: int
     name: str
     cost: int
     nutrition_value: int
     icon: str
-
 
 class PurchaseResponse(BaseModel):
     message: str
@@ -81,31 +75,35 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS
+# CORS - Poprawka dla problemu z frontendem
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://nadiahermann111.github.io",
         "http://localhost:3000",
         "http://localhost:5173",
-        "*"
+        "http://127.0.0.1:5173",
+        "https://localhost:5173",
+        "*"  # Podczas developmentu - usuń w produkcji
     ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
-
 
 # Basic endpoints
 @app.get("/")
 async def root():
     return {"message": "Habi API działa!", "version": "1.0.0"}
 
+@app.options("/{path:path}")
+async def options_handler(path: str):
+    """Handle CORS preflight requests"""
+    return {"message": "OK"}
 
 @app.get("/api/health")
 async def health():
     return {"status": "OK"}
-
 
 @app.get("/api/test-db")
 async def test_db():
@@ -123,7 +121,6 @@ async def test_db():
             "message": "Database error",
             "error": str(e)
         }
-
 
 # User endpoints
 @app.post("/api/register", response_model=LoginResponse)
@@ -174,7 +171,6 @@ async def register(user_data: UserRegister):
             )
         )
 
-
 @app.post("/api/login", response_model=LoginResponse)
 async def login(login_data: UserLogin):
     """Logowanie użytkownika"""
@@ -210,7 +206,6 @@ async def login(login_data: UserLogin):
             )
         )
 
-
 @app.get("/api/profile", response_model=UserResponse)
 async def get_profile(authorization: str = Header(None)):
     """Pobierz profil użytkownika (wymaga tokenu)"""
@@ -241,7 +236,6 @@ async def get_profile(authorization: str = Header(None)):
             coins=user["coins"]
         )
 
-
 @app.get("/api/coins")
 async def get_user_coins(authorization: str = Header(None)):
     """Pobierz liczbę monet użytkownika"""
@@ -266,7 +260,6 @@ async def get_user_coins(authorization: str = Header(None)):
             raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
 
         return {"coins": user["coins"], "user_id": user_id}
-
 
 @app.post("/api/coins/add")
 async def add_coins(data: dict, authorization: str = Header(None)):
@@ -306,7 +299,6 @@ async def add_coins(data: dict, authorization: str = Header(None)):
             "coins": user[0] if user else 0,
             "added": amount
         }
-
 
 # Habit endpoints
 @app.post("/api/habits")
@@ -373,7 +365,6 @@ async def create_habit(habit_data: HabitCreate, authorization: str = Header(None
             "completion_dates": []
         }
 
-
 @app.get("/api/habits")
 async def get_user_habits(authorization: str = Header(None)):
     """Pobierz wszystkie nawyki użytkownika"""
@@ -403,18 +394,12 @@ async def get_user_habits(authorization: str = Header(None)):
 
         # Pobierz nawyki użytkownika z kompletami
         cursor = await db.execute(
-            """SELECT h.id,
-                      h.name,
-                      h.description,
-                      h.reward_coins,
-                      h.is_active,
-                      h.created_at,
-                      COALESCE(h.icon, '🎯')         as icon,
+            """SELECT h.id, h.name, h.description, h.reward_coins, h.is_active, h.created_at,
+                      COALESCE(h.icon, '🎯') as icon,
                       GROUP_CONCAT(hc.completed_at) as completion_dates
                FROM habits h
-                        LEFT JOIN habit_completions hc ON h.id = hc.habit_id
-               WHERE h.user_id = ?
-                 AND h.is_active = 1
+               LEFT JOIN habit_completions hc ON h.id = hc.habit_id
+               WHERE h.user_id = ? AND h.is_active = 1
                GROUP BY h.id, h.name, h.description, h.reward_coins, h.is_active, h.created_at, h.icon
                ORDER BY h.created_at DESC""",
             (user_id,)
@@ -439,7 +424,6 @@ async def get_user_habits(authorization: str = Header(None)):
             })
 
         return result
-
 
 @app.post("/api/habits/{habit_id}/complete")
 async def complete_habit(habit_id: int, authorization: str = Header(None)):
@@ -510,7 +494,6 @@ async def complete_habit(habit_id: int, authorization: str = Header(None)):
             "completion_date": today
         }
 
-
 @app.delete("/api/habits/{habit_id}")
 async def delete_habit(habit_id: int, authorization: str = Header(None)):
     """Usuń nawyk (oznacz jako nieaktywny)"""
@@ -543,7 +526,6 @@ async def delete_habit(habit_id: int, authorization: str = Header(None)):
 
         return {"message": "Nawyk usunięty pomyślnie"}
 
-
 # Food/Rewards endpoints - NOWE
 @app.get("/api/foods")
 async def get_foods():
@@ -553,42 +535,15 @@ async def get_foods():
 
         # Sprawdź czy tabela rewards istnieje, jeśli nie - utwórz ją
         await db.execute("""
-                         CREATE TABLE IF NOT EXISTS rewards
-                         (
-                             id
-                             INTEGER
-                             PRIMARY
-                             KEY
-                             AUTOINCREMENT,
-                             name
-                             TEXT
-                             NOT
-                             NULL,
-                             cost
-                             INTEGER
-                             NOT
-                             NULL,
-                             nutrition_value
-                             INTEGER
-                             NOT
-                             NULL,
-                             icon
-                             TEXT
-                             NOT
-                             NULL,
-                             type
-                             TEXT
-                             DEFAULT
-                             'food'
-                             CHECK (
-                             type
-                             IN
-                         (
-                             'food',
-                             'accessory'
-                         ))
-                             )
-                         """)
+            CREATE TABLE IF NOT EXISTS rewards (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                cost INTEGER NOT NULL,
+                nutrition_value INTEGER NOT NULL,
+                icon TEXT NOT NULL,
+                type TEXT DEFAULT 'food' CHECK (type IN ('food', 'accessory'))
+            )
+        """)
 
         # Sprawdź czy są jakieś dane
         cursor = await db.execute("SELECT COUNT(*) FROM rewards")
@@ -627,7 +582,6 @@ async def get_foods():
             }
             for food in foods
         ]
-
 
 @app.post("/api/feed-habi")
 async def feed_habi(purchase_data: FoodPurchase, authorization: str = Header(None)):
@@ -673,85 +627,28 @@ async def feed_habi(purchase_data: FoodPurchase, authorization: str = Header(Non
 
         # Utwórz tabele jeśli nie istnieją
         await db.execute("""
-                         CREATE TABLE IF NOT EXISTS habi_status
-                         (
-                             id
-                             INTEGER
-                             PRIMARY
-                             KEY
-                             AUTOINCREMENT,
-                             user_id
-                             INTEGER
-                             NOT
-                             NULL,
-                             food_level
-                             INTEGER
-                             DEFAULT
-                             100,
-                             last_update
-                             TIMESTAMP
-                             DEFAULT
-                             CURRENT_TIMESTAMP,
-                             FOREIGN
-                             KEY
-                         (
-                             user_id
-                         ) REFERENCES users
-                         (
-                             id
-                         ),
-                             UNIQUE
-                         (
-                             user_id
-                         )
-                             )
-                         """)
+            CREATE TABLE IF NOT EXISTS habi_status (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                food_level INTEGER DEFAULT 100,
+                last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (id),
+                UNIQUE(user_id)
+            )
+        """)
 
         await db.execute("""
-                         CREATE TABLE IF NOT EXISTS food_purchases
-                         (
-                             id
-                             INTEGER
-                             PRIMARY
-                             KEY
-                             AUTOINCREMENT,
-                             user_id
-                             INTEGER
-                             NOT
-                             NULL,
-                             food_id
-                             INTEGER
-                             NOT
-                             NULL,
-                             cost
-                             INTEGER
-                             NOT
-                             NULL,
-                             nutrition_gained
-                             INTEGER
-                             NOT
-                             NULL,
-                             purchased_at
-                             TIMESTAMP
-                             DEFAULT
-                             CURRENT_TIMESTAMP,
-                             FOREIGN
-                             KEY
-                         (
-                             user_id
-                         ) REFERENCES users
-                         (
-                             id
-                         ),
-                             FOREIGN KEY
-                         (
-                             food_id
-                         ) REFERENCES rewards
-                         (
-                             id
-                         )
-                             )
-                         """)
+            CREATE TABLE IF NOT EXISTS food_purchases (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                food_id INTEGER NOT NULL,
+                cost INTEGER NOT NULL,
+                nutrition_gained INTEGER NOT NULL,
+                purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (id),
+                FOREIGN KEY (food_id) REFERENCES rewards (id)
+            )
+        """)
 
         # Pobierz obecny stan Habi
         cursor = await db.execute(
@@ -790,9 +687,9 @@ async def feed_habi(purchase_data: FoodPurchase, authorization: str = Header(Non
 
         # Zapisz zakup
         await db.execute("""
-                         INSERT INTO food_purchases (user_id, food_id, cost, nutrition_gained)
-                         VALUES (?, ?, ?, ?)
-                         """, (user_id, food["id"], food["cost"], food["nutrition_value"]))
+            INSERT INTO food_purchases (user_id, food_id, cost, nutrition_gained)
+            VALUES (?, ?, ?, ?)
+        """, (user_id, food["id"], food["cost"], food["nutrition_value"]))
 
         await db.commit()
 
@@ -804,7 +701,6 @@ async def feed_habi(purchase_data: FoodPurchase, authorization: str = Header(Non
             "habi_food_level": new_food_level,
             "cost": food["cost"]
         }
-
 
 @app.get("/api/habi-status")
 async def get_habi_status(authorization: str = Header(None)):
@@ -823,39 +719,15 @@ async def get_habi_status(authorization: str = Header(None)):
 
         # Sprawdź czy tabela istnieje
         await db.execute("""
-                         CREATE TABLE IF NOT EXISTS habi_status
-                         (
-                             id
-                             INTEGER
-                             PRIMARY
-                             KEY
-                             AUTOINCREMENT,
-                             user_id
-                             INTEGER
-                             NOT
-                             NULL,
-                             food_level
-                             INTEGER
-                             DEFAULT
-                             100,
-                             last_update
-                             TIMESTAMP
-                             DEFAULT
-                             CURRENT_TIMESTAMP,
-                             FOREIGN
-                             KEY
-                         (
-                             user_id
-                         ) REFERENCES users
-                         (
-                             id
-                         ),
-                             UNIQUE
-                         (
-                             user_id
-                         )
-                             )
-                         """)
+            CREATE TABLE IF NOT EXISTS habi_status (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                food_level INTEGER DEFAULT 100,
+                last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (id),
+                UNIQUE(user_id)
+            )
+        """)
 
         # Pobierz stan Habi
         cursor = await db.execute(
@@ -882,19 +754,18 @@ async def get_habi_status(authorization: str = Header(None)):
             # Zaktualizuj w bazie jeśli minęła przynajmniej godzina
             if hours_passed >= 1:
                 await db.execute("""
-                                 UPDATE habi_status
-                                 SET food_level  = ?,
-                                     last_update = CURRENT_TIMESTAMP
-                                 WHERE user_id = ?
-                                 """, (current_food_level, user_id))
+                    UPDATE habi_status 
+                    SET food_level = ?, last_update = CURRENT_TIMESTAMP 
+                    WHERE user_id = ?
+                """, (current_food_level, user_id))
                 await db.commit()
                 last_update = datetime.now().isoformat()
         else:
             # Pierwszy raz - utwórz wpis
             await db.execute("""
-                             INSERT INTO habi_status (user_id, food_level, last_update)
-                             VALUES (?, 100, CURRENT_TIMESTAMP)
-                             """, (user_id,))
+                INSERT INTO habi_status (user_id, food_level, last_update)
+                VALUES (?, 100, CURRENT_TIMESTAMP)
+            """, (user_id,))
             await db.commit()
 
         return {
@@ -902,7 +773,6 @@ async def get_habi_status(authorization: str = Header(None)):
             "last_update": last_update,
             "user_id": user_id
         }
-
 
 @app.get("/api/feed-history")
 async def get_feed_history(authorization: str = Header(None)):
@@ -920,17 +790,19 @@ async def get_feed_history(authorization: str = Header(None)):
         db.row_factory = aiosqlite.Row
 
         cursor = await db.execute("""
-                                  SELECT fp.id,
-                                         fp.cost,
-                                         fp.nutrition_gained,
-                                         fp.purchased_at,
-                                         r.name as food_name,
-                                         r.icon
-                                  FROM food_purchases fp
-                                           JOIN rewards r ON fp.food_id = r.id
-                                  WHERE fp.user_id = ?
-                                  ORDER BY fp.purchased_at DESC LIMIT 20
-                                  """, (user_id,))
+            SELECT 
+                fp.id,
+                fp.cost,
+                fp.nutrition_gained,
+                fp.purchased_at,
+                r.name as food_name,
+                r.icon
+            FROM food_purchases fp
+            JOIN rewards r ON fp.food_id = r.id
+            WHERE fp.user_id = ?
+            ORDER BY fp.purchased_at DESC
+            LIMIT 20
+        """, (user_id,))
 
         purchases = await cursor.fetchall()
 
@@ -946,7 +818,6 @@ async def get_feed_history(authorization: str = Header(None)):
             for purchase in purchases
         ]
 
-
 @app.get("/api/users")
 async def get_users():
     """Pobierz wszystkich użytkowników"""
@@ -958,9 +829,7 @@ async def get_users():
             "users": [dict(user) for user in users]
         }
 
-
 if __name__ == "__main__":
     import uvicorn
-
     port = int(os.environ.get("PORT", 10000))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
