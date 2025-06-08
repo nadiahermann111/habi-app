@@ -1,6 +1,7 @@
-// Poprawiony FeedHabi.js - używa /api/coins/add z ujemną wartością
+// FeedHabi.jsx - używa CoinSlot
 import React, { useState, useEffect, useRef } from 'react';
 import FoodControl from '../FoodControl/FoodControl';
+import CoinSlot from '../CoinSlot/CoinSlot';
 import HabiHappyAdult from './HabiAdultHappy.png';
 import HabiLogo from './habi-logo.png';
 import './FeedHabi.css';
@@ -9,6 +10,7 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
   const [currentCoins, setCurrentCoins] = useState(userCoins);
   const [purchaseAnimation, setPurchaseAnimation] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const foodControlRef = useRef(null);
 
   const foodItems = [
@@ -20,25 +22,26 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
     { id: 6, name: "Kawa", cost: 20, icon: "☕", nutrition: 40 }
   ];
 
-  // Funkcja do wydawania monet używając istniejącego endpointu
+  const API_BASE_URL = 'https://habi-backend.onrender.com';
+
+  // Funkcja do wydawania monet
   const spendCoins = async (amount) => {
     try {
       const token = localStorage.getItem('token');
 
-      // Użyj pełnego URL z domeną render.com
-      const baseUrl = window.location.hostname.includes('localhost')
-        ? 'http://localhost:10000'
-        : 'https://habi-backend.onrender.com';
+      if (!token) {
+        throw new Error('Brak tokenu autoryzacji');
+      }
 
       console.log(`🔄 Wydawanie ${amount} monet za jedzenie...`);
 
-      const response = await fetch(`${baseUrl}/api/coins/add`, {
+      const response = await fetch(`${API_BASE_URL}/api/coins/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ amount: -amount }) // Ujemna wartość = wydawanie
+        body: JSON.stringify({ amount: -amount })
       });
 
       const data = await response.json();
@@ -53,23 +56,26 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
         console.error('❌ Błąd serwera:', data);
         return {
           success: false,
-          error: data.detail || 'Błąd wydawania monet'
+          error: data.detail || data.message || 'Błąd wydawania monet'
         };
       }
     } catch (error) {
       console.error('❌ Błąd spendCoins:', error);
       return {
         success: false,
-        error: 'Błąd połączenia z serwerem'
+        error: error.message || 'Błąd połączenia z serwerem'
       };
     }
   };
 
   const handlePurchase = async (item) => {
     console.log(`🛒 Próba zakupu ${item.name} za ${item.cost} monet`);
+    setError(null);
 
     if (currentCoins < item.cost) {
-      alert(`Potrzebujesz ${item.cost} monet, ale masz tylko ${currentCoins}!`);
+      const errorMsg = `Potrzebujesz ${item.cost} monet, ale masz tylko ${currentCoins}!`;
+      setError(errorMsg);
+      alert(errorMsg);
       return;
     }
 
@@ -88,6 +94,11 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
           onCoinsUpdate(result.remainingCoins);
         }
 
+        // Wyślij globalny event o zmianie monet
+        window.dispatchEvent(new CustomEvent('coinsUpdated', {
+          detail: { coins: result.remainingCoins }
+        }));
+
         // Nakarm Habi lokalnie
         if (foodControlRef.current) {
           foodControlRef.current.feedHabi(item.nutrition);
@@ -105,13 +116,24 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
 
       } else {
         console.error('❌ Zakup nieudany:', result.error);
+        setError(result.error);
         alert(result.error || 'Błąd podczas zakupu');
       }
     } catch (error) {
       console.error('❌ Błąd handlePurchase:', error);
-      alert('Błąd podczas zakupu');
+      const errorMsg = 'Błąd podczas zakupu - sprawdź połączenie internetowe';
+      setError(errorMsg);
+      alert(errorMsg);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Synchronizuj lokalny stan z propsami
+  const handleCoinsUpdate = (newCoins) => {
+    setCurrentCoins(newCoins);
+    if (onCoinsUpdate) {
+      onCoinsUpdate(newCoins);
     }
   };
 
@@ -130,11 +152,33 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
             </button>
             <img src={HabiLogo} alt="Habi" className="habi-logo" />
           </div>
+
+          {/* CoinSlot zamiast prostego wyświetlania monet */}
           <div className="feed-coins-display">
-            <span>🪙</span>
-            <span>{currentCoins}</span>
+            <CoinSlot
+              initialCoins={currentCoins}
+              onCoinsUpdate={handleCoinsUpdate}
+              size="medium"
+              showRefreshButton={true}
+              autoRefresh={false} // Wyłączamy auto-refresh w FeedHabi
+              animated={true}
+            />
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="error-message" style={{
+            background: '#ffe6e6',
+            border: '1px solid #ff9999',
+            borderRadius: '8px',
+            padding: '10px',
+            margin: '10px 0',
+            color: '#cc0000'
+          }}>
+            ❌ {error}
+          </div>
+        )}
 
         {/* Purchase Animation */}
         {purchaseAnimation && (
@@ -148,6 +192,19 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
                 +{purchaseAnimation.nutrition} odżywiania dla Habi
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Loading Indicator */}
+        {loading && (
+          <div className="loading-indicator" style={{
+            textAlign: 'center',
+            padding: '10px',
+            background: '#f0f8ff',
+            borderRadius: '8px',
+            margin: '10px 0'
+          }}>
+            🔄 Przetwarzanie zakupu...
           </div>
         )}
 
@@ -213,6 +270,13 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
               </div>
             </div>
           )}
+
+          <div className="tip-card info">
+            <span className="tip-icon">🔗</span>
+            <div className="tip-content">
+              <strong>Status:</strong> Połączono z {API_BASE_URL}
+            </div>
+          </div>
         </div>
       </div>
     </div>

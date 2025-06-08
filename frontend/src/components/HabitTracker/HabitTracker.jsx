@@ -1,9 +1,11 @@
+// HabitTracker.jsx - zaktualizowany z CoinSlot
 import React, { useState, useEffect } from 'react';
 import { habitAPI } from '../../services/api.jsx';
+import CoinSlot from '../CoinSlot/CoinSlot';
 import './HabitTracker.css';
 
 const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
-  const [currentView, setCurrentView] = useState('list'); // 'list' or 'add'
+  const [currentView, setCurrentView] = useState('list');
   const [habits, setHabits] = useState([]);
   const [userCoins, setUserCoins] = useState(initialCoins);
   const [completedToday, setCompletedToday] = useState(new Set());
@@ -11,12 +13,28 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
   const [error, setError] = useState('');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
+  const [newHabit, setNewHabit] = useState({
+    name: '',
+    description: '',
+    coinValue: 3,
+    icon: '🎯'
+  });
+
+  const availableIcons = ['🎯', '💪', '📚', '🏃', '💧', '🧘', '🎵', '🎨', '🍎', '😴'];
+
+  // Funkcja do obsługi aktualizacji monet z CoinSlot
+  const handleCoinsUpdate = (newCoins) => {
+    setUserCoins(newCoins);
+    if (onCoinsUpdate) {
+      onCoinsUpdate(newCoins);
+    }
+  };
+
   // Sprawdź stan połączenia
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
       setError('');
-      // Automatycznie odśwież dane gdy wróci połączenie
       loadHabits();
       syncOfflineChanges();
     };
@@ -41,15 +59,6 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     loadHabits();
   }, []);
 
-  const [newHabit, setNewHabit] = useState({
-    name: '',
-    description: '',
-    coinValue: 3,
-    icon: '🎯'
-  });
-
-  const availableIcons = ['🎯', '💪', '📚', '🏃', '💧', '🧘', '🎵', '🎨', '🍎', '😴'];
-
   // Funkcja do synchronizacji zmian offline
   const syncOfflineChanges = async () => {
     try {
@@ -63,10 +72,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
         }
       }
 
-      // Wyczyść offline completions po synchronizacji
       localStorage.removeItem('offline_completions');
-
-      // Odśwież dane po synchronizacji
       await loadHabits();
 
     } catch (error) {
@@ -79,14 +85,10 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       setLoading(true);
       setError('');
 
-      // Spróbuj wczytać z backendu
       const habits = await habitAPI.getHabits();
       setHabits(habits);
-
-      // Zapisz w localStorage jako cache
       localStorage.setItem('habits_cache', JSON.stringify(habits));
 
-      // Sprawdź które są wykonane dzisiaj
       const today = new Date().toISOString().split('T')[0];
       const completedIds = new Set();
       habits.forEach(habit => {
@@ -96,29 +98,17 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       });
       setCompletedToday(completedIds);
 
-      // Pobierz aktualne monety z serwera
-      try {
-        const coinsResponse = await habitAPI.getUserCoins();
-        const serverCoins = coinsResponse.coins;
-        setUserCoins(serverCoins);
-        if (onCoinsUpdate) {
-          onCoinsUpdate(serverCoins);
-        }
-      } catch (coinsError) {
-        console.error('Błąd pobierania monet:', coinsError);
-      }
+      // Pobierz aktualne monety - CoinSlot się tym zajmie automatycznie
 
     } catch (error) {
       console.error('Błąd ładowania nawyków:', error);
 
-      // Spróbuj wczytać z cache
       try {
         const cachedHabits = localStorage.getItem('habits_cache');
         if (cachedHabits) {
           const habits = JSON.parse(cachedHabits);
           setHabits(habits);
 
-          // Sprawdź wykonane z localStorage
           const today = new Date().toISOString().split('T')[0];
           const completedKey = `completed_${today}`;
           const todayCompleted = localStorage.getItem(completedKey);
@@ -150,11 +140,10 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       setError('');
 
       if (isOnline) {
-        // Online - użyj backendu
         const createdHabit = await habitAPI.createHabit({
           name: newHabit.name,
           description: newHabit.description,
-          coin_value: newHabit.coinValue, // Używaj coin_value zamiast coinValue
+          coin_value: newHabit.coinValue,
           icon: newHabit.icon
         });
 
@@ -165,7 +154,6 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
         });
 
       } else {
-        // Offline - dodaj lokalnie
         const localHabit = {
           id: Date.now(),
           name: newHabit.name,
@@ -175,7 +163,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           is_active: true,
           created_at: new Date().toISOString(),
           completion_dates: [],
-          isLocal: true // Oznacz jako lokalny
+          isLocal: true
         };
 
         setHabits(prev => {
@@ -204,17 +192,15 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     const habit = habits.find(h => h.id === habitId);
     if (!habit) return;
 
-    const coinsToEarn = habit.coin_value; // Zawsze używaj coin_value
+    const coinsToEarn = habit.coin_value;
 
     try {
       setLoading(true);
       setError('');
 
       if (isOnline && !habit.isLocal) {
-        // Online - użyj backendu
         const result = await habitAPI.completeHabit(habitId);
 
-        // Aktualizuj lokalny stan monet z odpowiedzi serwera
         const newCoinsAmount = result.total_coins;
         setUserCoins(newCoinsAmount);
 
@@ -222,7 +208,11 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           onCoinsUpdate(newCoinsAmount);
         }
 
-        // Oznacz jako wykonane
+        // Wyślij globalny event o zmianie monet
+        window.dispatchEvent(new CustomEvent('coinsUpdated', {
+          detail: { coins: newCoinsAmount }
+        }));
+
         setCompletedToday(prev => {
           const updated = new Set([...prev, habitId]);
           const today = new Date().toISOString().split('T')[0];
@@ -230,7 +220,6 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           return updated;
         });
 
-        // Aktualizuj nawyk w liście
         const today = new Date().toISOString().split('T')[0];
         setHabits(prev => {
           const updated = prev.map(h =>
@@ -245,7 +234,6 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
         alert(`${result.message}! Otrzymałeś ${result.coins_earned} monet! 🎉`);
 
       } else {
-        // Offline lub lokalny nawyk - wykonaj lokalnie
         const newCoinsAmount = userCoins + coinsToEarn;
         setUserCoins(newCoinsAmount);
 
@@ -253,7 +241,11 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           onCoinsUpdate(newCoinsAmount);
         }
 
-        // Zapisz offline completion do synchronizacji później
+        // Wyślij globalny event o zmianie monet
+        window.dispatchEvent(new CustomEvent('coinsUpdated', {
+          detail: { coins: newCoinsAmount }
+        }));
+
         if (!habit.isLocal) {
           const offlineCompletions = JSON.parse(localStorage.getItem('offline_completions') || '[]');
           offlineCompletions.push({
@@ -282,7 +274,6 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           return updated;
         });
 
-        // Zapisz nową liczbę monet w localStorage
         localStorage.setItem('offline_coins', newCoinsAmount.toString());
 
         const message = isOnline ?
@@ -295,7 +286,6 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       console.error('Błąd wykonywania nawyku:', error);
       setError('Błąd: ' + error.message);
 
-      // Fallback - wykonaj lokalnie
       const newCoinsAmount = userCoins + coinsToEarn;
       setUserCoins(newCoinsAmount);
 
@@ -303,7 +293,11 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
         onCoinsUpdate(newCoinsAmount);
       }
 
-      // Zapisz offline completion
+      // Wyślij globalny event o zmianie monet
+      window.dispatchEvent(new CustomEvent('coinsUpdated', {
+        detail: { coins: newCoinsAmount }
+      }));
+
       const offlineCompletions = JSON.parse(localStorage.getItem('offline_completions') || '[]');
       offlineCompletions.push({
         habitId: habitId,
@@ -347,11 +341,9 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       const habit = habits.find(h => h.id === habitId);
 
       if (isOnline && !habit?.isLocal) {
-        // Online - użyj backendu
         await habitAPI.deleteHabit(habitId);
       }
 
-      // Usuń z lokalnego stanu
       setHabits(prev => {
         const updated = prev.filter(h => h.id !== habitId);
         localStorage.setItem('habits_cache', JSON.stringify(updated));
@@ -370,7 +362,6 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       console.error('Błąd usuwania nawyku:', error);
       setError('Błąd usuwania nawyku: ' + error.message);
 
-      // Fallback - usuń lokalnie
       setHabits(prev => {
         const updated = prev.filter(h => h.id !== habitId);
         localStorage.setItem('habits_cache', JSON.stringify(updated));
@@ -412,7 +403,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
             </div>
           </div>
 
-          {/* Formularz */}
+          {/* Formularz - reszta bez zmian... */}
           <div className="habit-form">
             {error && (
               <div className="error-message">
@@ -423,11 +414,8 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
               </div>
             )}
 
-            {/* Nazwa nawyku */}
             <div className="form-group">
-              <label className="form-label">
-                Nazwa nawyku
-              </label>
+              <label className="form-label">Nazwa nawyku</label>
               <input
                 type="text"
                 className="form-input"
@@ -438,11 +426,8 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
               />
             </div>
 
-            {/* Opis */}
             <div className="form-group">
-              <label className="form-label">
-                Opis (opcjonalny)
-              </label>
+              <label className="form-label">Opis (opcjonalny)</label>
               <textarea
                 className="form-textarea"
                 value={newHabit.description}
@@ -453,11 +438,8 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
               />
             </div>
 
-            {/* Wybór ikony */}
             <div className="form-group">
-              <label className="form-label">
-                Wybierz ikonę
-              </label>
+              <label className="form-label">Wybierz ikonę</label>
               <div className="icon-grid">
                 {availableIcons.map(icon => (
                   <button
@@ -472,7 +454,6 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
               </div>
             </div>
 
-            {/* Suwak wartości monet */}
             <div className="form-group coin-slider">
               <label className="form-label">
                 Wartość nagrody: {newHabit.coinValue} monet
@@ -494,7 +475,6 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
               </div>
             </div>
 
-            {/* Przycisk dodania */}
             <button
               className="submit-btn"
               onClick={handleAddHabit}
@@ -512,7 +492,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
   return (
     <div className="habit-tracker">
       <div className="habit-tracker-container">
-        {/* Header */}
+        {/* Header z CoinSlot */}
         <div className="habit-header">
           <div className="habit-header-left">
             <button
@@ -524,9 +504,18 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
             </button>
             <h2>Moje nawyki</h2>
           </div>
+
+          {/* CoinSlot zamiast prostego wyświetlania monet */}
           <div className="habit-coins-display">
-            <span>🪙</span>
-            <span>{userCoins}</span>
+            <CoinSlot
+              initialCoins={userCoins}
+              onCoinsUpdate={handleCoinsUpdate}
+              size="medium"
+              showRefreshButton={true}
+              autoRefresh={true}
+              refreshInterval={30000}
+              animated={true}
+            />
           </div>
         </div>
 

@@ -1,52 +1,10 @@
-import { useState, useEffect } from 'react';
-import { authAPI, tokenUtils } from "../../services/api.jsx";
+// components/MenuHeader/MenuHeader.jsx
+import React from 'react';
+import CoinSlot from '../CoinSlot/CoinSlot';
 import './MenuHeader.css';
 import habiLogo from './habi-logo.png';
 
 const MenuHeader = ({ onLogout, initialCoins = 0, onCoinsUpdate }) => {
-  const [coins, setCoins] = useState(initialCoins);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    fetchCoins();
-
-    // Automatyczne odświeżanie co 30 sekund
-    const interval = setInterval(() => {
-      fetchCoins();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchCoins = async () => {
-    setLoading(true);
-    try {
-      const coinsData = await authAPI.getCoins();
-      setCoins(coinsData.coins);
-      // Wywołaj callback jeśli został przekazany
-      if (onCoinsUpdate) {
-        onCoinsUpdate(coinsData.coins);
-      }
-    } catch (error) {
-      console.error('Błąd pobierania monet:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Funkcja do manualnego odświeżania (można wywołać z zewnątrz)
-  useEffect(() => {
-    // Nasłuchuj na customowe eventy do odświeżania monet
-    const handleCoinsUpdate = () => {
-      fetchCoins();
-    };
-
-    window.addEventListener('coinsUpdated', handleCoinsUpdate);
-
-    return () => {
-      window.removeEventListener('coinsUpdated', handleCoinsUpdate);
-    };
-  }, []);
 
   const handleLogout = () => {
     if (window.confirm('Czy na pewno chcesz się wylogować?')) {
@@ -84,7 +42,6 @@ const MenuHeader = ({ onLogout, initialCoins = 0, onCoinsUpdate }) => {
             alt="Habi Logo"
             className="habi-logo"
             onError={(e) => {
-              // Fallback jeśli obrazek nie istnieje
               console.error('Nie można załadować logo');
               e.target.style.display = 'none';
               e.target.nextSibling.style.display = 'flex';
@@ -95,14 +52,17 @@ const MenuHeader = ({ onLogout, initialCoins = 0, onCoinsUpdate }) => {
           </div>
         </div>
 
-        {/* Monety */}
+        {/* Monety - używamy CoinSlot */}
         <div className="coins-container">
-          <div className="coins-display">
-            <span className="coin-icon">🪙</span>
-            <span className="coins-amount">
-              {loading ? '...' : coins.toLocaleString()}
-            </span>
-          </div>
+          <CoinSlot
+            initialCoins={initialCoins}
+            onCoinsUpdate={onCoinsUpdate}
+            size="medium"
+            showRefreshButton={true}
+            autoRefresh={true}
+            refreshInterval={30000}
+            animated={true}
+          />
         </div>
       </div>
     </header>

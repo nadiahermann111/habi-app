@@ -57,6 +57,23 @@ const FoodControl = forwardRef(({ onFeed }, ref) => {
   }, []);
 
   useEffect(() => {
+    // Słuchacz eventów z Dashboard (deweloperskie zmiany poziomu)
+    const handleFoodLevelChange = (event) => {
+      if (event.detail && typeof event.detail.newLevel === 'number') {
+        console.log(`🔧 DEV: Zmiana poziomu sytości Habi na ${event.detail.newLevel}%`);
+        setFoodLevel(event.detail.newLevel);
+        setLastUpdate(Date.now());
+      }
+    };
+
+    window.addEventListener('habiFoodLevelChanged', handleFoodLevelChange);
+
+    return () => {
+      window.removeEventListener('habiFoodLevelChanged', handleFoodLevelChange);
+    };
+  }, []);
+
+  useEffect(() => {
     // Ustaw interval do sprawdzania co 30 sekund (częściej dla płynności)
     const interval = setInterval(() => {
       const currentTime = Date.now();

@@ -1,0 +1,24 @@
+/* components/CoinSlot/CoinSlot.css */
+
+.coin-slot {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+}
+
+.coin-slot-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.coin-icon {
+  font-size: 1em;
+}
+
+.coins-amount {
+  font-weight: bold;
+  color: #5d4e37;
+  white-space: nowrap;
+  font-size: 0.85em;
+}

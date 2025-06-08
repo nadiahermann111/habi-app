@@ -53,6 +53,33 @@ const Dashboard = ({ user, onLogout }) => {
     }
   };
 
+  const handleReduceHabiHappiness = () => {
+    try {
+      // Pobierz aktualny poziom sytości z localStorage
+      const currentFoodLevel = localStorage.getItem('habiFoodLevel');
+      const currentLevel = currentFoodLevel ? parseInt(currentFoodLevel) : 75;
+
+      // Zmniejsz o 10% (minimum 5 punktów, maksimum 25 punktów)
+      const reductionAmount = Math.max(5, Math.min(25, Math.floor(currentLevel * 0.1)));
+      const newLevel = Math.max(0, currentLevel - reductionAmount);
+
+      // Zaktualizuj localStorage
+      const currentTime = Date.now();
+      localStorage.setItem('habiFoodLevel', newLevel.toString());
+      localStorage.setItem('habiLastUpdate', currentTime.toString());
+
+      // Wyślij event do FoodControl żeby się odświeżył
+      window.dispatchEvent(new CustomEvent('habiFoodLevelChanged', {
+        detail: { newLevel, reductionAmount }
+      }));
+
+      alert(`Habi stracił ${reductionAmount}% szczęścia! 😢 Poziom sytości: ${newLevel}%`);
+    } catch (error) {
+      alert('Błąd zmiany poziomu szczęścia Habi');
+      console.error('Error reducing Habi happiness:', error);
+    }
+  };
+
   const handleCoinsUpdate = (newCoinsAmount) => {
     // Callback z MenuHeader - aktualizuj lokalny stan
     setProfile(prev => ({
@@ -142,6 +169,9 @@ const Dashboard = ({ user, onLogout }) => {
             <div className="dev-actions">
               <button className="dev-btn" onClick={handleAddTestCoins}>
                 🪙 Dodaj 10 monet (DEV)
+              </button>
+              <button className="dev-btn" onClick={handleReduceHabiHappiness}>
+                😢 Usuń 10% szczęścia Habi (DEV)
               </button>
             </div>
           )}
