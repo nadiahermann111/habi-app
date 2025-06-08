@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from datetime import datetime, date
-from typing import List, Optional  # Dodaj Optional do importów
+from typing import List
 
 # Importy
 try:
@@ -34,15 +34,6 @@ try:
 except Exception as e:
     print(f"❌ Failed to import auth.py: {e}")
 
-# Struktura jedzenia - przenieś na górę przed definicjami klas
-FOOD_ITEMS = {
-    1: {"name": "Woda", "cost": 1, "nutrition": 5, "icon": "💧"},
-    2: {"name": "Banan", "cost": 3, "nutrition": 15, "icon": "🍌"},
-    3: {"name": "Jabłko", "cost": 3, "nutrition": 15, "icon": "🍎"},
-    4: {"name": "Mięso", "cost": 8, "nutrition": 25, "icon": "🥩"},
-    5: {"name": "Sałatka", "cost": 8, "nutrition": 25, "icon": "🥗"},
-    6: {"name": "Kawa", "cost": 20, "nutrition": 40, "icon": "☕"}
-}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -55,6 +46,7 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown
     print("👋 Shutting down")
+
 
 app = FastAPI(
     title="Habi API",
@@ -518,11 +510,10 @@ async def get_users():
             "users": [dict(user) for user in users]
         }
 
-# ===== FEEDHABI ENDPOINTS =====
 
-@app.post("/api/habi/feed")
-async def feed_habi(data: dict, authorization: str = Header(None)):
-    """Nakarm Habi - wydaj monety i zwiększ poziom najedzenia"""
+@app.post("/api/coins/spend")
+async def spend_coins(data: dict, authorization: str = Header(None)):
+    """Wydaj monety użytkownika (dla FeedHabi)"""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -532,15 +523,9 @@ async def feed_habi(data: dict, authorization: str = Header(None)):
     if not user_id:
         raise HTTPException(status_code=401, detail="Nieprawidłowy token")
 
-    food_id = data.get('food_id')
-    quantity = data.get('quantity', 1)
-
-    if food_id not in FOOD_ITEMS:
-        raise HTTPException(status_code=400, detail="Nieprawidłowe jedzenie")
-
-    food_item = FOOD_ITEMS[food_id]
-    total_cost = food_item["cost"] * quantity
-    total_nutrition = food_item["nutrition"] * quantity
+    amount = data.get('amount', 0)
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="Kwota musi być większa od 0")
 
     async with aiosqlite.connect("database.db") as db:
         await db.execute("PRAGMA foreign_keys = ON")
@@ -556,69 +541,17 @@ async def feed_habi(data: dict, authorization: str = Header(None)):
         if not user:
             raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
 
-        if user["coins"] < total_cost:
+        if user["coins"] < amount:
             raise HTTPException(
                 status_code=400,
-                detail=f"Niewystarczająco monet. Potrzebujesz {total_cost}, masz {user['coins']}"
+                detail=f"Niewystarczająco monet. Potrzebujesz {amount}, masz {user['coins']}"
             )
 
-        # Pobierz obecny stan Habi
-        cursor = await db.execute(
-            "SELECT hunger_level, happiness, last_fed FROM habi_status WHERE user_id = ?",
-            (user_id,)
-        )
-        habi_status = await cursor.fetchone()
-
-        current_hunger = 0
-        current_happiness = 50
-
-        if habi_status:
-            current_hunger = habi_status["hunger_level"]
-            current_happiness = habi_status["happiness"]
-
-            # Sprawdź czy Habi nie był głodny za długo (obniż szczęście)
-            if habi_status["last_fed"]:
-                last_fed = datetime.fromisoformat(habi_status["last_fed"])
-                hours_since_fed = (datetime.now() - last_fed).total_seconds() / 3600
-                if hours_since_fed > 12:  # Po 12 godzinach bez jedzenia
-                    happiness_penalty = min(20, int(hours_since_fed - 12))
-                    current_happiness = max(0, current_happiness - happiness_penalty)
-
-        # Oblicz nowy poziom najedzenia i szczęścia
-        new_hunger = min(100, current_hunger + total_nutrition)
-        happiness_bonus = total_nutrition // 10  # Bonus szczęścia za jedzenie
-        new_happiness = min(100, current_happiness + happiness_bonus)
-
-        # Aktualizuj monety użytkownika
+        # Odejmij monety
         await db.execute(
             "UPDATE users SET coins = coins - ? WHERE id = ?",
-            (total_cost, user_id)
+            (amount, user_id)
         )
-
-        # Zapisz transakcję karmienia
-        await db.execute(
-            """INSERT INTO feeding_history
-               (user_id, food_id, food_name, quantity, cost_per_item, total_cost, nutrition_gained, fed_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            (user_id, food_id, food_item["name"], quantity, food_item["cost"],
-             total_cost, total_nutrition, datetime.now().isoformat())
-        )
-
-        # Aktualizuj status Habi
-        if habi_status:
-            await db.execute(
-                """UPDATE habi_status
-                   SET hunger_level = ?, happiness = ?, last_fed = ?
-                   WHERE user_id = ?""",
-                (new_hunger, new_happiness, datetime.now().isoformat(), user_id)
-            )
-        else:
-            await db.execute(
-                """INSERT INTO habi_status (user_id, hunger_level, happiness, last_fed)
-                   VALUES (?, ?, ?, ?)""",
-                (user_id, new_hunger, new_happiness, datetime.now().isoformat())
-            )
-
         await db.commit()
 
         # Pobierz nową liczbę monet
@@ -629,171 +562,9 @@ async def feed_habi(data: dict, authorization: str = Header(None)):
         updated_user = await cursor.fetchone()
 
         return {
-            "message": f"Habi zjadł {food_item['name']}!",
-            "food_consumed": {
-                "name": food_item["name"],
-                "icon": food_item["icon"],
-                "quantity": quantity,
-                "nutrition": total_nutrition
-            },
-            "cost": total_cost,
+            "message": f"Wydano {amount} monet",
             "remaining_coins": updated_user["coins"],
-            "habi_status": {
-                "hunger_level": new_hunger,
-                "happiness": new_happiness,
-                "last_fed": datetime.now().isoformat()
-            }
-        }
-
-@app.get("/api/habi/status")
-async def get_habi_status(authorization: str = Header(None)):
-    """Pobierz aktualny stan Habi"""
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
-
-    token = authorization.replace("Bearer ", "")
-    user_id = verify_token(token)
-
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
-
-    async with aiosqlite.connect("database.db") as db:
-        db.row_factory = aiosqlite.Row
-
-        cursor = await db.execute(
-            "SELECT hunger_level, happiness, last_fed FROM habi_status WHERE user_id = ?",
-            (user_id,)
-        )
-        habi_status = await cursor.fetchone()
-
-        if not habi_status:
-            # Nowy Habi - utwórz domyślny status
-            await db.execute(
-                "INSERT INTO habi_status (user_id, hunger_level, happiness, last_fed) VALUES (?, ?, ?, ?)",
-                (user_id, 50, 80, datetime.now().isoformat())
-            )
-            await db.commit()
-            return {
-                "hunger_level": 50,
-                "happiness": 80,
-                "last_fed": datetime.now().isoformat(),
-                "status_message": "Habi czeka na pierwsze karmienie!"
-            }
-
-        hunger = habi_status["hunger_level"]
-        happiness = habi_status["happiness"]
-        last_fed = habi_status["last_fed"]
-
-        # Oblicz spadek głodu w czasie
-        if last_fed:
-            last_fed_time = datetime.fromisoformat(last_fed)
-            hours_passed = (datetime.now() - last_fed_time).total_seconds() / 3600
-            hunger_decay = int(hours_passed * 2)  # 2 punkty głodu na godzinę
-            current_hunger = max(0, hunger - hunger_decay)
-
-            # Aktualizuj hunger w bazie jeśli znacząco się zmienił
-            if abs(current_hunger - hunger) > 5:
-                await db.execute(
-                    "UPDATE habi_status SET hunger_level = ? WHERE user_id = ?",
-                    (current_hunger, user_id)
-                )
-                await db.commit()
-                hunger = current_hunger
-
-        # Określ status message
-        if hunger < 20:
-            status_message = "Habi jest bardzo głodny! 😢"
-        elif hunger < 40:
-            status_message = "Habi potrzebuje jedzenia 😐"
-        elif hunger < 70:
-            status_message = "Habi czuje się dobrze 😊"
-        else:
-            status_message = "Habi jest najedzony i szczęśliwy! 😄"
-
-        return {
-            "hunger_level": hunger,
-            "happiness": happiness,
-            "last_fed": last_fed,
-            "status_message": status_message
-        }
-
-@app.get("/api/habi/feeding-history")
-async def get_feeding_history(authorization: str = Header(None), limit: int = 10):
-    """Pobierz historię karmienia Habi"""
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
-
-    token = authorization.replace("Bearer ", "")
-    user_id = verify_token(token)
-
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
-
-    async with aiosqlite.connect("database.db") as db:
-        db.row_factory = aiosqlite.Row
-
-        cursor = await db.execute(
-            """SELECT food_name, quantity, total_cost, nutrition_gained, fed_at
-               FROM feeding_history
-               WHERE user_id = ?
-               ORDER BY fed_at DESC LIMIT ?""",
-            (user_id, limit)
-        )
-        history = await cursor.fetchall()
-
-        return {
-            "feeding_history": [
-                {
-                    "food_name": record["food_name"],
-                    "quantity": record["quantity"],
-                    "cost": record["total_cost"],
-                    "nutrition": record["nutrition_gained"],
-                    "fed_at": record["fed_at"]
-                }
-                for record in history
-            ]
-        }
-
-@app.get("/api/food-items")
-async def get_food_items():
-    """Pobierz listę dostępnych produktów żywnościowych"""
-    return {
-        "food_items": [
-            {
-                "id": food_id,
-                "name": item["name"],
-                "cost": item["cost"],
-                "nutrition": item["nutrition"],
-                "icon": item["icon"]
-            }
-            for food_id, item in FOOD_ITEMS.items()
-        ]
-    }
-
-@app.post("/api/habi/reset")
-async def reset_habi_status(authorization: str = Header(None)):
-    """Reset stanu Habi (tylko dla testów)"""
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
-
-    token = authorization.replace("Bearer ", "")
-    user_id = verify_token(token)
-
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
-
-    async with aiosqlite.connect("database.db") as db:
-        await db.execute(
-            """INSERT OR REPLACE INTO habi_status (user_id, hunger_level, happiness, last_fed)
-               VALUES (?, ?, ?, ?)""",
-            (user_id, 50, 80, datetime.now().isoformat())
-        )
-        await db.commit()
-
-        return {
-            "message": "Stan Habi został zresetowany",
-            "hunger_level": 50,
-            "happiness": 80
+            "spent": amount
         }
 
 if __name__ == "__main__":
