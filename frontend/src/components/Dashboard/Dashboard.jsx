@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { authAPI, tokenUtils } from "../../services/api.jsx";
 import MenuHeader from '../MenuHeader/MenuHeader';
 import HabitTracker from '../HabitTracker/HabitTracker.jsx';
+import FeedHabi from '../FeedHabi/FeedHabi.jsx';
 import HabiSection from '../HabiSection/HabiSection';
 import './Dashboard.css';
 
@@ -9,12 +10,11 @@ const Dashboard = ({ user, onLogout }) => {
   const [profile, setProfile] = useState(user || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' or 'habits'
+  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'habits', or 'feed'
 
   useEffect(() => {
     fetchProfile();
   }, []);
-
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -65,6 +65,10 @@ const Dashboard = ({ user, onLogout }) => {
     setCurrentView('habits');
   };
 
+  const handleNavigateToFeed = () => {
+    setCurrentView('feed');
+  };
+
   const handleBackToDashboard = () => {
     setCurrentView('dashboard');
   };
@@ -75,7 +79,24 @@ const Dashboard = ({ user, onLogout }) => {
 
   // Render HabitTracker jeśli wybrano ten widok
   if (currentView === 'habits') {
-    return <HabitTracker onBack={handleBackToDashboard} />;
+    return (
+      <HabitTracker
+        onBack={handleBackToDashboard}
+        initialCoins={profile?.coins || 0}
+        onCoinsUpdate={handleCoinsUpdate}
+      />
+    );
+  }
+
+  // Render FeedHabi jeśli wybrano ten widok
+  if (currentView === 'feed') {
+    return (
+      <FeedHabi
+        onBack={handleBackToDashboard}
+        userCoins={profile?.coins || 0}
+        onCoinsUpdate={handleCoinsUpdate}
+      />
+    );
   }
 
   // Render głównego Dashboard
@@ -104,13 +125,26 @@ const Dashboard = ({ user, onLogout }) => {
               <button className="action-btn" onClick={handleNavigateToHabits}>
                 ➕ Dodaj nawyk
               </button>
-              <button className="action-btn">🍌 Nakarm Habi</button>
-              <button className="action-btn">📊 Zobacz statystyki</button>
+              <button className="action-btn" onClick={handleNavigateToFeed}>
+                🍌 Nakarm Habi
+              </button>
+              <button className="action-btn">
+                📊 Zobacz statystyki
+              </button>
               <button className="action-btn">
                 Personalizuj Habi
               </button>
             </div>
           </div>
+
+          {/* Opcjonalnie: dodaj test button dla dodawania monet */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="dev-actions">
+              <button className="dev-btn" onClick={handleAddTestCoins}>
+                🪙 Dodaj 10 monet (DEV)
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
