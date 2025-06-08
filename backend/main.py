@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from datetime import datetime, date
-from typing import List
+from typing import List, Optional  # Dodaj Optional do importów
 
 # Importy
 try:
@@ -34,6 +34,15 @@ try:
 except Exception as e:
     print(f"❌ Failed to import auth.py: {e}")
 
+# Struktura jedzenia - przenieś na górę przed definicjami klas
+FOOD_ITEMS = {
+    1: {"name": "Woda", "cost": 1, "nutrition": 5, "icon": "💧"},
+    2: {"name": "Banan", "cost": 3, "nutrition": 15, "icon": "🍌"},
+    3: {"name": "Jabłko", "cost": 3, "nutrition": 15, "icon": "🍎"},
+    4: {"name": "Mięso", "cost": 8, "nutrition": 25, "icon": "🥩"},
+    5: {"name": "Sałatka", "cost": 8, "nutrition": 25, "icon": "🥗"},
+    6: {"name": "Kawa", "cost": 20, "nutrition": 40, "icon": "☕"}
+}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -46,7 +55,6 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown
     print("👋 Shutting down")
-
 
 app = FastAPI(
     title="Habi API",
@@ -510,32 +518,7 @@ async def get_users():
             "users": [dict(user) for user in users]
         }
 
-
-class FoodPurchase:
-    def __init__(self, food_id: int, quantity: int = 1):
-        self.food_id = food_id
-        self.quantity = quantity
-
-
-class HabiStatusResponse:
-    def __init__(self, hunger_level: int, happiness: int, last_fed: Optional[str]):
-        self.hunger_level = hunger_level
-        self.happiness = happiness
-        self.last_fed = last_fed
-
-
-# Struktura jedzenia (dodaj na początku pliku)
-FOOD_ITEMS = {
-    1: {"name": "Woda", "cost": 1, "nutrition": 5, "icon": "💧"},
-    2: {"name": "Banan", "cost": 3, "nutrition": 15, "icon": "🍌"},
-    3: {"name": "Jabłko", "cost": 3, "nutrition": 15, "icon": "🍎"},
-    4: {"name": "Mięso", "cost": 8, "nutrition": 25, "icon": "🥩"},
-    5: {"name": "Sałatka", "cost": 8, "nutrition": 25, "icon": "🥗"},
-    6: {"name": "Kawa", "cost": 20, "nutrition": 40, "icon": "☕"}
-}
-
-
-# Dodaj te endpointy do swojego main.py:
+# ===== FEEDHABI ENDPOINTS =====
 
 @app.post("/api/habi/feed")
 async def feed_habi(data: dict, authorization: str = Header(None)):
@@ -625,9 +608,7 @@ async def feed_habi(data: dict, authorization: str = Header(None)):
         if habi_status:
             await db.execute(
                 """UPDATE habi_status
-                   SET hunger_level = ?,
-                       happiness    = ?,
-                       last_fed     = ?
+                   SET hunger_level = ?, happiness = ?, last_fed = ?
                    WHERE user_id = ?""",
                 (new_hunger, new_happiness, datetime.now().isoformat(), user_id)
             )
@@ -663,7 +644,6 @@ async def feed_habi(data: dict, authorization: str = Header(None)):
                 "last_fed": datetime.now().isoformat()
             }
         }
-
 
 @app.get("/api/habi/status")
 async def get_habi_status(authorization: str = Header(None)):
@@ -737,7 +717,6 @@ async def get_habi_status(authorization: str = Header(None)):
             "status_message": status_message
         }
 
-
 @app.get("/api/habi/feeding-history")
 async def get_feeding_history(authorization: str = Header(None), limit: int = 10):
     """Pobierz historię karmienia Habi"""
@@ -775,7 +754,6 @@ async def get_feeding_history(authorization: str = Header(None), limit: int = 10
             ]
         }
 
-
 @app.get("/api/food-items")
 async def get_food_items():
     """Pobierz listę dostępnych produktów żywnościowych"""
@@ -792,8 +770,6 @@ async def get_food_items():
         ]
     }
 
-
-# Dodaj też endpoint do resetowania stanu Habi (dla testów)
 @app.post("/api/habi/reset")
 async def reset_habi_status(authorization: str = Header(None)):
     """Reset stanu Habi (tylko dla testów)"""
