@@ -234,9 +234,12 @@ async def get_user_coins(authorization: str = Header(None)):
 
         return {"coins": user["coins"], "user_id": user_id}
 
+
+# Zastąp swój istniejący endpoint @app.post("/api/coins/add") tym kodem:
+
 @app.post("/api/coins/add")
 async def add_coins(data: dict, authorization: str = Header(None)):
-    """Dodaj monety użytkownikowi (dla testów)"""
+    """Dodaj lub odejmij monety użytkownikowi (obsługuje ujemne wartości dla wydawania)"""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -247,13 +250,40 @@ async def add_coins(data: dict, authorization: str = Header(None)):
         raise HTTPException(status_code=401, detail="Nieprawidłowy token")
 
     amount = data.get('amount', 0)
-    if amount <= 0:
-        raise HTTPException(status_code=400, detail="Kwota musi być większa od 0")
+
+    # Usuń poprzednie ograniczenie amount > 0, aby umożliwić wydawanie monet
+    if amount == 0:
+        raise HTTPException(status_code=400, detail="Kwota nie może być równa 0")
 
     async with aiosqlite.connect("database.db") as db:
         await db.execute("PRAGMA foreign_keys = ON")
+        db.row_factory = aiosqlite.Row
 
-        # Dodaj monety
+        # Sprawdź obecną liczbę monet
+        cursor = await db.execute(
+            "SELECT coins FROM users WHERE id = ?",
+            (user_id,)
+        )
+        user = await cursor.fetchone()
+
+        if not user:
+            raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
+
+        current_coins = user["coins"]
+        new_coins = current_coins + amount
+
+        # Sprawdź czy użytkownik ma wystarczająco monet przy wydawaniu (ujemne amount)
+        if amount < 0 and current_coins < abs(amount):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Niewystarczająco monet. Potrzebujesz {abs(amount)}, masz {current_coins}"
+            )
+
+        # Nie pozwól na ujemną liczbę monet
+        if new_coins < 0:
+            raise HTTPException(status_code=400, detail="Liczba monet nie może być ujemna")
+
+        # Dodaj/odejmij monety
         await db.execute(
             "UPDATE users SET coins = coins + ? WHERE id = ?",
             (amount, user_id)
@@ -265,12 +295,15 @@ async def add_coins(data: dict, authorization: str = Header(None)):
             "SELECT coins FROM users WHERE id = ?",
             (user_id,)
         )
-        user = await cursor.fetchone()
+        updated_user = await cursor.fetchone()
+
+        action = "Dodano" if amount > 0 else "Wydano"
+        abs_amount = abs(amount)
 
         return {
-            "message": f"Dodano {amount} monet",
-            "coins": user[0] if user else 0,
-            "added": amount
+            "message": f"{action} {abs_amount} monet",
+            "coins": updated_user["coins"],
+            "change": amount
         }
 
 # Habit endpoints
@@ -568,62 +601,6 @@ async def spend_coins(data: dict, authorization: str = Header(None)):
         }
 
 # Dodaj ten kod do swojego main.py, tuż po endpoincie @app.post("/api/coins/add")
-
-@app.post("/api/coins/spend")
-async def spend_coins(data: dict, authorization: str = Header(None)):
-    """Wydaj monety użytkownika (dla FeedHabi)"""
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
-
-    token = authorization.replace("Bearer ", "")
-    user_id = verify_token(token)
-
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
-
-    amount = data.get('amount', 0)
-    if amount <= 0:
-        raise HTTPException(status_code=400, detail="Kwota musi być większa od 0")
-
-    async with aiosqlite.connect("database.db") as db:
-        await db.execute("PRAGMA foreign_keys = ON")
-        db.row_factory = aiosqlite.Row
-
-        # Sprawdź czy użytkownik ma wystarczająco monet
-        cursor = await db.execute(
-            "SELECT coins FROM users WHERE id = ?",
-            (user_id,)
-        )
-        user = await cursor.fetchone()
-
-        if not user:
-            raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
-
-        if user["coins"] < amount:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Niewystarczająco monet. Potrzebujesz {amount}, masz {user['coins']}"
-            )
-
-        # Odejmij monety
-        await db.execute(
-            "UPDATE users SET coins = coins - ? WHERE id = ?",
-            (amount, user_id)
-        )
-        await db.commit()
-
-        # Pobierz nową liczbę monet
-        cursor = await db.execute(
-            "SELECT coins FROM users WHERE id = ?",
-            (user_id,)
-        )
-        updated_user = await cursor.fetchone()
-
-        return {
-            "message": f"Wydano {amount} monet",
-            "remaining_coins": updated_user["coins"],
-            "spent": amount
-        }
 
 if __name__ == "__main__":
     import uvicorn

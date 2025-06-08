@@ -1,4 +1,4 @@
-// Zaktualizowany FeedHabi.js - tylko wydawanie monet
+// Poprawiony FeedHabi.js - używa /api/coins/add z ujemną wartością
 import React, { useState, useEffect, useRef } from 'react';
 import FoodControl from '../FoodControl/FoodControl';
 import HabiHappyAdult from './HabiAdultHappy.png';
@@ -20,33 +20,44 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
     { id: 6, name: "Kawa", cost: 20, icon: "☕", nutrition: 40 }
   ];
 
-  // Funkcja do wydawania monet z backend (bez zapisywania jedzenia)
+  // Funkcja do wydawania monet używając istniejącego endpointu
   const spendCoins = async (amount) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/coins/spend', {
+
+      // Użyj pełnego URL z domeną render.com
+      const baseUrl = window.location.hostname.includes('localhost')
+        ? 'http://localhost:10000'
+        : 'https://habi-backend.onrender.com';
+
+      console.log(`🔄 Wydawanie ${amount} monet za jedzenie...`);
+
+      const response = await fetch(`${baseUrl}/api/coins/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ amount })
+        body: JSON.stringify({ amount: -amount }) // Ujemna wartość = wydawanie
       });
 
       const data = await response.json();
+      console.log('📦 Odpowiedź serwera:', data);
 
       if (response.ok) {
         return {
           success: true,
-          remainingCoins: data.remaining_coins
+          remainingCoins: data.coins
         };
       } else {
+        console.error('❌ Błąd serwera:', data);
         return {
           success: false,
           error: data.detail || 'Błąd wydawania monet'
         };
       }
     } catch (error) {
+      console.error('❌ Błąd spendCoins:', error);
       return {
         success: false,
         error: 'Błąd połączenia z serwerem'
@@ -55,6 +66,8 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
   };
 
   const handlePurchase = async (item) => {
+    console.log(`🛒 Próba zakupu ${item.name} za ${item.cost} monet`);
+
     if (currentCoins < item.cost) {
       alert(`Potrzebujesz ${item.cost} monet, ale masz tylko ${currentCoins}!`);
       return;
@@ -67,11 +80,15 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
       const result = await spendCoins(item.cost);
 
       if (result.success) {
+        console.log(`✅ Zakup udany! Pozostało monet: ${result.remainingCoins}`);
+
         // Aktualizuj monety lokalnie
         setCurrentCoins(result.remainingCoins);
-        onCoinsUpdate(result.remainingCoins);
+        if (onCoinsUpdate) {
+          onCoinsUpdate(result.remainingCoins);
+        }
 
-        // Nakarm Habi lokalnie (FoodControl się zajmie synchronizacją)
+        // Nakarm Habi lokalnie
         if (foodControlRef.current) {
           foodControlRef.current.feedHabi(item.nutrition);
         }
@@ -87,10 +104,11 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
         setTimeout(() => setPurchaseAnimation(null), 3000);
 
       } else {
-        alert(result.error);
+        console.error('❌ Zakup nieudany:', result.error);
+        alert(result.error || 'Błąd podczas zakupu');
       }
     } catch (error) {
-      console.error('Błąd zakupu:', error);
+      console.error('❌ Błąd handlePurchase:', error);
       alert('Błąd podczas zakupu');
     } finally {
       setLoading(false);
@@ -155,18 +173,23 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
                   <span className="coin-icon">🪙</span>
                   <span className="price-value">{item.cost}</span>
                 </div>
+                {!canAfford && (
+                  <div className="food-item-overlay">
+                    <span>{loading ? 'Kupowanie...' : 'Brak monet'}</span>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
 
-        {/* Habi Character Section z Food Control */}
+        {/* Habi Character Section */}
         <div className="habi-character-section">
           <div className="habi-avatar-large">
             <img src={HabiHappyAdult} alt="Habi" className="habi-image" />
           </div>
 
-          {/* Food Control - pokazuje stan głodu i zarządza nim lokalnie */}
+          {/* Food Control */}
           <div className="food-control-side">
             <FoodControl ref={foodControlRef} />
           </div>
@@ -178,9 +201,18 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
             <span className="tip-icon">💡</span>
             <div className="tip-content">
               <strong>Wskazówka:</strong> Kliknij na jedzenie aby wydać monety i nakarmić Habi!
-              Stan sytości jest zapisywany lokalnie i zmniejsza się z czasem.
+              Stan sytości zmniejsza się z czasem.
             </div>
           </div>
+
+          {currentCoins < 8 && (
+            <div className="tip-card warning">
+              <span className="tip-icon">⚠️</span>
+              <div className="tip-content">
+                <strong>Uwaga:</strong> Masz mało monet! Wykonaj więcej nawyków aby zdobyć monety.
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
