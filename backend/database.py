@@ -147,41 +147,15 @@ CREATE_TABLES_SQL = """
                         );
 
 -- Tabela nagród/jedzenia
-                    CREATE TABLE IF NOT EXISTS rewards \
-                    ( \
-                        id \
-                        INTEGER \
-                        PRIMARY \
-                        KEY \
-                        AUTOINCREMENT, \
-                        name \
-                        TEXT \
-                        NOT \
-                        NULL, \
-                        cost \
-                        INTEGER \
-                        NOT \
-                        NULL, \
-                        happiness_boost \
-                        INTEGER \
-                        DEFAULT \
-                        10, \
-                        hunger_reduction \
-                        INTEGER \
-                        DEFAULT \
-                        20, \
-                        type \
-                        TEXT \
-                        DEFAULT \
-                        'food' \
-                        CHECK ( \
-                        type \
-                        IN \
-                    ( \
-                        'food', \
-                        'accessory' \
-                    ))
-                        );
+                    CREATE TABLE IF NOT EXISTS rewards (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    cost INTEGER NOT NULL,
+    nutrition_value INTEGER NOT NULL,  -- Wartość odżywiania dla Habi
+    icon TEXT DEFAULT '🍎',           -- Emoji do wyświetlania
+    type TEXT DEFAULT 'food' 
+    CHECK (type IN ('food', 'accessory'))
+);
 
 -- Tabela zakupów użytkowników
                     CREATE TABLE IF NOT EXISTS purchases \
@@ -226,12 +200,12 @@ CREATE_TABLES_SQL = """
                     """
 
 DEFAULT_REWARDS = [
-    ("Banan", 1, 5, 10, "food"),
-    ("Jabłko", 1, 5, 10, "food"),
-    ("Orzech", 5, 10, 20, "food"),
-    ("Kawa", 10, 20, 30, "food"),
-    ("Mięso", 10, 20, 25, "food"),
-    ("Sałatka", 20, 50, 50, "food")
+    ("Woda", 1, 5, "🥤", "food"),
+    ("Banan", 3, 15, "🍌", "food"),
+    ("Jabłko", 3, 15, "🍎", "food"),
+    ("Mięso", 8, 25, "🥩", "food"),
+    ("Sałatka", 8, 25, "🥗", "food"),
+    ("Kawa", 20, 40, "☕", "food")
 ]
 
 

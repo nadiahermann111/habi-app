@@ -1,11 +1,10 @@
 .feed-habi {
   min-height: 100vh;
-  background: linear-gradient(135deg, #faf5cc 0%, #fff9c3 100%);
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
 }
 
 .feed-habi-container {
@@ -16,31 +15,20 @@
 
 @media (min-width: 768px) {
   .feed-habi-container {
-    max-width: 800px;
+    max-width: 600px;
     padding: 24px;
   }
 }
 
-@media (min-width: 1024px) {
-  .feed-habi-container {
-    max-width: 1000px;
-    padding: 32px;
-  }
-}
-
-/* Header styles */
+/* Header */
 .feed-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
-  padding: 12px 16px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  position: sticky;
-  top: env(safe-area-inset-top, 20px);
-  z-index: 100;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -48,22 +36,18 @@
 .feed-header-left {
   display: flex;
   align-items: center;
-  min-width: 0;
-  flex: 1;
+  gap: 12px;
 }
 
 .feed-back-btn {
   background: none;
   border: none;
-  font-size: 20px;
+  font-size: 24px;
   cursor: pointer;
-  margin-right: 12px;
-  color: #6c5b2f;
+  color: #d97706;
   transition: transform 0.2s ease;
   padding: 8px;
-  border-radius: 8px;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
+  border-radius: 12px;
   min-width: 44px;
   min-height: 44px;
   display: flex;
@@ -73,39 +57,196 @@
 
 .feed-back-btn:active {
   transform: scale(0.95);
-  background-color: rgba(108, 91, 47, 0.1);
+  background-color: rgba(217, 119, 6, 0.1);
 }
 
 .feed-header h2 {
   margin: 0;
-  color: #6c5b2f;
-  font-weight: 600;
-  font-size: 18px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: #d97706;
+  font-weight: 700;
+  font-size: 28px;
+  text-transform: lowercase;
+  letter-spacing: 2px;
+}
+
+.habi-logo {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .feed-coins-display {
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, #f4d03f 0%, #f7dc6f 100%);
-  padding: 8px 12px;
-  border-radius: 20px;
-  border: 1px solid #f1c40f;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  flex-shrink: 0;
+  background: #fbbf24;
+  padding: 8px 16px;
+  border-radius: 25px;
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
+  gap: 6px;
 }
 
 .feed-coins-display span:first-child {
   font-size: 16px;
-  margin-right: 4px;
 }
 
 .feed-coins-display span:last-child {
-  font-weight: 600;
-  color: #6c5b2f;
+  font-weight: 700;
+  color: #92400e;
+  font-size: 16px;
+}
+
+/* Food Items Grid - 3x2 layout like in image */
+.food-items-grid-redesigned {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 480px) {
+  .food-items-grid-redesigned {
+    gap: 12px;
+    max-width: 350px;
+  }
+}
+
+/* Food Item Cards */
+.food-item-redesigned {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  border: 2px solid #fbbf24;
+}
+
+.food-item-redesigned:hover:not(.disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  border-color: #f59e0b;
+}
+
+.food-item-redesigned:active:not(.disabled) {
+  transform: translateY(0);
+}
+
+.food-item-redesigned.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.food-item-image {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.food-emoji {
+  font-size: 32px;
+  transition: transform 0.2s ease;
+}
+
+.food-item-redesigned:hover:not(.disabled) .food-emoji {
+  transform: scale(1.1);
+}
+
+.food-item-price {
+  background: #fbbf24;
+  border-radius: 20px;
+  padding: 4px 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.coin-icon {
+  font-size: 12px;
+}
+
+.price-value {
+  font-weight: 700;
+  color: #92400e;
   font-size: 14px;
+}
+
+/* Habi Character Section */
+.habi-character-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 32px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+@media (max-width: 768px) {
+  .habi-character-section {
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+.habi-avatar-large {
+  flex-shrink: 0;
+}
+
+.habi-image {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
+  animation: float-habi 3s ease-in-out infinite;
+}
+
+@keyframes float-habi {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@media (max-width: 768px) {
+  .habi-image {
+    width: 150px;
+    height: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .habi-image {
+    width: 120px;
+    height: 120px;
+  }
+}
+
+.food-control-side {
+  flex: 1;
+  max-width: 300px;
+}
+
+@media (max-width: 768px) {
+  .food-control-side {
+    width: 100%;
+    max-width: 400px;
+  }
 }
 
 /* Purchase Animation */
@@ -115,7 +256,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -132,6 +273,7 @@
   animation: popIn 0.3s ease;
   max-width: 300px;
   margin: 20px;
+  border: 3px solid #fbbf24;
 }
 
 .purchase-icon {
@@ -143,13 +285,13 @@
 .purchase-text {
   font-size: 18px;
   font-weight: 600;
-  color: #6c5b2f;
+  color: #d97706;
   margin-bottom: 8px;
 }
 
 .purchase-nutrition {
   font-size: 14px;
-  color: #28a745;
+  color: #059669;
   font-weight: 500;
 }
 
@@ -174,162 +316,6 @@
   to { transform: translateY(-10px); }
 }
 
-/* Food Items Grid */
-.food-items-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
-  margin-bottom: 32px;
-}
-
-@media (min-width: 640px) {
-  .food-items-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .food-items-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-/* Food Item Card */
-.food-item-card {
-  background: white;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.food-item-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-}
-
-.food-item-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
-  gap: 12px;
-}
-
-.food-item-icon {
-  font-size: 32px;
-  flex-shrink: 0;
-}
-
-.food-item-name {
-  margin: 0;
-  color: #6c5b2f;
-  font-weight: 600;
-  font-size: 18px;
-  flex: 1;
-}
-
-/* Size Buttons */
-.food-item-sizes {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.size-button {
-  width: 100%;
-  padding: 12px;
-  border: 2px solid #e9ecef;
-  border-radius: 12px;
-  background: #f8f9fa;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.size-button:hover:not(.disabled) {
-  border-color: #f1c40f;
-  background: #fff;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(241, 196, 15, 0.2);
-}
-
-.size-button:active:not(.disabled) {
-  transform: translateY(0);
-}
-
-.size-button.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: #e9ecef;
-}
-
-.size-button.purchasing {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  border-color: #28a745;
-  color: white;
-  animation: pulse 0.5s ease;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
-}
-
-.size-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.size-label {
-  display: inline-block;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.size-details {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  text-align: left;
-}
-
-.size-cost {
-  font-size: 14px;
-  font-weight: 600;
-  color: #6c5b2f;
-  margin-bottom: 2px;
-}
-
-.size-nutrition {
-  font-size: 12px;
-  color: #28a745;
-  font-weight: 500;
-}
-
-/* Food Control Section */
-.food-control-section {
-  margin-bottom: 32px;
-}
-
-.section-title {
-  color: #6c5b2f;
-  font-weight: 600;
-  font-size: 20px;
-  margin: 0 0 16px 0;
-  text-align: center;
-}
-
 /* Tips Section */
 .feed-tips {
   display: flex;
@@ -337,22 +323,16 @@
   gap: 12px;
 }
 
-@media (min-width: 768px) {
-  .feed-tips {
-    flex-direction: row;
-    gap: 16px;
-  }
-}
-
 .tip-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.8);
   padding: 16px;
-  border-radius: 12px;
+  border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  flex: 1;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .tip-icon {
@@ -364,11 +344,11 @@
 .tip-content {
   font-size: 14px;
   line-height: 1.5;
-  color: #6c757d;
+  color: #374151;
 }
 
 .tip-content strong {
-  color: #6c5b2f;
+  color: #d97706;
   display: block;
   margin-bottom: 4px;
 }
@@ -380,28 +360,28 @@
   }
 
   .feed-header {
-    padding: 12px;
-    margin-bottom: 16px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
   }
 
   .feed-header h2 {
-    font-size: 16px;
+    font-size: 24px;
   }
 
-  .food-item-card {
-    padding: 16px;
+  .habi-logo {
+    height: 28px;
   }
 
-  .food-item-icon {
+  .food-emoji {
     font-size: 28px;
   }
 
-  .food-item-name {
-    font-size: 16px;
+  .price-value {
+    font-size: 12px;
   }
 
-  .section-title {
-    font-size: 18px;
+  .habi-character-section {
+    padding: 16px;
   }
 
   .purchase-popup {
@@ -421,43 +401,32 @@
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .feed-habi {
-    background: linear-gradient(135deg, #2c2c2c 0%, #3c3c3c 100%);
+    background: linear-gradient(135deg, #451a03 0%, #7c2d12 100%);
   }
 
   .feed-header,
-  .food-item-card,
+  .food-item-redesigned:not(.disabled),
   .tip-card,
-  .purchase-popup {
-    background: #2d3748;
-    color: #e2e8f0;
+  .purchase-popup,
+  .habi-character-section {
+    background: rgba(55, 65, 81, 0.9);
+    color: #f3f4f6;
   }
 
   .feed-header h2,
-  .food-item-name,
-  .section-title {
-    color: #e2e8f0;
+  .purchase-text {
+    color: #fbbf24;
   }
 
   .tip-content {
-    color: #a0aec0;
+    color: #d1d5db;
   }
 
   .tip-content strong {
-    color: #e2e8f0;
+    color: #fbbf24;
   }
 
-  .size-button {
-    background: #4a5568;
-    border-color: #4a5568;
-    color: #e2e8f0;
-  }
-
-  .size-button.disabled {
-    background: #2d3748;
-    border-color: #2d3748;
-  }
-
-  .size-cost {
-    color: #e2e8f0;
+  .food-item-redesigned.disabled {
+    background: rgba(31, 41, 55, 0.8);
   }
 }

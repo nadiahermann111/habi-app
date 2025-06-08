@@ -4,6 +4,7 @@ import './FoodControl.css';
 const FoodControl = forwardRef(({ onFeed }, ref) => {
   const [foodLevel, setFoodLevel] = useState(100);
   const [lastUpdate, setLastUpdate] = useState(Date.now());
+  const [showInfoPopup, setShowInfoPopup] = useState(false);
 
   useImperativeHandle(ref, () => ({
     feedHabi: (nutritionAmount) => {
@@ -96,21 +97,6 @@ const FoodControl = forwardRef(({ onFeed }, ref) => {
     return '😵';
   };
 
-  const feedHabiDirect = () => {
-    if (foodLevel < 100) {
-      const newLevel = Math.min(100, foodLevel + 20);
-      const currentTime = Date.now();
-      setFoodLevel(newLevel);
-      setLastUpdate(currentTime);
-      localStorage.setItem('habiFoodLevel', newLevel.toString());
-      localStorage.setItem('habiLastUpdate', currentTime.toString());
-
-      if (onFeed) {
-        onFeed(20);
-      }
-    }
-  };
-
   const getTimeUntilNextHunger = () => {
     const currentTime = Date.now();
     const savedLastUpdate = localStorage.getItem('habiLastUpdate');
@@ -124,30 +110,115 @@ const FoodControl = forwardRef(({ onFeed }, ref) => {
     return 60;
   };
 
+  const getLastFeedTime = () => {
+    const savedLastUpdate = localStorage.getItem('habiLastUpdate');
+    if (savedLastUpdate) {
+      const lastUpdate = new Date(parseInt(savedLastUpdate));
+      return lastUpdate.toLocaleTimeString('pl-PL', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    return 'Nieznany';
+  };
+
   return (
-    <div className="food-control">
-      <div className="habi-character">
-        <div className="habi-face">
-          <span className="habi-mood">{getHabiMood()}</span>
+    <div className="food-control-compact">
+      {/* Info Popup */}
+      {showInfoPopup && (
+        <div className="info-popup-overlay" onClick={() => setShowInfoPopup(false)}>
+          <div className="info-popup" onClick={e => e.stopPropagation()}>
+            <div className="info-popup-header">
+              <h3>Informacje o Habi</h3>
+              <button
+                className="close-popup-btn"
+                onClick={() => setShowInfoPopup(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="info-popup-content">
+              <div className="habi-avatar">
+                <div className="habi-face-popup">
+                  <span className="habi-mood-popup">{getHabiMood()}</span>
+                </div>
+                <div className="habi-name-popup">Habi</div>
+              </div>
+
+              <div className="info-section">
+                <h4>📊 Statystyki</h4>
+                <div className="info-stats">
+                  <div className="info-stat">
+                    <span className="stat-label">Poziom sytości:</span>
+                    <span className="stat-value">{foodLevel}%</span>
+                  </div>
+                  <div className="info-stat">
+                    <span className="stat-label">Ostatnie karmienie:</span>
+                    <span className="stat-value">{getLastFeedTime()}</span>
+                  </div>
+                  <div className="info-stat">
+                    <span className="stat-label">Następny spadek za:</span>
+                    <span className="stat-value">{getTimeUntilNextHunger()} min</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="info-section">
+                <h4>🎯 Cele i zasady</h4>
+                <div className="info-rules">
+                  <div className="rule-item">
+                    <span className="rule-icon">⏰</span>
+                    <span>Spadek sytości: -5% co godzinę</span>
+                  </div>
+                  <div className="rule-item">
+                    <span className="rule-icon">🎯</span>
+                    <span>Cel: Utrzymaj poziom >50%</span>
+                  </div>
+                  <div className="rule-item">
+                    <span className="rule-icon">🍎</span>
+                    <span>Kupuj jedzenie za monety</span>
+                  </div>
+                  <div className="rule-item">
+                    <span className="rule-icon">💪</span>
+                    <span>Większe porcje = więcej odżywiania</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="info-section">
+                <h4>💡 Wskazówki</h4>
+                <div className="tips-list">
+                  <p>• Regularne karmienie utrzymuje wysoką motywację</p>
+                  <p>• Wykonywanie nawyków daje monety na jedzenie</p>
+                  <p>• Różne produkty mają różną wartość odżywczą</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="habi-name">Habi</div>
+      )}
+
+      {/* Compact Food Control Bar */}
+      <div className="food-control-header">
+        <div className="food-control-left">
+          <button
+            className="info-btn"
+            onClick={() => setShowInfoPopup(true)}
+            title="Informacje o Habi"
+          >
+            ℹ️
+          </button>
+          <span className="habi-mood-small">{getHabiMood()}</span>
+          <span className="food-control-title">Stan Habi</span>
+        </div>
+
       </div>
 
-      <div className="food-status-section">
-        <div className="food-status">{getFoodStatus()}</div>
-        <div className="next-hunger">
-          Następny spadek za {getTimeUntilNextHunger()} min
-        </div>
-      </div>
-
-      <div className="food-bar-container">
-        <div className="food-bar-label">
-          <span>Poziom sytości</span>
-          <span className="food-percentage">{foodLevel}%</span>
-        </div>
-        <div className="food-bar-background">
+      <div className="food-bar-compact">
+        <div className="food-bar-background-compact">
           <div
-            className="food-bar-fill"
+            className="food-bar-fill-compact"
             style={{
               width: `${foodLevel}%`,
               backgroundColor: getFoodBarColor(),
@@ -157,36 +228,8 @@ const FoodControl = forwardRef(({ onFeed }, ref) => {
         </div>
       </div>
 
-      <div className="feed-actions">
-        <button
-          onClick={feedHabiDirect}
-          className={`feed-button ${foodLevel >= 100 ? 'disabled' : ''}`}
-          disabled={foodLevel >= 100}
-        >
-          <span className="feed-icon">🍽️</span>
-          Nakarm Habi (+20%)
-        </button>
-
-        <div className="feed-tip">
-          💡 Kup jedzenie powyżej aby nakarmić Habi bardziej efektywnie!
-        </div>
-      </div>
-
-      <div className="food-stats">
-        <div className="stat-item">
-          <span className="stat-icon">⏰</span>
-          <div className="stat-info">
-            <div className="stat-label">Spadek co godzinę</div>
-            <div className="stat-value">-5%</div>
-          </div>
-        </div>
-        <div className="stat-item">
-          <span className="stat-icon">🎯</span>
-          <div className="stat-info">
-            <div className="stat-label">Cel</div>
-            <div className="stat-value">Utrzymaj >50%</div>
-          </div>
-        </div>
+      <div className="food-status-compact">
+        {getFoodStatus()}
       </div>
     </div>
   );
