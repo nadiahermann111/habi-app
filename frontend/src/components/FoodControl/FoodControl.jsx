@@ -2,62 +2,71 @@ import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'rea
 import './FoodControl.css';
 
 const FoodControl = forwardRef(({ onFeed }, ref) => {
+  // Stan przechowujący aktualny poziom sytości Habi (0-100%)
   const [foodLevel, setFoodLevel] = useState(100);
+  // Stan przechowujący timestamp ostatniej aktualizacji poziomu sytości
   const [lastUpdate, setLastUpdate] = useState(Date.now());
+  // Stan kontrolujący wyświetlanie popup'u z informacjami o Habi
   const [showInfoPopup, setShowInfoPopup] = useState(false);
 
+  // Expose funkcji feedHabi dla parent komponentów przez ref
   useImperativeHandle(ref, () => ({
     feedHabi: (nutritionAmount) => {
+      // Zwiększenie poziomu sytości, maksymalnie do 100%
       const newLevel = Math.min(100, foodLevel + nutritionAmount);
       const currentTime = Date.now();
       setFoodLevel(newLevel);
       setLastUpdate(currentTime);
+
+      // Zapisanie aktualnego stanu w localStorage
       localStorage.setItem('habiFoodLevel', newLevel.toString());
       localStorage.setItem('habiLastUpdate', currentTime.toString());
 
+      // Wywołanie callback funkcji jeśli została przekazana
       if (onFeed) {
         onFeed(nutritionAmount);
       }
 
-      // Dodaj wizualny efekt karmienia
+      // Log debugujący efekt karmienia
       console.log(`🍽️ Habi zjadł jedzenie! +${nutritionAmount} sytości (${newLevel}%)`);
     }
   }));
 
+  // Inicjalizacja stanu sytości przy pierwszym załadowaniu komponentu
   useEffect(() => {
-    // Załaduj dane z localStorage przy starcie
+    // Załadowanie zapisanych danych z localStorage
     const savedFoodLevel = localStorage.getItem('habiFoodLevel');
     const savedLastUpdate = localStorage.getItem('habiLastUpdate');
 
     if (savedFoodLevel && savedLastUpdate) {
       const currentTime = Date.now();
       const timeDiff = currentTime - parseInt(savedLastUpdate);
-      const hoursPassed = timeDiff / (1000 * 60 * 60); // dokładne godziny
+      const hoursPassed = timeDiff / (1000 * 60 * 60); // konwersja na godziny
 
-      // Spadek głodu: 2 punkty na godzinę (można dostosować)
+      // Obliczenie spadku głodu: 2 punkty na godzinę
       let newFoodLevel = parseInt(savedFoodLevel) - (hoursPassed * 2);
-      newFoodLevel = Math.max(0, newFoodLevel); // Nie może być poniżej 0
+      newFoodLevel = Math.max(0, newFoodLevel); // minimum 0%
 
       setFoodLevel(Math.round(newFoodLevel));
       setLastUpdate(currentTime);
 
-      // Zapisz nowy stan jeśli znacząco się zmienił
+      // Zapisanie nowego stanu jeśli znacząco się zmienił
       if (Math.abs(newFoodLevel - parseInt(savedFoodLevel)) > 1) {
         localStorage.setItem('habiFoodLevel', Math.round(newFoodLevel).toString());
         localStorage.setItem('habiLastUpdate', currentTime.toString());
       }
     } else {
-      // Pierwszy raz - ustaw domyślny poziom
+      // Pierwsza wizyta - ustawienie domyślnego poziomu sytości
       const currentTime = Date.now();
-      setFoodLevel(75); // Zacznij z 75% zamiast 100%
+      setFoodLevel(75); // Start z 75% zamiast pełnej sytości
       setLastUpdate(currentTime);
       localStorage.setItem('habiFoodLevel', '75');
       localStorage.setItem('habiLastUpdate', currentTime.toString());
     }
   }, []);
 
+  // Nasłuchiwanie na deweloperskie eventy zmiany poziomu sytości
   useEffect(() => {
-    // Słuchacz eventów z Dashboard (deweloperskie zmiany poziomu)
     const handleFoodLevelChange = (event) => {
       if (event.detail && typeof event.detail.newLevel === 'number') {
         console.log(`🔧 DEV: Zmiana poziomu sytości Habi na ${event.detail.newLevel}%`);
@@ -73,8 +82,9 @@ const FoodControl = forwardRef(({ onFeed }, ref) => {
     };
   }, []);
 
+  // Periodyczne sprawdzanie i aktualizacja poziomu sytości
   useEffect(() => {
-    // Ustaw interval do sprawdzania co 30 sekund (częściej dla płynności)
+    // Interval sprawdzający co 30 sekund dla płynności animacji
     const interval = setInterval(() => {
       const currentTime = Date.now();
       const savedLastUpdate = localStorage.getItem('habiLastUpdate');
@@ -83,10 +93,10 @@ const FoodControl = forwardRef(({ onFeed }, ref) => {
         const timeDiff = currentTime - parseInt(savedLastUpdate);
         const hoursPassed = timeDiff / (1000 * 60 * 60);
 
-        // Aktualizuj co ~6 minut (0.1 godziny)
+        // Aktualizacja co około 6 minut (0.1 godziny)
         if (hoursPassed >= 0.1) {
           setFoodLevel(prevLevel => {
-            const decrease = hoursPassed * 2; // 2 punkty na godzinę
+            const decrease = hoursPassed * 2; // spadek 2 punkty na godzinę
             const newLevel = Math.max(0, prevLevel - decrease);
             localStorage.setItem('habiFoodLevel', Math.round(newLevel).toString());
             localStorage.setItem('habiLastUpdate', currentTime.toString());
@@ -95,18 +105,20 @@ const FoodControl = forwardRef(({ onFeed }, ref) => {
           setLastUpdate(currentTime);
         }
       }
-    }, 30000); // Sprawdzaj co 30 sekund
+    }, 30000); // sprawdzenie co 30 sekund
 
     return () => clearInterval(interval);
   }, []);
 
+  // Funkcja określająca kolor paska sytości na podstawie poziomu
   const getFoodBarColor = () => {
-    if (foodLevel > 60) return '#4CAF50'; // Zielony
-    if (foodLevel > 30) return '#FFC107'; // Żółty
-    if (foodLevel > 10) return '#FF9800'; // Pomarańczowy
-    return '#F44336'; // Czerwony
+    if (foodLevel > 60) return '#4CAF50'; // zielony - bardzo dobry stan
+    if (foodLevel > 30) return '#FFC107'; // żółty - dobry stan
+    if (foodLevel > 10) return '#FF9800'; // pomarańczowy - niski poziom
+    return '#F44336'; // czerwony - krytyczny poziom
   };
 
+  // Funkcja generująca opis stanu Habi na podstawie poziomu sytości
   const getFoodStatus = () => {
     if (foodLevel > 80) return 'Habi jest bardzo szczęśliwy! 😄';
     if (foodLevel > 60) return 'Habi czuje się świetnie! 😊';
@@ -116,6 +128,7 @@ const FoodControl = forwardRef(({ onFeed }, ref) => {
     return 'Habi jest bardzo głodny! 😢';
   };
 
+  // Funkcja zwracająca emoji nastroju Habi
   const getHabiMood = () => {
     if (foodLevel > 80) return '😄';
     if (foodLevel > 60) return '😊';
@@ -125,6 +138,7 @@ const FoodControl = forwardRef(({ onFeed }, ref) => {
     return '😢';
   };
 
+  // Funkcja obliczająca czas do następnego spadku sytości
   const getTimeUntilNextHunger = () => {
     const currentTime = Date.now();
     const savedLastUpdate = localStorage.getItem('habiLastUpdate');
@@ -138,6 +152,7 @@ const FoodControl = forwardRef(({ onFeed }, ref) => {
     return 30;
   };
 
+  // Funkcja formatująca czas ostatniego karmienia
   const getLastFeedTime = () => {
     const savedLastUpdate = localStorage.getItem('habiLastUpdate');
     if (savedLastUpdate) {
@@ -152,7 +167,7 @@ const FoodControl = forwardRef(({ onFeed }, ref) => {
 
   return (
     <div className="food-control-compact">
-      {/* Info Popup */}
+      {/* Popup z szczegółowymi informacjami o Habi */}
       {showInfoPopup && (
         <div className="info-popup-overlay" onClick={() => setShowInfoPopup(false)}>
           <div className="info-popup" onClick={e => e.stopPropagation()}>
@@ -167,6 +182,7 @@ const FoodControl = forwardRef(({ onFeed }, ref) => {
             </div>
 
             <div className="info-popup-content">
+              {/* Avatar Habi z aktualnym nastrojem */}
               <div className="habi-avatar">
                 <div className="habi-face-popup">
                   <span className="habi-mood-popup">{getHabiMood()}</span>
@@ -174,6 +190,7 @@ const FoodControl = forwardRef(({ onFeed }, ref) => {
                 <div className="habi-name-popup">Habi</div>
               </div>
 
+              {/* Sekcja ze statystykami */}
               <div className="info-section">
                 <h4>📊 Statystyki</h4>
                 <div className="info-stats">
@@ -192,6 +209,7 @@ const FoodControl = forwardRef(({ onFeed }, ref) => {
                 </div>
               </div>
 
+              {/* Sekcja z mechaniką gry */}
               <div className="info-section">
                 <h4>🎯 Mechanika</h4>
                 <div className="info-rules">
@@ -214,6 +232,7 @@ const FoodControl = forwardRef(({ onFeed }, ref) => {
                 </div>
               </div>
 
+              {/* Sekcja z poradami */}
               <div className="info-section">
                 <h4>💡 Wskazówki</h4>
                 <div className="tips-list">
@@ -228,7 +247,7 @@ const FoodControl = forwardRef(({ onFeed }, ref) => {
         </div>
       )}
 
-      {/* Compact Food Control Bar */}
+      {/* Kompaktowy pasek kontroli jedzenia */}
       <div className="food-control-header">
         <div className="food-control-left">
           <button
@@ -243,6 +262,7 @@ const FoodControl = forwardRef(({ onFeed }, ref) => {
         </div>
       </div>
 
+      {/* Pasek wizualizacji poziomu sytości */}
       <div className="food-bar-compact">
         <div className="food-bar-background-compact">
           <div
@@ -256,6 +276,7 @@ const FoodControl = forwardRef(({ onFeed }, ref) => {
         </div>
       </div>
 
+      {/* Opis aktualnego stanu Habi */}
       <div className="food-status-compact">
         {getFoodStatus()}
       </div>

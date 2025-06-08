@@ -35,7 +35,6 @@
   }
 }
 
-/* Header styles - optimized for mobile */
 .habit-header {
   display: flex;
   align-items: center;
@@ -94,42 +93,31 @@
   text-overflow: ellipsis;
 }
 
+.habi-logo {
+  height: 24px;
+  width: auto;
+  margin-left: 8px;
+}
+
+.habi-logo-k {
+  height: 24px;
+  width: auto;
+  margin-left: 8px;
+}
 
 @media (min-width: 480px) {
-  .habi-logo {
+  .habi-logo, .habi-logo-k {
     height: 30px;
   }
 }
 
 @media (min-width: 768px) {
-  .habi-logo {
+  .habi-logo, .habi-logo-k {
     height: 30px;
   }
 }
 
-.habit-coins-display {
-  display: flex;
-  align-items: center;
-  background: linear-gradient(135deg, #f4d03f 0%, #fff1bd 100%);
-  padding: 6px 10px;
-  border-radius: 20px;
-  border: 1px solid #f1c40f;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  flex-shrink: 0;
-}
 
-.habit-coins-display span:first-child {
-  font-size: 15px;
-  margin-right: 4px;
-}
-
-.habit-coins-display span:last-child {
-  font-weight: 600;
-  color: #6c5b2f;
-  font-size: 14px;
-}
-
-/* Add habit button - mobile optimized */
 .add-habit-btn {
   width: 100%;
   padding: 16px;
@@ -161,7 +149,6 @@
   margin-right: 8px;
 }
 
-/* Form styles - mobile first */
 .habit-form {
   background: white;
   padding: 20px;
@@ -265,7 +252,6 @@
   transform: scale(1.05);
 }
 
-/* Slider styles - mobile optimized */
 .coin-slider {
   margin-bottom: 24px;
 }
@@ -311,7 +297,6 @@
   font-weight: 500;
 }
 
-/* Submit button - mobile optimized */
 .submit-btn {
   width: 100%;
   padding: 16px;
@@ -342,7 +327,6 @@
   box-shadow: none;
 }
 
-/* Empty state */
 .empty-state {
   text-align: center;
   padding: 40px 20px;
@@ -370,7 +354,6 @@
   line-height: 1.5;
 }
 
-/* KOMPAKTOWE KARTY NAWYKÓW */
 .habit-card {
   background: white;
   padding: 12px 16px;
@@ -406,7 +389,6 @@
   transform: none;
 }
 
-/* NOWY HEADER Z PRZYCISKIEM KOSZA */
 .habit-card-header {
   display: flex;
   align-items: center;
@@ -457,7 +439,6 @@
   overflow: hidden;
 }
 
-/* AKCJE PO PRAWEJ STRONIE */
 .habit-actions {
   display: flex;
   align-items: center;
@@ -486,7 +467,6 @@
   font-size: 11px;
 }
 
-/* PRZYCISK KOSZA */
 .habit-delete-btn {
   background: none;
   border: none;
@@ -514,7 +494,6 @@
   opacity: 1;
 }
 
-/* Completed indicator - bardziej kompaktowy */
 .completed-indicator {
   text-align: center;
   padding: 8px;
@@ -526,7 +505,136 @@
   margin-top: 8px;
 }
 
-/* PWA specific optimizations */
+.local-badge {
+  font-size: 10px;
+  margin-left: 4px;
+  opacity: 0.7;
+}
+
+.limit-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 13px;
+  border: 1px solid #e9ecef;
+}
+
+.limit-exceeded {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.limit-warning {
+  color: #dc3545;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.limits-legend {
+  background: linear-gradient(135deg, #fff9e6 0%, #fff3d3 100%);
+  border: 2px solid #f4d03f;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 20px 0;
+  box-shadow: 0 2px 8px rgba(244, 208, 63, 0.1);
+}
+
+.limits-legend h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #6c5b2f;
+  font-weight: 600;
+  text-align: center;
+}
+
+.limits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 8px;
+  font-size: 11px;
+  color: #6c5b2f;
+  font-weight: 500;
+  text-align: center;
+}
+
+.limits-grid > div {
+  padding: 6px 4px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #f4d03f;
+}
+
+.submit-btn:disabled {
+  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%) !important;
+  color: #6c757d !important;
+  cursor: not-allowed !important;
+  opacity: 0.7 !important;
+  box-shadow: none !important;
+}
+
+.submit-btn:disabled:active {
+  transform: none !important;
+}
+
+.error-message {
+  background: linear-gradient(135deg, #ffe6e6 0%, #ffcccc 100%);
+  border: 2px solid #dc3545;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.error-message > div {
+  color: #dc3545;
+  font-size: 13px;
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+}
+
+.error-message button {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.error-message button:active {
+  transform: scale(0.95);
+  background: #c82333;
+}
+
+.offline-indicator {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border: 2px solid #ffc107;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  color: #856404;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.1);
+}
+
 @media (display-mode: standalone) {
   .habit-tracker {
     padding-top: env(safe-area-inset-top);
@@ -538,7 +646,6 @@
   }
 }
 
-/* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .habit-tracker {
     background: linear-gradient(135deg, #2c2c2c 0%, #3c3c3c 100%);
@@ -574,9 +681,75 @@
     background: #4a5568;
     border-color: #4a5568;
   }
+
+  /* Dark mode dla limitów */
+  .limits-legend {
+    background: linear-gradient(135deg, #3d4142 0%, #4a5568 100%);
+    border-color: #f4d03f;
+  }
+
+  .limits-legend h4 {
+    color: #e2e8f0;
+  }
+
+  .limits-grid > div {
+    background: #2d3748;
+    color: #e2e8f0;
+    border-color: #f4d03f;
+  }
+
+  .limit-info {
+    background: #4a5568;
+    border-color: #4a5568;
+    color: #e2e8f0;
+  }
+
+  .error-message {
+    background: linear-gradient(135deg, #742a2a 0%, #9b2c2c 100%);
+    border-color: #fc8181;
+  }
+
+  .error-message > div {
+    color: #fed7d7;
+  }
+
+  .offline-indicator {
+    background: linear-gradient(135deg, #744210 0%, #975a16 100%);
+    border-color: #d69e2e;
+    color: #faf089;
+  }
 }
 
-/* Responsive design */
+@media (max-width: 768px) {
+  .limits-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    font-size: 10px;
+  }
+
+  .limits-grid > div {
+    padding: 4px 2px;
+  }
+
+  .limits-legend {
+    padding: 12px;
+    margin: 16px 0;
+  }
+
+  .limits-legend h4 {
+    font-size: 13px;
+  }
+
+  .limit-info {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .habi-logo, .habi-logo-k {
+    height: 20px;
+  }
+}
+
 @media (max-width: 480px) {
   .habit-tracker-container {
     padding: env(safe-area-inset-top, 16px) env(safe-area-inset-right, 16px) env(safe-area-inset-bottom, 16px) env(safe-area-inset-left, 16px);
@@ -652,9 +825,24 @@
     font-size: 11px;
     padding: 6px;
   }
+
+  .limits-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    font-size: 9px;
+  }
+
+  .error-message {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .error-message button {
+    width: 100%;
+    margin-top: 8px;
+  }
 }
 
-/* Extra small screens */
 @media (max-width: 360px) {
   .habit-tracker-container {
     padding: env(safe-area-inset-top, 12px) env(safe-area-inset-right, 12px) env(safe-area-inset-bottom, 12px) env(safe-area-inset-left, 12px);

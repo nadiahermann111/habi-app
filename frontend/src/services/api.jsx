@@ -1,8 +1,5 @@
-// frontend/src/services/api.jsx
-
 const API_BASE_URL = 'https://habi-backend.onrender.com';
 
-// Token utilities
 export const tokenUtils = {
   getToken: () => localStorage.getItem('token'),
   setToken: (token) => localStorage.setItem('token', token),
@@ -13,7 +10,6 @@ export const tokenUtils = {
   }
 };
 
-// API functions
 export const authAPI = {
   async register(userData) {
     const response = await fetch(`${API_BASE_URL}/api/register`, {
@@ -63,7 +59,6 @@ export const authAPI = {
     return response.json();
   },
 
-  // POPRAWKA: Dodaj metodę getUserCoins zgodną z HabitTracker
   async getUserCoins() {
     const response = await fetch(`${API_BASE_URL}/api/coins`, {
       headers: {
@@ -79,7 +74,7 @@ export const authAPI = {
   },
 
   async getCoins() {
-    return this.getUserCoins(); // Alias dla kompatybilności
+    return this.getUserCoins();
   },
 
   async addCoins(amount) {
@@ -107,12 +102,9 @@ export const authAPI = {
 
   // Aktualizuj monety użytkownika (po wykonaniu nawyku)
   async updateCoins(newAmount) {
-    // Ta funkcja może być używana do synchronizacji stanu monet
-    // bez wysyłania requestu - lokalnie aktualizujemy stan
     return { coins: newAmount };
   },
 
-  // Dodaj funkcję do sprawdzania czy nawyk był już wykonany dzisiaj
   async checkTodayCompletion(habitId) {
     const today = new Date().toISOString().split('T')[0];
     const habits = await habitAPI.getHabits();
@@ -143,7 +135,6 @@ export const habitAPI = {
     return response.json();
   },
 
-  // POPRAWKA: Stwórz nowy nawyk z właściwym mapowaniem pól
   async createHabit(habitData) {
     // Mapuj coinValue na coin_value zgodnie z backend API
     const payload = {
@@ -170,7 +161,6 @@ export const habitAPI = {
     return response.json();
   },
 
-  // POPRAWKA: Wykonaj nawyk z lepszą obsługą błędów
   async completeHabit(habitId) {
     const response = await fetch(`${API_BASE_URL}/api/habits/${habitId}/complete`, {
       method: 'POST',
@@ -187,7 +177,6 @@ export const habitAPI = {
 
     const result = await response.json();
 
-    // Upewnij się, że odpowiedź zawiera wszystkie potrzebne pola
     if (!result.total_coins && result.coins_earned) {
       // Fallback - pobierz aktualne monety jeśli total_coins nie jest w odpowiedzi
       try {
@@ -201,7 +190,6 @@ export const habitAPI = {
     return result;
   },
 
-  // POPRAWKA: Dodaj metodę getUserCoins dla kompatybilności z HabitTracker
   async getUserCoins() {
     return authAPI.getUserCoins();
   },
@@ -281,7 +269,6 @@ export const habitAPI = {
     return response.json();
   },
 
-  // NOWA FUNKCJA: Synchronizuj offline completions
   async syncOfflineCompletions() {
     const offlineCompletions = JSON.parse(localStorage.getItem('offline_completions') || '[]');
     const results = [];
@@ -296,7 +283,6 @@ export const habitAPI = {
       }
     }
 
-    // Usuń zsynchronizowane completions
     const failedCompletions = results
       .filter(r => !r.success)
       .map(r => offlineCompletions.find(c => c.habitId === r.habitId))
@@ -307,7 +293,6 @@ export const habitAPI = {
     return results;
   },
 
-  // NOWA FUNKCJA: Sprawdź czy są offline changes do synchronizacji
   hasOfflineChanges() {
     const offlineCompletions = JSON.parse(localStorage.getItem('offline_completions') || '[]');
     const offlineCoins = localStorage.getItem('offline_coins');

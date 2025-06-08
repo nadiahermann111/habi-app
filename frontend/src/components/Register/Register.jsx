@@ -1,16 +1,21 @@
 import { useState } from 'react';
 import { authAPI, tokenUtils } from '../../services/api.jsx';
 import './Register.css';
+
 function Register({ onRegisterSuccess, switchToLogin }) {
+  // Stan przechowujący dane formularza rejestracji
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
     confirmPassword: ''
   });
+  // Stan informujący o trwającym procesie rejestracji
   const [loading, setLoading] = useState(false);
+  // Stan przechowujący komunikaty błędów
   const [error, setError] = useState('');
 
+  // Funkcja obsługująca zmiany w polach formularza
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -18,12 +23,13 @@ function Register({ onRegisterSuccess, switchToLogin }) {
     });
   };
 
+  // Funkcja obsługująca wysłanie formularza rejestracji
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    // Validate passwords match
+    // Walidacja - sprawdzenie czy hasła są identyczne
     if (formData.password !== formData.confirmPassword) {
       setError('Hasła nie są identyczne');
       setLoading(false);
@@ -33,7 +39,7 @@ function Register({ onRegisterSuccess, switchToLogin }) {
     try {
       console.log('Starting registration process...');
 
-      // Call the registration API
+      // Wywołanie API rejestracji z danymi użytkownika
       const response = await authAPI.register({
         username: formData.username,
         email: formData.email,
@@ -42,13 +48,13 @@ function Register({ onRegisterSuccess, switchToLogin }) {
 
       console.log('Registration successful:', response);
 
-      // Store the token
+      // Zapisanie tokenu autoryzacji w pamięci lokalnej
       if (response.token) {
         tokenUtils.setToken(response.token);
         console.log('Token stored successfully');
       }
 
-      // Call the success callback with user data
+      // Wywołanie callback funkcji z danymi nowo zarejestrowanego użytkownika
       if (onRegisterSuccess && response.user) {
         console.log('Calling onRegisterSuccess with user data:', response.user);
         onRegisterSuccess(response.user);
@@ -70,6 +76,7 @@ function Register({ onRegisterSuccess, switchToLogin }) {
         <h2>Rejestracja</h2>
 
         <form onSubmit={handleSubmit}>
+          {/* Pole wprowadzania nazwy użytkownika */}
           <div className="form-group">
             <label htmlFor="username">Nazwa użytkownika:</label>
             <input
@@ -83,6 +90,7 @@ function Register({ onRegisterSuccess, switchToLogin }) {
             />
           </div>
 
+          {/* Pole wprowadzania adresu email */}
           <div className="form-group">
             <label htmlFor="email">Email:</label>
             <input
@@ -96,6 +104,7 @@ function Register({ onRegisterSuccess, switchToLogin }) {
             />
           </div>
 
+          {/* Pole wprowadzania hasła */}
           <div className="form-group">
             <label htmlFor="password">Hasło:</label>
             <input
@@ -109,6 +118,7 @@ function Register({ onRegisterSuccess, switchToLogin }) {
             />
           </div>
 
+          {/* Pole potwierdzenia hasła */}
           <div className="form-group">
             <label htmlFor="confirmPassword">Potwierdź hasło:</label>
             <input
@@ -122,13 +132,16 @@ function Register({ onRegisterSuccess, switchToLogin }) {
             />
           </div>
 
+          {/* Wyświetlenie komunikatu błędu jeśli wystąpił */}
           {error && <div className="error-message">{error}</div>}
 
+          {/* Przycisk wysłania formularza */}
           <button type="submit" disabled={loading}>
             {loading ? 'Rejestrowanie...' : 'Zarejestruj się'}
           </button>
         </form>
 
+        {/* Link do przełączenia na formularz logowania */}
         <p>
           Masz już konto?{' '}
           <button type="button" onClick={switchToLogin} disabled={loading}>

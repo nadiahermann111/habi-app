@@ -86,7 +86,6 @@
   transform: translateY(-1px);
 }
 
-/* Responsive design */
 @media (max-width: 810px) {
   .welcome-message {
     font-size: 2em;

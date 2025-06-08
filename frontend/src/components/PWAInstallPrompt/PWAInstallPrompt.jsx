@@ -1,41 +1,49 @@
 import { useState, useEffect } from 'react';
 import './PWAInstallPrompt.css';
+
 const PWAInstallPrompt = () => {
+  // Stan przechowujący odroczone zdarzenie instalacji PWA
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+  // Stan kontrolujący wyświetlanie prompt'a do instalacji
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
 
   useEffect(() => {
+    // Handler dla zdarzenia beforeinstallprompt (przed wyświetleniem prompt'a instalacji)
     const handleBeforeInstallPrompt = (e) => {
-      // Prevent the mini-infobar from appearing on mobile
+      // Zapobieganie wyświetleniu domyślnego mini-infobara na urządzeniach mobilnych
       e.preventDefault();
-      // Stash the event so it can be triggered later
+      // Zapisanie zdarzenia aby móc je użyć później
       setDeferredPrompt(e);
-      // Show the install prompt
+      // Wyświetlenie własnego prompt'a do instalacji
       setShowInstallPrompt(true);
     };
 
+    // Handler dla zdarzenia appinstalled (po zainstalowaniu aplikacji)
     const handleAppInstalled = () => {
       console.log('Habi została zainstalowana');
       setShowInstallPrompt(false);
       setDeferredPrompt(null);
     };
 
+    // Dodanie nasłuchiwaczy na zdarzenia PWA
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
+    // Cleanup - usunięcie nasłuchiwaczy przy odmontowaniu komponentu
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
+  // Funkcja obsługująca kliknięcie przycisku instalacji
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
 
-    // Show the install prompt
+    // Wyświetlenie natywnego prompt'a instalacji
     deferredPrompt.prompt();
 
-    // Wait for the user to respond to the prompt
+    // Oczekiwanie na odpowiedź użytkownika
     const { outcome } = await deferredPrompt.userChoice;
 
     if (outcome === 'accepted') {
@@ -44,22 +52,24 @@ const PWAInstallPrompt = () => {
       console.log('User dismissed the install prompt');
     }
 
-    // Clear the deferredPrompt
+    // Wyczyszczenie odroczonego prompt'a
     setDeferredPrompt(null);
     setShowInstallPrompt(false);
   };
 
+  // Funkcja obsługująca odrzucenie prompt'a instalacji
   const handleDismiss = () => {
     setShowInstallPrompt(false);
-    // Hide for this session
+    // Ukrycie prompt'a na czas tej sesji
     localStorage.setItem('pwa-install-dismissed', 'true');
   };
 
-  // Don't show if already dismissed this session
+  // Nie wyświetlaj jeśli prompt został już odrzucony w tej sesji
   if (localStorage.getItem('pwa-install-dismissed') === 'true') {
     return null;
   }
 
+  // Nie wyświetlaj jeśli prompt nie powinien być pokazany
   if (!showInstallPrompt) return null;
 
   return (
@@ -69,9 +79,11 @@ const PWAInstallPrompt = () => {
         <p>Dodaj aplikację do ekranu głównego dla lepszego doświadczenia</p>
       </div>
       <div>
+        {/* Przycisk instalacji aplikacji */}
         <button onClick={handleInstallClick}>
           Zainstaluj
         </button>
+        {/* Przycisk odrzucenia prompt'a */}
         <button
           onClick={handleDismiss}
           style={{

@@ -1,19 +1,26 @@
-// HabitTracker.jsx - zaktualizowany z CoinSlot i Habi Logo
 import React, { useState, useEffect } from 'react';
 import { habitAPI } from '../../services/api.jsx';
 import CoinSlot from '../CoinSlot/CoinSlot';
-import HabiLogo from './habi-logo.png'; // Dodaj import logo
+import HabiLogo from './habi-logo.png';
 import './HabitTracker.css';
 
 const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
+  // Stan określający aktualny widok ('list' - lista nawyków, 'add' - formularz dodawania)
   const [currentView, setCurrentView] = useState('list');
+  // Stan przechowujący listę wszystkich nawyków użytkownika
   const [habits, setHabits] = useState([]);
+  // Stan przechowujący aktualną liczbę monet użytkownika
   const [userCoins, setUserCoins] = useState(initialCoins);
+  // Set przechowujący ID nawyków wykonanych dzisiaj
   const [completedToday, setCompletedToday] = useState(new Set());
+  // Stan informujący o trwających operacjach
   const [loading, setLoading] = useState(false);
+  // Stan przechowujący komunikaty błędów
   const [error, setError] = useState('');
+  // Stan informujący o statusie połączenia internetowego
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
+  // Obiekt przechowujący dane nowego nawyku podczas dodawania
   const [newHabit, setNewHabit] = useState({
     name: '',
     description: '',
@@ -21,9 +28,59 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     icon: '🎯'
   });
 
+  // Tablica dostępnych ikon do wyboru dla nawyków
   const availableIcons = ['🎯', '💪', '📚', '🏃', '💧', '🧘', '🎵', '🎨', '🍎', '😴'];
 
-  // Funkcja do obsługi aktualizacji monet z CoinSlot
+  // Definicja limitów nawyków według ich wartości w monetach
+  const HABIT_LIMITS = {
+    5: 1,   // maksymalnie 1 nawyk za 5 monet
+    4: 2,   // maksymalnie 2 nawyki za 4 monety
+    3: 3,   // maksymalnie 3 nawyki za 3 monety
+    2: 4,   // maksymalnie 4 nawyki za 2 monety
+    1: -1   // bez limitu dla nawyków za 1 monetę (-1 = bez limitu)
+  };
+
+  // Funkcja sprawdzająca czy można dodać nawyk o określonej wartości
+  const canAddHabit = (coinValue) => {
+    const currentCount = habits.filter(habit => habit.coin_value === coinValue && habit.is_active).length;
+    const limit = HABIT_LIMITS[coinValue];
+
+    // Jeśli limit to -1, oznacza to brak ograniczeń
+    if (limit === -1) return { canAdd: true, current: currentCount, limit: 'bez limitu' };
+
+    return {
+      canAdd: currentCount < limit,
+      current: currentCount,
+      limit: limit
+    };
+  };
+
+  // Funkcja generująca tekst informacji o limitach dla danej wartości
+  const getLimitInfo = (coinValue) => {
+    const info = canAddHabit(coinValue);
+    if (info.limit === 'bez limitu') {
+      return `${info.current} nawyków (bez limitu)`;
+    }
+    return `${info.current}/${info.limit} nawyków`;
+  };
+
+  // Funkcja generująca style dla suwaka wartości nawyku (kolory według limitów)
+  const getSliderStyle = (coinValue) => {
+    const info = canAddHabit(coinValue);
+    let color = '#f4d03f'; // domyślny złoty kolor
+
+    if (!info.canAdd && info.limit !== 'bez limitu') {
+      color = '#ff6b6b'; // czerwony gdy limit osiągnięty
+    } else if (info.current >= info.limit * 0.8 && info.limit !== 'bez limitu') {
+      color = '#ffa500'; // pomarańczowy gdy blisko limitu
+    }
+
+    return {
+      background: `linear-gradient(to right, ${color} 0%, ${color} ${(coinValue-1)*25}%, #e0e0e0 ${(coinValue-1)*25}%, #e0e0e0 100%)`
+    };
+  };
+
+  // Callback do obsługi aktualizacji monet z komponentu CoinSlot
   const handleCoinsUpdate = (newCoins) => {
     setUserCoins(newCoins);
     if (onCoinsUpdate) {
@@ -31,7 +88,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     }
   };
 
-  // Sprawdź stan połączenia
+  // Nasłuchiwanie zmian stanu połączenia internetowego
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
@@ -50,17 +107,17 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     };
   }, []);
 
-  // Synchronizuj monety z Dashboard
+  // Synchronizacja monet z parent komponentem (Dashboard)
   useEffect(() => {
     setUserCoins(initialCoins);
   }, [initialCoins]);
 
-  // Wczytaj nawyki przy starcie
+  // Załadowanie nawyków przy pierwszym uruchomieniu komponentu
   useEffect(() => {
     loadHabits();
   }, []);
 
-  // Funkcja do synchronizacji zmian offline
+  // Funkcja synchronizująca zmiany wykonane offline z serwerem
   const syncOfflineChanges = async () => {
     try {
       const offlineCompletions = JSON.parse(localStorage.getItem('offline_completions') || '[]');
@@ -81,15 +138,18 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     }
   };
 
+  // Funkcja ładująca listę nawyków z serwera lub cache
   const loadHabits = async () => {
     try {
       setLoading(true);
       setError('');
 
+      // Pobranie nawyków z API
       const habits = await habitAPI.getHabits();
       setHabits(habits);
       localStorage.setItem('habits_cache', JSON.stringify(habits));
 
+      // Sprawdzenie które nawyki zostały wykonane dzisiaj
       const today = new Date().toISOString().split('T')[0];
       const completedIds = new Set();
       habits.forEach(habit => {
@@ -99,12 +159,11 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       });
       setCompletedToday(completedIds);
 
-      // Pobierz aktualne monety - CoinSlot się tym zajmie automatycznie
-
     } catch (error) {
       console.error('Błąd ładowania nawyków:', error);
 
       try {
+        // Fallback do danych z cache w przypadku błędu połączenia
         const cachedHabits = localStorage.getItem('habits_cache');
         if (cachedHabits) {
           const habits = JSON.parse(cachedHabits);
@@ -130,9 +189,17 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     }
   };
 
+  // Funkcja obsługująca dodawanie nowego nawyku
   const handleAddHabit = async () => {
     if (!newHabit.name.trim()) {
       alert('Nazwa nawyku jest wymagana');
+      return;
+    }
+
+    // Sprawdzenie limitów przed dodaniem nawyku
+    const limitCheck = canAddHabit(newHabit.coinValue);
+    if (!limitCheck.canAdd) {
+      alert(`Osiągnięto limit nawyków o wartości ${newHabit.coinValue} monet! Możesz mieć maksymalnie ${limitCheck.limit} takich nawyków.`);
       return;
     }
 
@@ -141,6 +208,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       setError('');
 
       if (isOnline) {
+        // Dodanie nawyku przez API gdy połączenie dostępne
         const createdHabit = await habitAPI.createHabit({
           name: newHabit.name,
           description: newHabit.description,
@@ -155,6 +223,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
         });
 
       } else {
+        // Dodanie nawyku lokalnie w trybie offline
         const localHabit = {
           id: Date.now(),
           name: newHabit.name,
@@ -176,6 +245,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
         setError('Nawyk dodany offline - zostanie zsynchronizowany gdy połączenie wróci');
       }
 
+      // Reset formularza i powrót do listy
       setNewHabit({ name: '', description: '', coinValue: 3, icon: '🎯' });
       setCurrentView('list');
 
@@ -187,6 +257,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     }
   };
 
+  // Funkcja obsługująca wykonanie nawyku i zdobycie monet
   const handleCompleteHabit = async (habitId) => {
     if (completedToday.has(habitId)) return;
 
@@ -200,6 +271,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       setError('');
 
       if (isOnline && !habit.isLocal) {
+        // Wykonanie nawyku przez API
         const result = await habitAPI.completeHabit(habitId);
 
         const newCoinsAmount = result.total_coins;
@@ -209,11 +281,12 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           onCoinsUpdate(newCoinsAmount);
         }
 
-        // Wyślij globalny event o zmianie monet
+        // Wysłanie globalnego eventu o zmianie monet
         window.dispatchEvent(new CustomEvent('coinsUpdated', {
           detail: { coins: newCoinsAmount }
         }));
 
+        // Oznaczenie nawyku jako wykonanego dzisiaj
         setCompletedToday(prev => {
           const updated = new Set([...prev, habitId]);
           const today = new Date().toISOString().split('T')[0];
@@ -221,6 +294,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           return updated;
         });
 
+        // Aktualizacja daty wykonania w lokalnych danych
         const today = new Date().toISOString().split('T')[0];
         setHabits(prev => {
           const updated = prev.map(h =>
@@ -235,6 +309,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
         alert(`${result.message}! Otrzymałeś ${result.coins_earned} monet! 🎉`);
 
       } else {
+        // Wykonanie nawyku w trybie offline
         const newCoinsAmount = userCoins + coinsToEarn;
         setUserCoins(newCoinsAmount);
 
@@ -242,11 +317,11 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           onCoinsUpdate(newCoinsAmount);
         }
 
-        // Wyślij globalny event o zmianie monet
         window.dispatchEvent(new CustomEvent('coinsUpdated', {
           detail: { coins: newCoinsAmount }
         }));
 
+        // Zapisanie do kolejki synchronizacji offline
         if (!habit.isLocal) {
           const offlineCompletions = JSON.parse(localStorage.getItem('offline_completions') || '[]');
           offlineCompletions.push({
@@ -287,6 +362,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       console.error('Błąd wykonywania nawyku:', error);
       setError('Błąd: ' + error.message);
 
+      // Fallback - dodanie monet lokalnie nawet przy błędzie API
       const newCoinsAmount = userCoins + coinsToEarn;
       setUserCoins(newCoinsAmount);
 
@@ -294,7 +370,6 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
         onCoinsUpdate(newCoinsAmount);
       }
 
-      // Wyślij globalny event o zmianie monet
       window.dispatchEvent(new CustomEvent('coinsUpdated', {
         detail: { coins: newCoinsAmount }
       }));
@@ -332,6 +407,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     }
   };
 
+  // Funkcja obsługująca usuwanie nawyku
   const handleDeleteHabit = async (habitId) => {
     if (!confirm('Czy na pewno chcesz usunąć ten nawyk?')) return;
 
@@ -341,16 +417,19 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
 
       const habit = habits.find(h => h.id === habitId);
 
+      // Usunięcie przez API jeśli online i nawyk nie jest lokalny
       if (isOnline && !habit?.isLocal) {
         await habitAPI.deleteHabit(habitId);
       }
 
+      // Usunięcie z lokalnej listy
       setHabits(prev => {
         const updated = prev.filter(h => h.id !== habitId);
         localStorage.setItem('habits_cache', JSON.stringify(updated));
         return updated;
       });
 
+      // Usunięcie z listy wykonanych dzisiaj
       setCompletedToday(prev => {
         const newSet = new Set(prev);
         newSet.delete(habitId);
@@ -363,6 +442,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       console.error('Błąd usuwania nawyku:', error);
       setError('Błąd usuwania nawyku: ' + error.message);
 
+      // Usunięcie lokalne nawet przy błędzie API
       setHabits(prev => {
         const updated = prev.filter(h => h.id !== habitId);
         localStorage.setItem('habits_cache', JSON.stringify(updated));
@@ -382,15 +462,19 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     }
   };
 
+  // Funkcja do ponownego połączenia z serwerem
   const retryConnection = async () => {
     await loadHabits();
   };
 
+  // Renderowanie widoku dodawania nowego nawyku
   if (currentView === 'add') {
+    const limitInfo = canAddHabit(newHabit.coinValue);
+
     return (
       <div className="habit-tracker">
         <div className="habit-tracker-container">
-          {/* Header z logo */}
+          {/* Nagłówek z przyciskiem powrotu i logo */}
           <div className="habit-header">
             <div className="habit-header-left">
               <button
@@ -404,7 +488,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
             </div>
           </div>
 
-          {/* Formularz - reszta bez zmian... */}
+          {/* Formularz dodawania nawyku */}
           <div className="habit-form">
             {error && (
               <div className="error-message">
@@ -415,6 +499,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
               </div>
             )}
 
+            {/* Pole nazwy nawyku */}
             <div className="form-group">
               <label className="form-label">Nazwa nawyku</label>
               <input
@@ -427,6 +512,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
               />
             </div>
 
+            {/* Pole opisu nawyku */}
             <div className="form-group">
               <label className="form-label">Opis (opcjonalny)</label>
               <textarea
@@ -439,6 +525,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
               />
             </div>
 
+            {/* Wybór ikony nawyku */}
             <div className="form-group">
               <label className="form-label">Wybierz ikonę</label>
               <div className="icon-grid">
@@ -455,10 +542,19 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
               </div>
             </div>
 
+            {/* Suwak wartości nagrody */}
             <div className="form-group coin-slider">
               <label className="form-label">
                 Wartość nagrody: {newHabit.coinValue} monet
               </label>
+              <div className="limit-info">
+                <span className={!limitInfo.canAdd ? 'limit-exceeded' : ''}>
+                  {getLimitInfo(newHabit.coinValue)}
+                </span>
+                {!limitInfo.canAdd && (
+                  <span className="limit-warning">⚠️ Limit osiągnięty!</span>
+                )}
+              </div>
               <input
                 type="range"
                 className="slider-input"
@@ -467,21 +563,34 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
                 value={newHabit.coinValue}
                 onChange={(e) => setNewHabit(prev => ({ ...prev, coinValue: parseInt(e.target.value) }))}
                 disabled={loading}
-                style={{
-                  background: `linear-gradient(to right, #f4d03f 0%, #f4d03f ${(newHabit.coinValue-1)*25}%, #e0e0e0 ${(newHabit.coinValue-1)*25}%, #e0e0e0 100%)`
-                }}
+                style={getSliderStyle(newHabit.coinValue)}
               />
               <div className="slider-labels">
                 <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
               </div>
             </div>
 
+            {/* Legenda limitów nawyków */}
+            <div className="limits-legend">
+              <h4>Limity nawyków:</h4>
+              <div className="limits-grid">
+                <div>🪙×5: max 1 nawyk</div>
+                <div>🪙×4: max 2 nawyki</div>
+                <div>🪙×3: max 3 nawyki</div>
+                <div>🪙×2: max 4 nawyki</div>
+                <div>🪙×1: bez limitu</div>
+              </div>
+            </div>
+
+            {/* Przycisk dodawania nawyku */}
             <button
               className="submit-btn"
               onClick={handleAddHabit}
-              disabled={!newHabit.name.trim() || loading}
+              disabled={!newHabit.name.trim() || loading || !limitInfo.canAdd}
             >
-              {loading ? 'Dodawanie...' : 'Dodaj nawyk'}
+              {loading ? 'Dodawanie...' :
+               !limitInfo.canAdd ? 'Osiągnięto limit' :
+               'Dodaj nawyk'}
             </button>
           </div>
         </div>
@@ -489,11 +598,11 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     );
   }
 
-  // Widok listy nawyków
+  // Renderowanie głównego widoku listy nawyków
   return (
     <div className="habit-tracker">
       <div className="habit-tracker-container">
-        {/* Header z CoinSlot i logo */}
+        {/* Nagłówek z logo i komponentem monet */}
         <div className="habit-header">
           <div className="habit-header-left">
             <button
@@ -506,7 +615,6 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
             <img src={HabiLogo} alt="Habi" className="habi-logo" />
           </div>
 
-          {/* CoinSlot zamiast prostego wyświetlania monet */}
           <div className="habit-coins-display">
             <CoinSlot
               initialCoins={userCoins}
@@ -520,7 +628,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           </div>
         </div>
 
-        {/* Error message */}
+        {/* Komunikat błędu */}
         {error && (
           <div className="error-message">
             <div>
@@ -533,14 +641,14 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           </div>
         )}
 
-        {/* Connection status */}
+        {/* Wskaźnik trybu offline */}
         {!isOnline && (
           <div className="offline-indicator">
             📶 Tryb offline - zmiany będą zsynchronizowane gdy połączenie wróci
           </div>
         )}
 
-        {/* Przycisk dodania nawyku */}
+        {/* Przycisk dodawania nowego nawyku */}
         <button
           className="add-habit-btn"
           onClick={() => setCurrentView('add')}
@@ -550,7 +658,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           {loading ? 'Ładowanie...' : 'Dodaj nowy nawyk'}
         </button>
 
-        {/* Lista nawyków */}
+        {/* Lista nawyków lub komunikat o pustej liście */}
         {!loading && habits.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">🎯</div>
@@ -559,53 +667,59 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           </div>
         ) : (
           <div>
-            {habits.map(habit => {
-              const isCompletedToday = completedToday.has(habit.id);
-              return (
-                <div
-                  key={habit.id}
-                  className={`habit-card ${isCompletedToday ? 'completed' : ''}`}
-                  onClick={() => !isCompletedToday && !loading && handleCompleteHabit(habit.id)}
-                >
-                  <div className="habit-card-header">
-                    <div className="habit-main-info">
-                      <span className="habit-icon">{habit.icon}</span>
-                      <div className="habit-info">
-                        <h3 className="habit-title">
-                          {habit.name}
-                          {habit.isLocal && <span className="local-badge">📱</span>}
-                        </h3>
-                        {habit.description && (
-                          <p className="habit-description">{habit.description}</p>
-                        )}
+            {habits
+              .sort((a, b) => b.coin_value - a.coin_value) // Sortowanie według wartości malejąco
+              .map(habit => {
+                const isCompletedToday = completedToday.has(habit.id);
+                return (
+                  <div
+                    key={habit.id}
+                    className={`habit-card ${isCompletedToday ? 'completed' : ''}`}
+                    onClick={() => !isCompletedToday && !loading && handleCompleteHabit(habit.id)}
+                  >
+                    <div className="habit-card-header">
+                      <div className="habit-main-info">
+                        <span className="habit-icon">{habit.icon}</span>
+                        <div className="habit-info">
+                          <h3 className="habit-title">
+                            {habit.name}
+                            {/* Oznaczenie nawyków lokalnych (offline) */}
+                            {habit.isLocal && <span className="local-badge">📱</span>}
+                          </h3>
+                          {habit.description && (
+                            <p className="habit-description">{habit.description}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="habit-actions">
+                        {/* Wyświetlenie wartości nagrody */}
+                        <div className="habit-reward">
+                          <span>🪙</span>
+                          <span>{habit.coin_value}</span>
+                        </div>
+                        {/* Przycisk usuwania nawyku */}
+                        <button
+                          className="habit-delete-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteHabit(habit.id);
+                          }}
+                          disabled={loading}
+                        >
+                          🗑️
+                        </button>
                       </div>
                     </div>
-                    <div className="habit-actions">
-                      <div className="habit-reward">
-                        <span>🪙</span>
-                        <span>{habit.coin_value}</span>
-                      </div>
-                      <button
-                        className="habit-delete-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteHabit(habit.id);
-                        }}
-                        disabled={loading}
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
 
-                  {isCompletedToday && (
-                    <div className="completed-indicator">
-                      ✅ Wykonane dzisiaj!
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                    {/* Wskaźnik wykonania nawyku dzisiaj */}
+                    {isCompletedToday && (
+                      <div className="completed-indicator">
+                        ✅ Wykonane dzisiaj!
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
           </div>
         )}
       </div>

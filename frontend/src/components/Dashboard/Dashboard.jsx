@@ -10,12 +10,14 @@ const Dashboard = ({ user, onLogout }) => {
   const [profile, setProfile] = useState(user || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'habits', or 'feed'
+  const [currentView, setCurrentView] = useState('dashboard');
 
+  // Pobranie profilu użytkownika przy pierwszym załadowaniu komponentu
   useEffect(() => {
     fetchProfile();
   }, []);
 
+  // Funkcja pobierająca dane profilu użytkownika z serwera
   const fetchProfile = async () => {
     setLoading(true);
     try {
@@ -29,22 +31,24 @@ const Dashboard = ({ user, onLogout }) => {
     }
   };
 
+  // Obsługa wylogowania użytkownika
   const handleLogout = () => {
     tokenUtils.removeToken();
     onLogout();
   };
 
+  // Funkcja testowa do dodawania monet (tylko w trybie deweloperskim)
   const handleAddTestCoins = async () => {
     try {
       const result = await authAPI.addCoins(10);
 
-      // Zaktualizuj lokalny stan profilu
+      // Aktualizacja lokalnego stanu profilu z nową liczbą monet
       setProfile(prev => ({
         ...prev,
         coins: result.coins
       }));
 
-      // Wyślij event żeby MenuHeader się odświeżył
+      // Wysłanie globalnego eventu o zmianie liczby monet
       window.dispatchEvent(new CustomEvent('coinsUpdated'));
 
       alert(`${result.message}! Masz teraz ${result.coins} monet.`);
@@ -53,22 +57,23 @@ const Dashboard = ({ user, onLogout }) => {
     }
   };
 
+  // Funkcja testowa do zmniejszania szczęścia Habi (tylko w trybie deweloperskim)
   const handleReduceHabiHappiness = () => {
     try {
-      // Pobierz aktualny poziom sytości z localStorage
+      // Pobranie aktualnego poziomu sytości z pamięci lokalnej
       const currentFoodLevel = localStorage.getItem('habiFoodLevel');
       const currentLevel = currentFoodLevel ? parseInt(currentFoodLevel) : 75;
 
-      // Zmniejsz o 10% (minimum 5 punktów, maksimum 25 punktów)
+      // Obliczenie redukcji (10% poziomu, minimum 5, maksimum 25 punktów)
       const reductionAmount = Math.max(5, Math.min(25, Math.floor(currentLevel * 0.1)));
       const newLevel = Math.max(0, currentLevel - reductionAmount);
 
-      // Zaktualizuj localStorage
+      // Zapisanie nowego poziomu i czasu aktualizacji
       const currentTime = Date.now();
       localStorage.setItem('habiFoodLevel', newLevel.toString());
       localStorage.setItem('habiLastUpdate', currentTime.toString());
 
-      // Wyślij event do FoodControl żeby się odświeżył
+      // Wysłanie eventu o zmianie poziomu sytości Habi
       window.dispatchEvent(new CustomEvent('habiFoodLevelChanged', {
         detail: { newLevel, reductionAmount }
       }));
@@ -80,14 +85,15 @@ const Dashboard = ({ user, onLogout }) => {
     }
   };
 
+  // Callback wywoływany przy aktualizacji liczby monet
   const handleCoinsUpdate = (newCoinsAmount) => {
-    // Callback z MenuHeader - aktualizuj lokalny stan
     setProfile(prev => ({
       ...prev,
       coins: newCoinsAmount
     }));
   };
 
+  // Funkcje nawigacji między różnymi widokami aplikacji
   const handleNavigateToHabits = () => {
     setCurrentView('habits');
   };
@@ -100,11 +106,12 @@ const Dashboard = ({ user, onLogout }) => {
     setCurrentView('dashboard');
   };
 
+  // Wyświetlenie ekranu ładowania podczas pobierania danych
   if (loading) {
     return <div className="loading">Ładowanie profilu...</div>;
   }
 
-  // Render HabitTracker jeśli wybrano ten widok
+  // Renderowanie widoku trackera nawyków
   if (currentView === 'habits') {
     return (
       <HabitTracker
@@ -115,7 +122,7 @@ const Dashboard = ({ user, onLogout }) => {
     );
   }
 
-  // Render FeedHabi jeśli wybrano ten widok
+  // Renderowanie widoku karmienia Habi
   if (currentView === 'feed') {
     return (
       <FeedHabi
@@ -126,26 +133,30 @@ const Dashboard = ({ user, onLogout }) => {
     );
   }
 
-  // Render głównego Dashboard
+  // Renderowanie głównego widoku Dashboard
   return (
     <div className="dashboard">
+      {/* Nagłówek z menu i informacjami o monetach */}
       <MenuHeader
         onLogout={handleLogout}
         initialCoins={profile?.coins || 0}
         onCoinsUpdate={handleCoinsUpdate}
       />
 
+      {/* Wyświetlenie komunikatu błędu jeśli wystąpił */}
       {error && <div className="error-message">{error}</div>}
 
       {profile && (
         <div className="profile-section">
-          {/* Powitanie użytkownika */}
+          {/* Sekcja powitalna z imieniem użytkownika */}
           <div className="welcome-section">
             <h1 className="welcome-message">Cześć {profile.username}! 👋</h1>
           </div>
 
+          {/* Komponent wyświetlający wirtualnego zwierzaka Habi */}
           <HabiSection />
 
+          {/* Sekcja z przyciskami szybkich akcji */}
           <div className="quick-actions">
             <h3>Szybkie akcje</h3>
             <div className="action-buttons">
@@ -164,14 +175,14 @@ const Dashboard = ({ user, onLogout }) => {
             </div>
           </div>
 
-          {/* Opcjonalnie: dodaj test button dla dodawania monet */}
+          {/* Przyciski deweloperskie widoczne tylko w trybie development */}
           {process.env.NODE_ENV === 'development' && (
             <div className="dev-actions">
               <button className="dev-btn" onClick={handleAddTestCoins}>
                 🪙 Dodaj 10 monet (DEV)
               </button>
               <button className="dev-btn" onClick={handleReduceHabiHappiness}>
-                😢 Usuń 10% szczęścia Habi (DEV)
+                😢 Usuń % najedzenia Habi (DEV)
               </button>
             </div>
           )}

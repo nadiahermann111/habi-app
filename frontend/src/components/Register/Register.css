@@ -1,6 +1,3 @@
-/* Register component - complete styles without inheritance */
-
-/* Local variables for Register */
 .register-container {
   --reg-butter-yellow: #FFF8DC;
   --reg-golden-yellow: #FFEB9C;
@@ -252,14 +249,12 @@
   transform: translateY(-1px);
 }
 
-/* Loading state */
 .register-form button[type="submit"]:disabled {
   background: linear-gradient(135deg, #ccc 0%, #999 100%);
   cursor: not-allowed;
   transform: none;
 }
 
-/* Success animation */
 .register-success {
   animation: registerSuccess 0.8s ease-out;
 }
@@ -270,7 +265,6 @@
   100% { transform: scale(1); }
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .register-container {
     max-width: 400px;
@@ -327,7 +321,6 @@
   }
 }
 
-/* Additional utility classes */
 .register-container .loading-spinner {
   display: inline-block;
   animation: spin 1s linear infinite;
@@ -339,7 +332,6 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Focus states for better accessibility */
 .register-form button:focus-visible {
   outline: 3px solid var(--reg-warm-yellow);
   outline-offset: 2px;

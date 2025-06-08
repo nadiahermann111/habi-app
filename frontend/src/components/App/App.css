@@ -1,6 +1,3 @@
-/* App.css - tylko globalne style i zmienne */
-
-/* Reset i podstawowe style */
 * {
   margin: 0;
   padding: 0;
@@ -8,7 +5,6 @@
 }
 
 :root {
-  /* Globalne zmienne kolorów - dostępne dla wszystkich komponentów */
   --butter-yellow: #FFF8DC;
   --golden-yellow: #FFEB9C;
   --warm-yellow: #FFD23F;
@@ -45,7 +41,6 @@ body {
   padding: 20px;
 }
 
-/* Loading screen - tylko dla App */
 .loading-screen {
   display: flex;
   flex-direction: column;
@@ -80,7 +75,6 @@ body {
   margin-top: 10px;
 }
 
-/* Responsive dla App */
 @media (max-width: 768px) {
   .App {
     padding: 12px;

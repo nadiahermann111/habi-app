@@ -70,7 +70,6 @@
   pointer-events: none;
 }
 
-/* Kontener dla wiadomości i serduszka */
 .habi-message-container {
   position: absolute;
   top: -80px;
@@ -80,8 +79,6 @@
   pointer-events: none;
   animation: messageAppear 3s ease-out forwards;
 }
-
-/* Animowane serduszko */
 .habi-heart {
   position: absolute;
   top: -30px;
@@ -92,7 +89,6 @@
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Wiadomość motywacyjna */
 .habi-message {
   background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
   color: white;
@@ -109,7 +105,6 @@
   position: relative;
 }
 
-/* Strzałka wiadomości */
 .habi-message::after {
   content: '';
   position: absolute;
@@ -123,7 +118,7 @@
   border-top: 8px solid #ff6b6b;
 }
 
-/* Animacja pojawiania się całego kontenera */
+
 @keyframes messageAppear {
   0% {
     opacity: 0;
@@ -146,7 +141,6 @@
   }
 }
 
-/* Animacja serduszka - unosi się w górę */
 @keyframes heartFloat {
   0% {
     transform: translateX(-50%) translateY(0px) scale(0.5);
@@ -170,7 +164,6 @@
   }
 }
 
-/* Animacja wiadomości - wjeżdża z dołu */
 @keyframes messageSlideUp {
   0% {
     transform: translateY(20px) scale(0.8);
@@ -212,7 +205,6 @@
   }
 }
 
-/* Responsive design */
 @media (max-width: 768px) {
   .habi-content {
     flex-direction: column;

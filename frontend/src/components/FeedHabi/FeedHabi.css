@@ -76,27 +76,6 @@
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
-.feed-coins-display {
-  display: flex;
-  align-items: center;
-  background: #fbbf24;
-  padding: 8px 16px;
-  border-radius: 25px;
-  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
-  gap: 6px;
-}
-
-.feed-coins-display span:first-child {
-  font-size: 16px;
-}
-
-.feed-coins-display span:last-child {
-  font-weight: 700;
-  color: #92400e;
-  font-size: 16px;
-}
-
-/* POPRAWIONY FOOD ITEMS GRID - większy i lepiej rozłożony */
 .food-items-grid-redesigned {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -124,7 +103,6 @@
   }
 }
 
-/* POPRAWIONE FOOD ITEM CARDS - z ceną na górze */
 .food-item-redesigned {
   background: white;
   border-radius: 16px;
@@ -188,7 +166,6 @@
   gap: 8px;
 }
 
-/* NOWA STRUKTURA - CENA NA GÓRZE */
 .food-item-price {
   background: #fbbf24;
   border-radius: 12px;
@@ -276,7 +253,6 @@
   transform: scale(1.1);
 }
 
-/* NAZWA PRODUKTU */
 .food-item-name {
   font-size: 12px;
   font-weight: 600;
@@ -297,7 +273,6 @@
   }
 }
 
-/* Habi Character Section */
 .habi-character-section {
   display: flex;
   align-items: center;
@@ -361,7 +336,6 @@
   }
 }
 
-/* POPRAWIONA PURCHASE ANIMATION - bez nakładki tła i czytelniejsza */
 .purchase-animation {
   position: fixed;
   top: 20%;
@@ -435,7 +409,6 @@
   }
 }
 
-/* NOWE ANIMACJE - bardziej subtelne */
 @keyframes slideInFromTop {
   from {
     opacity: 0;
@@ -475,7 +448,6 @@
   }
 }
 
-/* Tips Section */
 .feed-tips {
   display: flex;
   flex-direction: column;
@@ -512,7 +484,6 @@
   margin-bottom: 4px;
 }
 
-/* Responsive adjustments */
 @media (max-width: 480px) {
   .feed-habi-container {
     padding: env(safe-area-inset-top, 16px) env(safe-area-inset-right, 16px) env(safe-area-inset-bottom, 16px) env(safe-area-inset-left, 16px);
@@ -536,7 +507,6 @@
   }
 }
 
-/* DODAJ STYLE DLA LOADING I DISABLED STATES */
 .food-item-redesigned.loading {
   opacity: 0.6;
   cursor: not-allowed;

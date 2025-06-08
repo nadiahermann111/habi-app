@@ -1,4 +1,3 @@
-// components/MenuHeader/MenuHeader.jsx
 import React from 'react';
 import CoinSlot from '../CoinSlot/CoinSlot';
 import './MenuHeader.css';
@@ -52,7 +51,7 @@ const MenuHeader = ({ onLogout, initialCoins = 0, onCoinsUpdate }) => {
           </div>
         </div>
 
-        {/* Monety - używamy CoinSlot */}
+        {}
         <div className="coins-container">
           <CoinSlot
             initialCoins={initialCoins}

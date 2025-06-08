@@ -3,23 +3,28 @@ import { authAPI, tokenUtils } from '../../services/api.jsx';
 import './Login.css';
 
 const Login = ({ onLoginSuccess, switchToRegister }) => {
+  // Stan przechowujący dane formularza logowania
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
+  // Stan informujący o trwającym procesie logowania
   const [loading, setLoading] = useState(false);
+  // Stan przechowujący komunikaty błędów
   const [error, setError] = useState('');
 
+  // Funkcja obsługująca zmiany w polach formularza
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
       [name]: value,
     });
-    // Wyczyść błąd gdy użytkownik zaczyna pisać
+    // Wyczyszczenie błędu gdy użytkownik zaczyna wpisywać dane
     if (error) setError('');
   };
 
+  // Funkcja walidująca poprawność danych w formularzu
   const validateForm = () => {
     if (!formData.email.trim()) {
       setError('Email jest wymagany');
@@ -31,7 +36,7 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
       return false;
     }
 
-    // Prosta walidacja email
+    // Podstawowa walidacja formatu adresu email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       setError('Nieprawidłowy format email');
@@ -41,6 +46,7 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
     return true;
   };
 
+  // Funkcja obsługująca wysłanie formularza logowania
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -54,7 +60,7 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
     try {
       console.log('Starting login process...', { email: formData.email });
 
-      // Call the login API
+      // Wywołanie API logowania z danymi użytkownika
       const response = await authAPI.login({
         email: formData.email.trim().toLowerCase(),
         password: formData.password
@@ -62,13 +68,13 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
 
       console.log('Login successful:', response);
 
-      // Store the token
+      // Zapisanie tokenu autoryzacji w pamięci lokalnej
       if (response.token) {
         tokenUtils.setToken(response.token);
         console.log('Token stored successfully');
       }
 
-      // Call the success callback with user data
+      // Wywołanie callback funkcji z danymi zalogowanego użytkownika
       if (onLoginSuccess && response.user) {
         console.log('Calling onLoginSuccess with user data:', response.user);
         onLoginSuccess(response.user);
@@ -79,7 +85,7 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
     } catch (err) {
       console.error('Login failed:', err);
 
-      // Obsługa różnych typów błędów
+      // Obsługa różnych typów błędów z odpowiednimi komunikatami
       if (err.message.includes('Failed to fetch') || err.message.includes('CORS')) {
         setError('Problemy z połączeniem do serwera. Sprawdź czy backend działa.');
       } else if (err.message.includes('401') || err.message.includes('Nieprawidłowy email lub hasło')) {
@@ -97,11 +103,12 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
   return (
     <div className="login-container">
       <div className="login-card">
+        {/* Nagłówek formularza logowania */}
         <div className="login-header">
           <h2>Zaloguj się do Habi</h2>
-          <p>Witaj ponownie! Zaloguj się do swojego konta.</p>
         </div>
 
+        {/* Wyświetlenie komunikatu błędu jeśli wystąpił */}
         {error && (
           <div className="login-error-message">
             <span className="error-icon">⚠️</span>
@@ -109,7 +116,9 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
           </div>
         )}
 
+        {/* Formularz logowania */}
         <form onSubmit={handleSubmit} className="login-form">
+          {/* Pole wprowadzania adresu email */}
           <div className="login-form-group">
             <label htmlFor="email">Email</label>
             <input
@@ -126,6 +135,7 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
             />
           </div>
 
+          {/* Pole wprowadzania hasła */}
           <div className="login-form-group">
             <label htmlFor="password">Hasło</label>
             <input
@@ -142,6 +152,7 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
             />
           </div>
 
+          {/* Przycisk wysłania formularza */}
           <button
             type="submit"
             disabled={loading || !formData.email.trim() || !formData.password}
@@ -158,6 +169,7 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
           </button>
         </form>
 
+        {/* Stopka z linkiem do rejestracji */}
         <div className="login-footer">
           <p className="login-switch-auth">
             Nie masz konta?{' '}
@@ -170,14 +182,6 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
               Zarejestruj się
             </button>
           </p>
-        </div>
-
-        {/* Debug info - usuń w produkcji */}
-        <div className="debug-info">
-          <small>
-            Status: {navigator.onLine ? 'Online' : 'Offline'} |
-            Backend: {import.meta.env.VITE_API_URL || 'https://habi-backend.onrender.com'}
-          </small>
         </div>
       </div>
     </div>
