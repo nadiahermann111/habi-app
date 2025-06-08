@@ -18,6 +18,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       setError('');
       // Automatycznie odśwież dane gdy wróci połączenie
       loadHabits();
+      syncOfflineChanges();
     };
     const handleOffline = () => setIsOnline(false);
 
@@ -49,6 +50,30 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
 
   const availableIcons = ['🎯', '💪', '📚', '🏃', '💧', '🧘', '🎵', '🎨', '🍎', '😴'];
 
+  // Funkcja do synchronizacji zmian offline
+  const syncOfflineChanges = async () => {
+    try {
+      const offlineCompletions = JSON.parse(localStorage.getItem('offline_completions') || '[]');
+
+      for (const completion of offlineCompletions) {
+        try {
+          await habitAPI.completeHabit(completion.habitId);
+        } catch (error) {
+          console.error('Błąd synchronizacji completion:', error);
+        }
+      }
+
+      // Wyczyść offline completions po synchronizacji
+      localStorage.removeItem('offline_completions');
+
+      // Odśwież dane po synchronizacji
+      await loadHabits();
+
+    } catch (error) {
+      console.error('Błąd synchronizacji offline:', error);
+    }
+  };
+
   const loadHabits = async () => {
     try {
       setLoading(true);
@@ -70,6 +95,18 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
         }
       });
       setCompletedToday(completedIds);
+
+      // Pobierz aktualne monety z serwera
+      try {
+        const coinsResponse = await habitAPI.getUserCoins();
+        const serverCoins = coinsResponse.coins;
+        setUserCoins(serverCoins);
+        if (onCoinsUpdate) {
+          onCoinsUpdate(serverCoins);
+        }
+      } catch (coinsError) {
+        console.error('Błąd pobierania monet:', coinsError);
+      }
 
     } catch (error) {
       console.error('Błąd ładowania nawyków:', error);
@@ -117,7 +154,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
         const createdHabit = await habitAPI.createHabit({
           name: newHabit.name,
           description: newHabit.description,
-          coinValue: newHabit.coinValue,
+          coin_value: newHabit.coinValue, // Używaj coin_value zamiast coinValue
           icon: newHabit.icon
         });
 
@@ -167,6 +204,8 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     const habit = habits.find(h => h.id === habitId);
     if (!habit) return;
 
+    const coinsToEarn = habit.coin_value; // Zawsze używaj coin_value
+
     try {
       setLoading(true);
       setError('');
@@ -175,7 +214,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
         // Online - użyj backendu
         const result = await habitAPI.completeHabit(habitId);
 
-        // Aktualizuj lokalny stan monet
+        // Aktualizuj lokalny stan monet z odpowiedzi serwera
         const newCoinsAmount = result.total_coins;
         setUserCoins(newCoinsAmount);
 
@@ -207,11 +246,22 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
 
       } else {
         // Offline lub lokalny nawyk - wykonaj lokalnie
-        const newCoinsAmount = userCoins + habit.coin_value;
+        const newCoinsAmount = userCoins + coinsToEarn;
         setUserCoins(newCoinsAmount);
 
         if (onCoinsUpdate) {
           onCoinsUpdate(newCoinsAmount);
+        }
+
+        // Zapisz offline completion do synchronizacji później
+        if (!habit.isLocal) {
+          const offlineCompletions = JSON.parse(localStorage.getItem('offline_completions') || '[]');
+          offlineCompletions.push({
+            habitId: habitId,
+            completedAt: new Date().toISOString(),
+            coinsEarned: coinsToEarn
+          });
+          localStorage.setItem('offline_completions', JSON.stringify(offlineCompletions));
         }
 
         setCompletedToday(prev => {
@@ -221,7 +271,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           return updated;
         });
 
-        const today = new Date().toDateString();
+        const today = new Date().toISOString().split('T')[0];
         setHabits(prev => {
           const updated = prev.map(h =>
             h.id === habitId
@@ -232,9 +282,12 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           return updated;
         });
 
+        // Zapisz nową liczbę monet w localStorage
+        localStorage.setItem('offline_coins', newCoinsAmount.toString());
+
         const message = isOnline ?
-          `Brawo! Otrzymałeś ${habit.coin_value} monet! 🎉` :
-          `Offline: Otrzymałeś ${habit.coin_value} monet! 🎉`;
+          `Brawo! Otrzymałeś ${coinsToEarn} monet! 🎉` :
+          `Offline: Otrzymałeś ${coinsToEarn} monet! Zostanie zsynchronizowane 🎉`;
         alert(message);
       }
 
@@ -243,12 +296,21 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       setError('Błąd: ' + error.message);
 
       // Fallback - wykonaj lokalnie
-      const newCoinsAmount = userCoins + habit.coin_value;
+      const newCoinsAmount = userCoins + coinsToEarn;
       setUserCoins(newCoinsAmount);
 
       if (onCoinsUpdate) {
         onCoinsUpdate(newCoinsAmount);
       }
+
+      // Zapisz offline completion
+      const offlineCompletions = JSON.parse(localStorage.getItem('offline_completions') || '[]');
+      offlineCompletions.push({
+        habitId: habitId,
+        completedAt: new Date().toISOString(),
+        coinsEarned: coinsToEarn
+      });
+      localStorage.setItem('offline_completions', JSON.stringify(offlineCompletions));
 
       setCompletedToday(prev => {
         const updated = new Set([...prev, habitId]);
@@ -257,7 +319,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
         return updated;
       });
 
-      const today = new Date().toDateString();
+      const today = new Date().toISOString().split('T')[0];
       setHabits(prev => {
         const updated = prev.map(h =>
           h.id === habitId
@@ -268,7 +330,8 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
         return updated;
       });
 
-      alert(`Offline: Otrzymałeś ${habit.coin_value} monet! 🎉`);
+      localStorage.setItem('offline_coins', newCoinsAmount.toString());
+      alert(`Offline: Otrzymałeś ${coinsToEarn} monet! 🎉`);
     } finally {
       setLoading(false);
     }

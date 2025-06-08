@@ -63,7 +63,8 @@ export const authAPI = {
     return response.json();
   },
 
-  async getCoins() {
+  // POPRAWKA: Dodaj metodę getUserCoins zgodną z HabitTracker
+  async getUserCoins() {
     const response = await fetch(`${API_BASE_URL}/api/coins`, {
       headers: {
         ...tokenUtils.getAuthHeaders(),
@@ -75,6 +76,10 @@ export const authAPI = {
     }
 
     return response.json();
+  },
+
+  async getCoins() {
+    return this.getUserCoins(); // Alias dla kompatybilności
   },
 
   async addCoins(amount) {
@@ -138,20 +143,23 @@ export const habitAPI = {
     return response.json();
   },
 
-  // Stwórz nowy nawyk
+  // POPRAWKA: Stwórz nowy nawyk z właściwym mapowaniem pól
   async createHabit(habitData) {
+    // Mapuj coinValue na coin_value zgodnie z backend API
+    const payload = {
+      name: habitData.name,
+      description: habitData.description,
+      coin_value: habitData.coinValue || habitData.coin_value, // Obsłuż oba formaty
+      icon: habitData.icon
+    };
+
     const response = await fetch(`${API_BASE_URL}/api/habits`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...tokenUtils.getAuthHeaders(),
       },
-      body: JSON.stringify({
-        name: habitData.name,
-        description: habitData.description,
-        coinValue: habitData.coinValue,
-        icon: habitData.icon
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
@@ -162,7 +170,7 @@ export const habitAPI = {
     return response.json();
   },
 
-  // Wykonaj nawyk
+  // POPRAWKA: Wykonaj nawyk z lepszą obsługą błędów
   async completeHabit(habitId) {
     const response = await fetch(`${API_BASE_URL}/api/habits/${habitId}/complete`, {
       method: 'POST',
@@ -177,7 +185,25 @@ export const habitAPI = {
       throw new Error(errorData.detail || 'Failed to complete habit');
     }
 
-    return response.json();
+    const result = await response.json();
+
+    // Upewnij się, że odpowiedź zawiera wszystkie potrzebne pola
+    if (!result.total_coins && result.coins_earned) {
+      // Fallback - pobierz aktualne monety jeśli total_coins nie jest w odpowiedzi
+      try {
+        const coinsResponse = await authAPI.getUserCoins();
+        result.total_coins = coinsResponse.coins;
+      } catch (error) {
+        console.warn('Could not fetch updated coins:', error);
+      }
+    }
+
+    return result;
+  },
+
+  // POPRAWKA: Dodaj metodę getUserCoins dla kompatybilności z HabitTracker
+  async getUserCoins() {
+    return authAPI.getUserCoins();
   },
 
   // Pobierz szczegóły nawyku
@@ -198,13 +224,20 @@ export const habitAPI = {
 
   // Zaktualizuj nawyk
   async updateHabit(habitId, habitData) {
+    // Mapuj pola jeśli potrzeba
+    const payload = { ...habitData };
+    if (payload.coinValue) {
+      payload.coin_value = payload.coinValue;
+      delete payload.coinValue;
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/habits/${habitId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         ...tokenUtils.getAuthHeaders(),
       },
-      body: JSON.stringify(habitData),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
@@ -246,5 +279,38 @@ export const habitAPI = {
     }
 
     return response.json();
+  },
+
+  // NOWA FUNKCJA: Synchronizuj offline completions
+  async syncOfflineCompletions() {
+    const offlineCompletions = JSON.parse(localStorage.getItem('offline_completions') || '[]');
+    const results = [];
+
+    for (const completion of offlineCompletions) {
+      try {
+        const result = await this.completeHabit(completion.habitId);
+        results.push({ success: true, habitId: completion.habitId, result });
+      } catch (error) {
+        console.error(`Failed to sync completion for habit ${completion.habitId}:`, error);
+        results.push({ success: false, habitId: completion.habitId, error: error.message });
+      }
+    }
+
+    // Usuń zsynchronizowane completions
+    const failedCompletions = results
+      .filter(r => !r.success)
+      .map(r => offlineCompletions.find(c => c.habitId === r.habitId))
+      .filter(Boolean);
+
+    localStorage.setItem('offline_completions', JSON.stringify(failedCompletions));
+
+    return results;
+  },
+
+  // NOWA FUNKCJA: Sprawdź czy są offline changes do synchronizacji
+  hasOfflineChanges() {
+    const offlineCompletions = JSON.parse(localStorage.getItem('offline_completions') || '[]');
+    const offlineCoins = localStorage.getItem('offline_coins');
+    return offlineCompletions.length > 0 || offlineCoins !== null;
   }
 };
