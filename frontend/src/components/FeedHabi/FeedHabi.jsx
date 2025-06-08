@@ -1,24 +1,94 @@
 import React, { useState, useEffect, useRef } from 'react';
 import FoodControl from '../FoodControl/FoodControl';
 import HabiHappyAdult from './HabiAdultHappy.png';
-import HabiLogo from './habi-logo.png'; // Dodaj ten import
+import HabiLogo from './habi-logo.png';
+import { feedAPI } from '../../services/api.jsx'; // Dodaj import
 import './FeedHabi.css';
 
 const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
   const [currentCoins, setCurrentCoins] = useState(userCoins);
   const [purchaseAnimation, setPurchaseAnimation] = useState(null);
+  const [foodItems, setFoodItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const foodControlRef = useRef(null);
 
-  const foodItems = [
-    { id: 1, name: "Woda", cost: 1, icon: "💧", nutrition: 5, iconImage: "🥤" },
-    { id: 2, name: "Banan", cost: 3, icon: "🍌", nutrition: 15, iconImage: "🍌" },
-    { id: 3, name: "Jabłko", cost: 3, icon: "🍎", nutrition: 15, iconImage: "🍎" },
-    { id: 4, name: "Mięso", cost: 8, icon: "🥩", nutrition: 25, iconImage: "🥩" },
-    { id: 5, name: "Sałatka", cost: 8, icon: "🥗", nutrition: 25, iconImage: "🥗" },
-    { id: 6, name: "Kawa", cost: 20, icon: "☕", nutrition: 40, iconImage: "☕" }
-  ];
+  // Sprawdź stan połączenia
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      setError('');
+      loadFoods();
+      syncOfflinePurchases();
+    };
+    const handleOffline = () => setIsOnline(false);
 
-  const handlePurchase = (item) => {
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Wczytaj jedzenie przy starcie
+  useEffect(() => {
+    loadFoods();
+  }, []);
+
+  // Synchronizuj monety
+  useEffect(() => {
+    setCurrentCoins(userCoins);
+  }, [userCoins]);
+
+  const loadFoods = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      if (isOnline) {
+        const foods = await feedAPI.getFoods();
+        setFoodItems(foods);
+        localStorage.setItem('foods_cache', JSON.stringify(foods));
+      } else {
+        // Offline - użyj cache
+        const cachedFoods = localStorage.getItem('foods_cache');
+        if (cachedFoods) {
+          setFoodItems(JSON.parse(cachedFoods));
+          setError('Tryb offline - używam zapisanych danych');
+        } else {
+          setError('Brak połączenia internetowego');
+        }
+      }
+    } catch (error) {
+      console.error('Błąd ładowania jedzenia:', error);
+
+      // Fallback do cache
+      const cachedFoods = localStorage.getItem('foods_cache');
+      if (cachedFoods) {
+        setFoodItems(JSON.parse(cachedFoods));
+        setError('Błąd serwera - używam zapisanych danych');
+      } else {
+        setError('Nie udało się wczytać jedzenia');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const syncOfflinePurchases = async () => {
+    try {
+      if (feedAPI.hasOfflinePurchases()) {
+        await feedAPI.syncOfflinePurchases();
+        // Odśwież dane po synchronizacji
+        await loadFoods();
+      }
+    } catch (error) {
+      console.error('Błąd synchronizacji offline:', error);
+    }
+  };
     if (currentCoins >= item.cost) {
       const newAmount = currentCoins - item.cost;
       setCurrentCoins(newAmount);
@@ -63,6 +133,26 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
           </div>
         </div>
 
+        {/* Error message */}
+        {error && (
+          <div className="error-message">
+            <div>
+              {!isOnline && '📶 '}
+              {error}
+            </div>
+            <button onClick={loadFoods} disabled={loading}>
+              {isOnline ? 'Odśwież' : 'Sprawdź połączenie'}
+            </button>
+          </div>
+        )}
+
+        {/* Connection status */}
+        {!isOnline && (
+          <div className="offline-indicator">
+            📶 Tryb offline - zakupy będą zsynchronizowane gdy połączenie wróci
+          </div>
+        )}
+
         {/* Purchase Animation */}
         {purchaseAnimation && (
           <div className="purchase-animation">
@@ -79,27 +169,41 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
         )}
 
         {/* Food Items Grid */}
-        <div className="food-items-grid-redesigned">
-          {foodItems.map(item => {
-            const canAfford = currentCoins >= item.cost;
+        {loading && (
+          <div className="loading-indicator">
+            Ładowanie jedzenia...
+          </div>
+        )}
 
-            return (
-              <div
-                key={item.id}
-                className={`food-item-redesigned ${!canAfford ? 'disabled' : ''}`}
-                onClick={() => canAfford && handlePurchase(item)}
-              >
-                <div className="food-item-image">
-                  <span className="food-emoji">{item.iconImage}</span>
+        {!loading && foodItems.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">🍽️</div>
+            <h3>Brak jedzenia</h3>
+            <p>Nie udało się wczytać dostępnego jedzenia dla Habi.</p>
+          </div>
+        ) : (
+          <div className="food-items-grid-redesigned">
+            {foodItems.map(item => {
+              const canAfford = currentCoins >= item.cost;
+
+              return (
+                <div
+                  key={item.id}
+                  className={`food-item-redesigned ${!canAfford ? 'disabled' : ''} ${loading ? 'loading' : ''}`}
+                  onClick={() => canAfford && !loading && handlePurchase(item)}
+                >
+                  <div className="food-item-image">
+                    <span className="food-emoji">{item.iconImage}</span>
+                  </div>
+                  <div className="food-item-price">
+                    <span className="coin-icon">🪙</span>
+                    <span className="price-value">{item.cost}</span>
+                  </div>
                 </div>
-                <div className="food-item-price">
-                  <span className="coin-icon">🪙</span>
-                  <span className="price-value">{item.cost}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Habi Character Section */}
         <div className="habi-character-section">

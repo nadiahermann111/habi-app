@@ -314,3 +314,105 @@ export const habitAPI = {
     return offlineCompletions.length > 0 || offlineCoins !== null;
   }
 };
+
+// NOWE API dla karmienia Habi
+export const feedAPI = {
+  // Pobierz dostępne jedzenie
+  async getFoods() {
+    const response = await fetch(`${API_BASE_URL}/api/foods`, {
+      headers: {
+        ...tokenUtils.getAuthHeaders(),
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to fetch foods');
+    }
+
+    return response.json();
+  },
+
+  // Kup jedzenie i nakarm Habi
+  async feedHabi(foodId) {
+    const response = await fetch(`${API_BASE_URL}/api/feed-habi`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...tokenUtils.getAuthHeaders(),
+      },
+      body: JSON.stringify({ food_id: foodId }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to feed Habi');
+    }
+
+    return response.json();
+  },
+
+  // Pobierz aktualny stan Habi
+  async getHabiStatus() {
+    const response = await fetch(`${API_BASE_URL}/api/habi-status`, {
+      headers: {
+        ...tokenUtils.getAuthHeaders(),
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to fetch Habi status');
+    }
+
+    return response.json();
+  },
+
+  // Pobierz historię karmienia
+  async getFeedHistory() {
+    const response = await fetch(`${API_BASE_URL}/api/feed-history`, {
+      headers: {
+        ...tokenUtils.getAuthHeaders(),
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Failed to fetch feed history');
+    }
+
+    return response.json();
+  },
+
+  // Synchronizuj offline purchases
+  async syncOfflinePurchases() {
+    const offlinePurchases = JSON.parse(localStorage.getItem('offline_purchases') || '[]');
+    const results = [];
+
+    for (const purchase of offlinePurchases) {
+      try {
+        const result = await this.feedHabi(purchase.foodId);
+        results.push({ success: true, foodId: purchase.foodId, result });
+      } catch (error) {
+        console.error(`Failed to sync purchase for food ${purchase.foodId}:`, error);
+        results.push({ success: false, foodId: purchase.foodId, error: error.message });
+      }
+    }
+
+    // Usuń zsynchronizowane purchases
+    const failedPurchases = results
+      .filter(r => !r.success)
+      .map(r => offlinePurchases.find(p => p.foodId === r.foodId))
+      .filter(Boolean);
+
+    localStorage.setItem('offline_purchases', JSON.stringify(failedPurchases));
+
+    return results;
+  },
+
+  // Sprawdź czy są offline changes
+  hasOfflinePurchases() {
+    const offlinePurchases = JSON.parse(localStorage.getItem('offline_purchases') || '[]');
+    return offlinePurchases.length > 0;
+  }
+};
