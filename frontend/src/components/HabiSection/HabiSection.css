@@ -46,15 +46,152 @@
   justify-content: center;
   align-items: center;
   margin-bottom: 10px;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  user-select: none;
+}
+
+.habi-avatar:hover {
+  transform: scale(1.05);
+}
+
+.habi-avatar:active {
+  transform: scale(0.95);
 }
 
 .habi-avatar img {
-  max-width: 200px;
-  max-height: 200px;
+  max-width: 220px;
+  max-height: 220px;
   width: auto;
   height: auto;
   object-fit: contain;
   animation: bounce 2s infinite;
+  pointer-events: none;
+}
+
+/* Kontener dla wiadomości i serduszka */
+.habi-message-container {
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  pointer-events: none;
+  animation: messageAppear 3s ease-out forwards;
+}
+
+/* Animowane serduszko */
+.habi-heart {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 28px;
+  animation: heartFloat 3s ease-out forwards;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Wiadomość motywacyjna */
+.habi-message {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+  color: white;
+  padding: 12px 15px;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+  border: 3px solid white;
+  animation: messageSlideUp 3s ease-out forwards;
+  text-align: center;
+  min-width: 140px;
+  position: relative;
+}
+
+/* Strzałka wiadomości */
+.habi-message::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #ff6b6b;
+}
+
+/* Animacja pojawiania się całego kontenera */
+@keyframes messageAppear {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.5);
+  }
+  10% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.1);
+  }
+  20% {
+    transform: translateX(-50%) scale(1);
+  }
+  90% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.8);
+  }
+}
+
+/* Animacja serduszka - unosi się w górę */
+@keyframes heartFloat {
+  0% {
+    transform: translateX(-50%) translateY(0px) scale(0.5);
+    opacity: 0;
+  }
+  10% {
+    transform: translateX(-50%) translateY(-5px) scale(1.2);
+    opacity: 1;
+  }
+  20% {
+    transform: translateX(-50%) translateY(-10px) scale(1);
+    opacity: 1;
+  }
+  80% {
+    transform: translateX(-50%) translateY(-25px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) translateY(-40px) scale(0.7);
+    opacity: 0;
+  }
+}
+
+/* Animacja wiadomości - wjeżdża z dołu */
+@keyframes messageSlideUp {
+  0% {
+    transform: translateY(20px) scale(0.8);
+    opacity: 0;
+  }
+  15% {
+    transform: translateY(0px) scale(1.05);
+    opacity: 1;
+  }
+  25% {
+    transform: translateY(0px) scale(1);
+    opacity: 1;
+  }
+  85% {
+    transform: translateY(0px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-10px) scale(0.9);
+    opacity: 0;
+  }
 }
 
 .habi-status p {
@@ -85,5 +222,42 @@
   .habi-avatar img {
     max-width: 150px;
     max-height: 150px;
+  }
+
+  .habi-message-container {
+    top: -60px;
+  }
+
+  .habi-heart {
+    top: -25px;
+    font-size: 24px;
+  }
+
+  .habi-message {
+    font-size: 12px;
+    padding: 10px 16px;
+    min-width: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .habi-avatar img {
+    max-width: 120px;
+    max-height: 120px;
+  }
+
+  .habi-message-container {
+    top: -50px;
+  }
+
+  .habi-heart {
+    top: -20px;
+    font-size: 20px;
+  }
+
+  .habi-message {
+    font-size: 10px;
+    padding: 8px 10px;
+    min-width: 100px;
   }
 }

@@ -1,7 +1,8 @@
-// HabitTracker.jsx - zaktualizowany z CoinSlot
+// HabitTracker.jsx - zaktualizowany z CoinSlot i Habi Logo
 import React, { useState, useEffect } from 'react';
 import { habitAPI } from '../../services/api.jsx';
 import CoinSlot from '../CoinSlot/CoinSlot';
+import HabiLogo from './habi-logo.png'; // Dodaj import logo
 import './HabitTracker.css';
 
 const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
@@ -389,7 +390,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     return (
       <div className="habit-tracker">
         <div className="habit-tracker-container">
-          {/* Header */}
+          {/* Header z logo */}
           <div className="habit-header">
             <div className="habit-header-left">
               <button
@@ -399,7 +400,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
               >
                 ←
               </button>
-              <h2>Dodaj nowy nawyk</h2>
+              <img src={HabiLogo} alt="Habi" className="habi-logo-k" />
             </div>
           </div>
 
@@ -492,7 +493,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
   return (
     <div className="habit-tracker">
       <div className="habit-tracker-container">
-        {/* Header z CoinSlot */}
+        {/* Header z CoinSlot i logo */}
         <div className="habit-header">
           <div className="habit-header-left">
             <button
@@ -502,7 +503,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
             >
               ←
             </button>
-            <h2>Moje nawyki</h2>
+            <img src={HabiLogo} alt="Habi" className="habi-logo" />
           </div>
 
           {/* CoinSlot zamiast prostego wyświetlania monet */}
@@ -549,13 +550,6 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           {loading ? 'Ładowanie...' : 'Dodaj nowy nawyk'}
         </button>
 
-        {/* Loading indicator */}
-        {loading && (
-          <div className="loading-indicator">
-            Ładowanie nawyków...
-          </div>
-        )}
-
         {/* Lista nawyków */}
         {!loading && habits.length === 0 ? (
           <div className="empty-state">
@@ -574,15 +568,17 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
                   onClick={() => !isCompletedToday && !loading && handleCompleteHabit(habit.id)}
                 >
                   <div className="habit-card-header">
-                    <span className="habit-icon">{habit.icon}</span>
-                    <div className="habit-info">
-                      <h3 className="habit-title">
-                        {habit.name}
-                        {habit.isLocal && <span className="local-badge">📱</span>}
-                      </h3>
-                      {habit.description && (
-                        <p className="habit-description">{habit.description}</p>
-                      )}
+                    <div className="habit-main-info">
+                      <span className="habit-icon">{habit.icon}</span>
+                      <div className="habit-info">
+                        <h3 className="habit-title">
+                          {habit.name}
+                          {habit.isLocal && <span className="local-badge">📱</span>}
+                        </h3>
+                        {habit.description && (
+                          <p className="habit-description">{habit.description}</p>
+                        )}
+                      </div>
                     </div>
                     <div className="habit-actions">
                       <div className="habit-reward">
@@ -590,7 +586,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
                         <span>{habit.coin_value}</span>
                       </div>
                       <button
-                        className="delete-btn"
+                        className="habit-delete-btn"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteHabit(habit.id);
@@ -605,12 +601,6 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
                   {isCompletedToday && (
                     <div className="completed-indicator">
                       ✅ Wykonane dzisiaj!
-                    </div>
-                  )}
-
-                  {!isCompletedToday && (
-                    <div className="click-hint">
-                      Kliknij aby wykonać (+{habit.coin_value} monet)
                     </div>
                   )}
                 </div>

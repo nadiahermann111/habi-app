@@ -14,12 +14,12 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
   const foodControlRef = useRef(null);
 
   const foodItems = [
-    { id: 1, name: "Woda", cost: 1, icon: "💧", nutrition: 5 },
-    { id: 2, name: "Banan", cost: 3, icon: "🍌", nutrition: 15 },
-    { id: 3, name: "Jabłko", cost: 3, icon: "🍎", nutrition: 15 },
-    { id: 4, name: "Mięso", cost: 8, icon: "🥩", nutrition: 25 },
-    { id: 5, name: "Sałatka", cost: 8, icon: "🥗", nutrition: 25 },
-    { id: 6, name: "Kawa", cost: 20, icon: "☕", nutrition: 40 }
+    { id: 1, cost: 1, icon: "💧", nutrition: 5 },
+    { id: 2, cost: 3, icon: "🍌", nutrition: 15 },
+    { id: 3, cost: 3, icon: "🍎", nutrition: 15 },
+    { id: 4, cost: 8, icon: "🥩", nutrition: 25 },
+    { id: 5, cost: 8, icon: "🥗", nutrition: 25 },
+    { id: 6, cost: 20, icon: "☕", nutrition: 40 }
   ];
 
   const API_BASE_URL = 'https://habi-backend.onrender.com';
@@ -150,7 +150,7 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
             <button className="feed-back-btn" onClick={onBack} disabled={loading}>
               ←
             </button>
-            <img src={HabiLogo} alt="Habi" className="habi-logo" />
+            <img src={HabiLogo} alt="Habi" className="habi-logo-m" />
           </div>
 
           {/* CoinSlot zamiast prostego wyświetlania monet */}
@@ -186,7 +186,7 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
             <div className="purchase-popup">
               <div className="purchase-icon">{purchaseAnimation.icon}</div>
               <div className="purchase-text">
-                {purchaseAnimation.itemName} kupione za {purchaseAnimation.cost} monet!
+                {purchaseAnimation.itemName} Kupione za {purchaseAnimation.cost} monet!
               </div>
               <div className="purchase-nutrition">
                 +{purchaseAnimation.nutrition} odżywiania dla Habi
@@ -222,10 +222,6 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
                 <div className="food-item-image">
                   <span className="food-emoji">{item.icon}</span>
                 </div>
-                <div className="food-item-info">
-                  <div className="food-item-name">{item.name}</div>
-                  <div className="food-item-nutrition">+{item.nutrition} 🍽️</div>
-                </div>
                 <div className="food-item-price">
                   <span className="coin-icon">🪙</span>
                   <span className="price-value">{item.cost}</span>
@@ -258,7 +254,7 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
             <span className="tip-icon">💡</span>
             <div className="tip-content">
               <strong>Wskazówka:</strong> Kliknij na jedzenie aby wydać monety i nakarmić Habi!
-              Stan sytości zmniejsza się z czasem.
+              Stan sytości zmniejsza się z czasem, jeśli nie wykonujesz swoich nowych nawyków - Habi będzie smutna i głodna.
             </div>
           </div>
 
@@ -270,13 +266,6 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
               </div>
             </div>
           )}
-
-          <div className="tip-card info">
-            <span className="tip-icon">🔗</span>
-            <div className="tip-content">
-              <strong>Status:</strong> Połączono z {API_BASE_URL}
-            </div>
-          </div>
         </div>
       </div>
     </div>

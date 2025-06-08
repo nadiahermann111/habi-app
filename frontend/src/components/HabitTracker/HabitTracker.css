@@ -9,28 +9,28 @@
 }
 
 .habit-tracker-container {
-  max-width: 100%;
+  max-width: 120%;
   margin: 0 auto;
   padding: env(safe-area-inset-top, 20px) env(safe-area-inset-right, 20px) env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 20px);
 }
 
 @media (min-width: 768px) {
   .habit-tracker-container {
-    max-width: 600px;
+    max-width: 1000px;
     padding: 24px;
   }
 }
 
 @media (min-width: 1024px) {
   .habit-tracker-container {
-    max-width: 800px;
+    max-width: 1300px;
     padding: 32px;
   }
 }
 
 @media (min-width: 1200px) {
   .habit-tracker-container {
-    max-width: 1000px;
+    max-width: 1500px;
     padding: 40px;
   }
 }
@@ -85,6 +85,7 @@
 
 .habit-header h2 {
   margin: 0;
+  width: 1200px;
   color: #6c5b2f;
   font-weight: 600;
   font-size: 18px;
@@ -93,11 +94,24 @@
   text-overflow: ellipsis;
 }
 
+
+@media (min-width: 480px) {
+  .habi-logo {
+    height: 30px;
+  }
+}
+
+@media (min-width: 768px) {
+  .habi-logo {
+    height: 30px;
+  }
+}
+
 .habit-coins-display {
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, #f4d03f 0%, #f7dc6f 100%);
-  padding: 8px 12px;
+  background: linear-gradient(135deg, #f4d03f 0%, #fff1bd 100%);
+  padding: 6px 10px;
   border-radius: 20px;
   border: 1px solid #f1c40f;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -105,7 +119,7 @@
 }
 
 .habit-coins-display span:first-child {
-  font-size: 16px;
+  font-size: 15px;
   margin-right: 4px;
 }
 
@@ -154,7 +168,7 @@
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   margin-bottom: 16px;
-  max-width: 500px;
+  max-width: 800px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -204,7 +218,7 @@
   grid-template-columns: repeat(5, 1fr);
   gap: 12px;
   justify-items: center;
-  max-width: 400px;
+  max-width: 550px;
   margin: 0 auto;
 }
 
@@ -212,7 +226,7 @@
   .icon-grid {
     grid-template-columns: repeat(5, 1fr);
     gap: 16px;
-    max-width: 400px;
+    max-width: 600px;
   }
 }
 
@@ -220,7 +234,7 @@
   .icon-grid {
     grid-template-columns: repeat(5, 1fr);
     gap: 20px;
-    max-width: 400px;
+    max-width: 650px;
   }
 }
 
@@ -356,15 +370,15 @@
   line-height: 1.5;
 }
 
-/* Habit card - mobile optimized */
+/* KOMPAKTOWE KARTY NAWYKÓW */
 .habit-card {
   background: white;
-  padding: 16px;
-  border-radius: 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   border: 2px solid transparent;
   transition: all 0.2s ease;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   cursor: pointer;
   position: relative;
   touch-action: manipulation;
@@ -373,15 +387,8 @@
 
 @media (min-width: 768px) {
   .habit-card {
-    padding: 20px;
-    margin-bottom: 16px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .habit-card {
-    padding: 24px;
-    margin-bottom: 20px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
   }
 }
 
@@ -399,15 +406,24 @@
   transform: none;
 }
 
+/* NOWY HEADER Z PRZYCISKIEM KOSZA */
 .habit-card-header {
   display: flex;
   align-items: center;
-  margin-bottom: 12px;
+  justify-content: space-between;
   gap: 12px;
 }
 
+.habit-main-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
 .habit-icon {
-  font-size: 28px;
+  font-size: 20px;
   flex-shrink: 0;
 }
 
@@ -417,53 +433,97 @@
 }
 
 .habit-title {
-  margin: 0 0 4px 0;
+  margin: 0 0 2px 0;
   color: #6c5b2f;
   font-weight: 600;
-  font-size: 16px;
-  line-height: 1.3;
+  font-size: 14px;
+  line-height: 1.2;
   word-wrap: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .habit-description {
   margin: 0;
   color: #6c757d;
-  font-size: 13px;
-  line-height: 1.4;
+  font-size: 11px;
+  line-height: 1.3;
   word-wrap: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* AKCJE PO PRAWEJ STRONIE */
+.habit-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .habit-reward {
   display: flex;
   align-items: center;
   background: linear-gradient(135deg, #f4d03f 0%, #f7dc6f 100%);
-  padding: 6px 10px;
-  border-radius: 12px;
+  padding: 4px 8px;
+  border-radius: 8px;
   border: 1px solid #f1c40f;
   flex-shrink: 0;
 }
 
 .habit-reward span:first-child {
-  font-size: 14px;
-  margin-right: 4px;
+  font-size: 12px;
+  margin-right: 3px;
 }
 
 .habit-reward span:last-child {
   font-weight: 600;
   color: #6c5b2f;
-  font-size: 13px;
+  font-size: 11px;
 }
 
-/* Completed indicator */
+/* PRZYCISK KOSZA */
+.habit-delete-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #dc3545;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  line-height: 1;
+}
+
+.habit-delete-btn:hover {
+  opacity: 1;
+}
+
+.habit-delete-btn:active {
+  transform: scale(0.90);
+  opacity: 1;
+}
+
+/* Completed indicator - bardziej kompaktowy */
 .completed-indicator {
   text-align: center;
-  padding: 12px;
+  padding: 8px;
   background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
   color: white;
-  border-radius: 12px;
-  font-size: 14px;
+  border-radius: 8px;
+  font-size: 12px;
   font-weight: 600;
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 /* PWA specific optimizations */
@@ -547,28 +607,50 @@
   }
 
   .habit-card {
-    padding: 12px;
+    padding: 10px 14px;
   }
 
-  .habit-card-header {
+  .habit-main-info {
     gap: 8px;
   }
 
   .habit-icon {
-    font-size: 24px;
+    font-size: 18px;
   }
 
   .habit-title {
-    font-size: 15px;
+    font-size: 13px;
   }
 
   .habit-description {
-    font-size: 12px;
+    font-size: 10px;
+  }
+
+  .habit-actions {
+    gap: 6px;
+  }
+
+  .habit-reward {
+    padding: 3px 6px;
+  }
+
+  .habit-reward span:first-child {
+    font-size: 11px;
+  }
+
+  .habit-reward span:last-child {
+    font-size: 10px;
+  }
+
+  .habit-delete-btn {
+    font-size: 14px;
+    padding: 0;
+    margin: 0;
   }
 
   .completed-indicator {
-    font-size: 13px;
-    padding: 10px;
+    font-size: 11px;
+    padding: 6px;
   }
 }
 
@@ -585,6 +667,18 @@
   .icon-grid {
     grid-template-columns: repeat(4, 1fr);
   }
+
+  .habit-card {
+    padding: 8px 12px;
+  }
+
+  .habit-title {
+    font-size: 12px;
+  }
+
+  .habit-description {
+    font-size: 9px;
+  }
 }
 
 /* Large screen optimizations */
@@ -600,7 +694,7 @@
 
   .habit-form {
     padding: 24px;
-    max-width: 500px;
+    max-width: 800px;
   }
 
   .form-group {
@@ -614,16 +708,16 @@
   }
 
   .habit-title {
-    font-size: 17px;
+    font-size: 15px;
   }
 
   .habit-description {
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .completed-indicator {
-    font-size: 15px;
-    padding: 14px;
+    font-size: 13px;
+    padding: 10px;
   }
 }
 
@@ -634,7 +728,7 @@
 
   .habit-form {
     padding: 28px;
-    max-width: 500px;
+    max-width: 900px;
   }
 
   .form-group {
@@ -642,10 +736,10 @@
   }
 
   .habit-title {
-    font-size: 18px;
+    font-size: 16px;
   }
 
   .habit-description {
-    font-size: 15px;
+    font-size: 13px;
   }
 }
