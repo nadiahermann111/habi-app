@@ -75,6 +75,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .habit-back-btn:active {
@@ -84,36 +85,42 @@
 
 .habit-header h2 {
   margin: 0;
-  width: 1200px;
   color: #6c5b2f;
   font-weight: 600;
   font-size: 18px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  line-height: 1;
 }
 
 .habi-logo {
-  height: 24px;
+  height: 28px;
   width: auto;
   margin-left: 8px;
+  display: block;
+  vertical-align: middle;
 }
 
 .habi-logo-k {
-  height: 24px;
+  height: 28px;
   width: auto;
   margin-left: 8px;
+  display: block;
+  vertical-align: middle;
 }
 
 @media (min-width: 480px) {
   .habi-logo, .habi-logo-k {
-    height: 30px;
+    height: 32px;
   }
 }
 
 @media (min-width: 768px) {
   .habi-logo, .habi-logo-k {
-    height: 30px;
+    height: 36px;
   }
 }
 
@@ -746,7 +753,7 @@
   }
 
   .habi-logo, .habi-logo-k {
-    height: 20px;
+    height: 24px;
   }
 }
 
@@ -762,6 +769,10 @@
 
   .habit-header h2 {
     font-size: 16px;
+  }
+
+  .habi-logo, .habi-logo-k {
+    height: 22px;
   }
 
   .habit-form {
@@ -850,6 +861,10 @@
 
   .habit-header h2 {
     font-size: 15px;
+  }
+
+  .habi-logo, .habi-logo-k {
+    height: 20px;
   }
 
   .icon-grid {
