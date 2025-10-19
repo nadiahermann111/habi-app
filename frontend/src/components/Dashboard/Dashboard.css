@@ -11,7 +11,7 @@
 .dashboard-container {
   max-width: 100%;
   margin: 0 auto;
-  padding: 6px;
+  padding: 4px;
   box-sizing: border-box;
   width: 100%;
 }
@@ -21,7 +21,7 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
-  font-size: 1.4em;
+  font-size: 1.6em;
   color: #6c5b2f;
   font-weight: 500;
 }
@@ -29,11 +29,11 @@
 .error-message {
   background: linear-gradient(135deg, #ffe6e6 0%, #ffcccc 100%);
   border: 2px solid #dc3545;
-  border-radius: 14px;
-  padding: 24px 28px;
+  border-radius: 16px;
+  padding: 28px 32px;
   margin: 12px 0;
   color: #dc3545;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 500;
   text-align: center;
   box-sizing: border-box;
@@ -54,10 +54,10 @@
 
 .welcome-section {
   text-align: center;
-  margin-bottom: 14px;
-  padding: 40px 28px;
+  margin-bottom: 12px;
+  padding: 48px 32px;
   background: rgba(255, 255, 255, 0.5);
-  border-radius: 22px;
+  border-radius: 24px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -78,7 +78,7 @@
 
 .welcome-message {
   color: #6c5b2f;
-  font-size: 36px;
+  font-size: 42px;
   margin: 0;
   font-weight: 700;
   letter-spacing: -0.5px;
@@ -87,10 +87,10 @@
 
 .quick-actions {
   background: white;
-  border-radius: 18px;
-  padding: 32px 28px;
+  border-radius: 20px;
+  padding: 36px 32px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   box-sizing: border-box;
   animation: slideUp 0.6s ease-out;
 }
@@ -107,9 +107,9 @@
 }
 
 .quick-actions h3 {
-  margin: 0 0 24px 0;
+  margin: 0 0 28px 0;
   color: #6c5b2f;
-  font-size: 26px;
+  font-size: 30px;
   font-weight: 600;
   letter-spacing: 0.3px;
 }
@@ -117,28 +117,28 @@
 .action-buttons {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
-  gap: 18px;
+  gap: 20px;
 }
 
 .action-btn {
   background: linear-gradient(135deg, #f4d03f 0%, #f1c40f 100%);
   color: #6c5b2f;
   border: none;
-  padding: 28px 32px;
-  border-radius: 14px;
-  font-size: 20px;
+  padding: 32px 36px;
+  border-radius: 16px;
+  font-size: 22px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(244, 208, 63, 0.3);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  min-height: 80px;
+  min-height: 90px;
   display: flex;
   align-items: center;
   justify-content: center;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 1px;
   box-sizing: border-box;
   position: relative;
   overflow: hidden;
@@ -192,32 +192,32 @@
 
   .action-buttons {
     grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
+    gap: 22px;
   }
 
   .welcome-message {
-    font-size: 38px;
+    font-size: 44px;
   }
 
   .welcome-section {
     margin-bottom: 24px;
-    padding: 44px 32px;
+    padding: 52px 36px;
   }
 
   .quick-actions {
-    padding: 36px 32px;
+    padding: 40px 36px;
     margin-bottom: 24px;
   }
 
   .quick-actions h3 {
-    font-size: 28px;
-    margin-bottom: 28px;
+    font-size: 32px;
+    margin-bottom: 32px;
   }
 
   .action-btn {
-    padding: 30px 36px;
-    font-size: 21px;
-    min-height: 85px;
+    padding: 34px 40px;
+    font-size: 23px;
+    min-height: 95px;
   }
 }
 
@@ -229,26 +229,26 @@
   }
 
   .welcome-section {
-    padding: 48px 36px;
+    padding: 56px 40px;
     margin-bottom: 28px;
   }
 
   .welcome-message {
-    font-size: 42px;
+    font-size: 48px;
   }
 
   .quick-actions {
-    padding: 40px 36px;
+    padding: 44px 40px;
   }
 
   .quick-actions h3 {
-    font-size: 30px;
+    font-size: 34px;
   }
 
   .action-btn {
-    padding: 32px 40px;
-    font-size: 22px;
-    min-height: 90px;
+    padding: 36px 44px;
+    font-size: 24px;
+    min-height: 100px;
   }
 }
 
@@ -260,8 +260,8 @@
   }
 
   .dashboard-container {
-    padding-left: max(env(safe-area-inset-left), 6px);
-    padding-right: max(env(safe-area-inset-right), 6px);
+    padding-left: max(env(safe-area-inset-left), 4px);
+    padding-right: max(env(safe-area-inset-right), 4px);
   }
 }
 

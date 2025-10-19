@@ -62,8 +62,8 @@
 }
 
 .habi-avatar img {
-  max-width: 220px;
-  max-height: 220px;
+  max-width: 235px;
+  max-height: 235px;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -89,7 +89,7 @@
   font-size: 32px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   will-change: transform, opacity;
-  animation: heartFloat 2.5s ease-out forwards;
+  animation: heartFloat 3s ease-out forwards;
 }
 
 .habi-message {
@@ -106,7 +106,7 @@
   min-width: 160px;
   position: relative;
   will-change: transform, opacity;
-  animation: messageSlideUp 2.5s ease-out forwards;
+  animation: messageSlideUp 3s ease-out forwards;
 }
 
 .habi-message::after {
