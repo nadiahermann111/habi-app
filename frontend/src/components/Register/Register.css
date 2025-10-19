@@ -78,7 +78,6 @@
 }
 
 .register-form h2::after {
-  content: '🐵';
   position: absolute;
   bottom: -12px;
   left: 50%;

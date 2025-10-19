@@ -2,50 +2,30 @@
   min-height: 100vh;
   background: linear-gradient(135deg, #faf5cc 0%, #fff9c3 100%);
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
 
 .habit-tracker-container {
-  max-width: 120%;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: env(safe-area-inset-top, 20px) env(safe-area-inset-right, 20px) env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 20px);
-}
-
-@media (min-width: 768px) {
-  .habit-tracker-container {
-    max-width: 1000px;
-    padding: 24px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .habit-tracker-container {
-    max-width: 1300px;
-    padding: 32px;
-  }
-}
-
-@media (min-width: 1200px) {
-  .habit-tracker-container {
-    max-width: 1500px;
-    padding: 40px;
-  }
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .habit-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
-  padding: 12px 16px;
+  margin-bottom: 24px;
+  padding: 16px 20px;
   background: white;
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   position: sticky;
-  top: env(safe-area-inset-top, 20px);
+  top: 20px;
   z-index: 100;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -84,43 +64,24 @@
 
 .habit-header h2 {
   margin: 0;
-  width: 1200px;
   color: #6c5b2f;
   font-weight: 600;
-  font-size: 18px;
+  font-size: 20px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.habi-logo {
-  height: 24px;
-  width: auto;
-  margin-left: 8px;
-}
-
+.habi-logo,
 .habi-logo-k {
-  height: 24px;
+  height: 28px;
   width: auto;
   margin-left: 8px;
 }
-
-@media (min-width: 480px) {
-  .habi-logo, .habi-logo-k {
-    height: 30px;
-  }
-}
-
-@media (min-width: 768px) {
-  .habi-logo, .habi-logo-k {
-    height: 30px;
-  }
-}
-
 
 .add-habit-btn {
   width: 100%;
-  padding: 16px;
+  padding: 16px 24px;
   background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
   color: white;
   border: none;
@@ -128,19 +89,24 @@
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  min-height: 56px;
+  box-sizing: border-box;
+}
+
+.add-habit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(46, 204, 113, 0.4);
 }
 
 .add-habit-btn:active {
-  transform: translateY(1px);
+  transform: translateY(0);
   box-shadow: 0 2px 8px rgba(46, 204, 113, 0.3);
 }
 
@@ -151,17 +117,18 @@
 
 .habit-form {
   background: white;
-  padding: 20px;
+  padding: 24px;
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  margin-bottom: 16px;
+  margin-bottom: 24px;
   max-width: 800px;
   margin-left: auto;
   margin-right: auto;
+  box-sizing: border-box;
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .form-label {
@@ -170,75 +137,66 @@
   font-weight: 600;
   color: #6c5b2f;
   font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.form-input, .form-textarea {
+.form-input,
+.form-textarea {
   width: 100%;
-  padding: 16px;
+  padding: 16px 20px;
   border: 2px solid #e9ecef;
   border-radius: 12px;
   font-size: 16px;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   font-family: inherit;
   box-sizing: border-box;
   background-color: #f8f9fa;
-  -webkit-appearance: none;
-  appearance: none;
 }
 
-.form-input:focus, .form-textarea:focus {
+.form-input:focus,
+.form-textarea:focus {
   outline: none;
   border-color: #f4d03f;
   background-color: white;
-  box-shadow: 0 0 0 3px rgba(244, 208, 63, 0.1);
+  box-shadow: 0 0 0 4px rgba(244, 208, 63, 0.2);
+  transform: translateY(-2px);
 }
 
 .form-textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 100px;
   line-height: 1.5;
 }
 
-/* Icon selection - touch friendly */
 .icon-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 12px;
   justify-items: center;
-  max-width: 550px;
+  max-width: 600px;
   margin: 0 auto;
 }
 
-@media (min-width: 768px) {
-  .icon-grid {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 16px;
-    max-width: 600px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .icon-grid {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 20px;
-    max-width: 650px;
-  }
-}
-
 .icon-btn {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   border: 2px solid #e9ecef;
   border-radius: 12px;
   background: #f8f9fa;
   cursor: pointer;
-  font-size: 20px;
-  transition: all 0.2s ease;
+  font-size: 22px;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+}
+
+.icon-btn:hover {
+  transform: translateY(-2px);
+  border-color: #f1c40f;
 }
 
 .icon-btn:active {
@@ -292,14 +250,14 @@
   display: flex;
   justify-content: space-between;
   margin-top: 8px;
-  font-size: 12px;
+  font-size: 13px;
   color: #6c757d;
   font-weight: 500;
 }
 
 .submit-btn {
   width: 100%;
-  padding: 16px;
+  padding: 16px 24px;
   background: linear-gradient(135deg, #f4d03f 0%, #f1c40f 100%);
   color: #6c5b2f;
   border: none;
@@ -307,36 +265,44 @@
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(244, 208, 63, 0.3);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  min-height: 56px;
+  box-sizing: border-box;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(244, 208, 63, 0.4);
 }
 
 .submit-btn:active {
-  transform: translateY(1px);
+  transform: translateY(0);
   box-shadow: 0 2px 8px rgba(244, 208, 63, 0.3);
 }
 
 .submit-btn:disabled {
-  background: #e9ecef;
+  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
   color: #6c757d;
   cursor: not-allowed;
-  transform: none;
+  opacity: 0.7;
   box-shadow: none;
+  transform: none;
 }
 
 .empty-state {
   text-align: center;
-  padding: 40px 20px;
+  padding: 48px 24px;
   background: white;
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .empty-state-icon {
-  font-size: 48px;
+  font-size: 56px;
   margin-bottom: 16px;
 }
 
@@ -344,35 +310,34 @@
   color: #6c5b2f;
   margin: 0 0 12px 0;
   font-weight: 600;
-  font-size: 18px;
+  font-size: 20px;
 }
 
 .empty-state p {
   color: #6c757d;
   margin: 0;
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 .habit-card {
   background: white;
-  padding: 12px 16px;
+  padding: 16px 20px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   border: 2px solid transparent;
-  transition: all 0.2s ease;
-  margin-bottom: 8px;
+  transition: all 0.3s ease;
+  margin-bottom: 12px;
   cursor: pointer;
   position: relative;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
 }
 
-@media (min-width: 768px) {
-  .habit-card {
-    padding: 14px 18px;
-    margin-bottom: 10px;
-  }
+.habit-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .habit-card:active {
@@ -385,6 +350,7 @@
   cursor: default;
 }
 
+.habit-card.completed:hover,
 .habit-card.completed:active {
   transform: none;
 }
@@ -399,13 +365,13 @@
 .habit-main-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex: 1;
   min-width: 0;
 }
 
 .habit-icon {
-  font-size: 20px;
+  font-size: 24px;
   flex-shrink: 0;
 }
 
@@ -415,14 +381,14 @@
 }
 
 .habit-title {
-  margin: 0 0 2px 0;
+  margin: 0 0 4px 0;
   color: #6c5b2f;
   font-weight: 600;
-  font-size: 14px;
-  line-height: 1.2;
+  font-size: 16px;
+  line-height: 1.3;
   word-wrap: break-word;
   display: -webkit-box;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -430,11 +396,11 @@
 .habit-description {
   margin: 0;
   color: #6c757d;
-  font-size: 11px;
-  line-height: 1.3;
+  font-size: 13px;
+  line-height: 1.4;
   word-wrap: break-word;
   display: -webkit-box;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -442,7 +408,7 @@
 .habit-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
@@ -450,43 +416,43 @@
   display: flex;
   align-items: center;
   background: linear-gradient(135deg, #f4d03f 0%, #f7dc6f 100%);
-  padding: 4px 8px;
+  padding: 6px 10px;
   border-radius: 8px;
   border: 1px solid #f1c40f;
   flex-shrink: 0;
 }
 
 .habit-reward span:first-child {
-  font-size: 12px;
-  margin-right: 3px;
+  font-size: 14px;
+  margin-right: 4px;
 }
 
 .habit-reward span:last-child {
   font-weight: 600;
   color: #6c5b2f;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .habit-delete-btn {
   background: none;
   border: none;
-  font-size: 16px;
+  font-size: 18px;
   color: #dc3545;
   cursor: pointer;
-  padding: 0;
-  margin: 0;
-  transition: all 0.2s ease;
+  padding: 8px;
+  transition: all 0.3s ease;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.6;
-  line-height: 1;
+  opacity: 0.7;
+  border-radius: 8px;
 }
 
 .habit-delete-btn:hover {
   opacity: 1;
+  background-color: rgba(220, 53, 69, 0.1);
 }
 
 .habit-delete-btn:active {
@@ -496,31 +462,32 @@
 
 .completed-indicator {
   text-align: center;
-  padding: 8px;
+  padding: 10px;
   background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
   color: white;
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  margin-top: 8px;
+  margin-top: 12px;
 }
 
 .local-badge {
-  font-size: 10px;
+  font-size: 11px;
   margin-left: 4px;
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 .limit-info {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
-  padding: 8px 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
   background: #f8f9fa;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: 12px;
+  font-size: 14px;
   border: 1px solid #e9ecef;
+  box-sizing: border-box;
 }
 
 .limit-exceeded {
@@ -530,7 +497,7 @@
 
 .limit-warning {
   color: #dc3545;
-  font-size: 11px;
+  font-size: 12px;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -540,15 +507,16 @@
 .limits-legend {
   background: linear-gradient(135deg, #fff9e6 0%, #fff3d3 100%);
   border: 2px solid #f4d03f;
-  border-radius: 12px;
-  padding: 16px;
-  margin: 20px 0;
+  border-radius: 16px;
+  padding: 20px;
+  margin: 24px 0;
   box-shadow: 0 2px 8px rgba(244, 208, 63, 0.1);
+  box-sizing: border-box;
 }
 
 .limits-legend h4 {
-  margin: 0 0 12px 0;
-  font-size: 14px;
+  margin: 0 0 16px 0;
+  font-size: 16px;
   color: #6c5b2f;
   font-weight: 600;
   text-align: center;
@@ -556,49 +524,38 @@
 
 .limits-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-  gap: 8px;
-  font-size: 11px;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  font-size: 13px;
   color: #6c5b2f;
   font-weight: 500;
   text-align: center;
 }
 
 .limits-grid > div {
-  padding: 6px 4px;
+  padding: 8px 6px;
   background: white;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid #f4d03f;
-}
-
-.submit-btn:disabled {
-  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%) !important;
-  color: #6c757d !important;
-  cursor: not-allowed !important;
-  opacity: 0.7 !important;
-  box-shadow: none !important;
-}
-
-.submit-btn:disabled:active {
-  transform: none !important;
 }
 
 .error-message {
   background: linear-gradient(135deg, #ffe6e6 0%, #ffcccc 100%);
   border: 2px solid #dc3545;
   border-radius: 12px;
-  padding: 12px 16px;
-  margin: 16px 0;
+  padding: 16px 20px;
+  margin: 20px 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
+  box-sizing: border-box;
 }
 
 .error-message > div {
   color: #dc3545;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   flex: 1;
   min-width: 0;
@@ -608,44 +565,291 @@
   background: #dc3545;
   color: white;
   border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   flex-shrink: 0;
+}
+
+.error-message button:hover {
+  background: #c82333;
 }
 
 .error-message button:active {
   transform: scale(0.95);
-  background: #c82333;
 }
 
 .offline-indicator {
   background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
   border: 2px solid #ffc107;
   border-radius: 12px;
-  padding: 12px 16px;
-  margin: 16px 0;
+  padding: 16px 20px;
+  margin: 20px 0;
   color: #856404;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   text-align: center;
   box-shadow: 0 2px 8px rgba(255, 193, 7, 0.1);
+  box-sizing: border-box;
 }
 
-@media (display-mode: standalone) {
-  .habit-tracker {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
+/* Tablet - 768px */
+@media (max-width: 768px) {
+  .habit-tracker-container {
+    max-width: 720px;
+    padding: 16px;
   }
 
   .habit-header {
-    top: 0;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+  }
+
+  .habit-header h2 {
+    font-size: 18px;
+  }
+
+  .habi-logo,
+  .habi-logo-k {
+    height: 24px;
+  }
+
+  .habit-form {
+    padding: 20px;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .icon-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+  }
+
+  .icon-btn {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+
+  .habit-card {
+    padding: 14px 18px;
+    margin-bottom: 10px;
+  }
+
+  .habit-icon {
+    font-size: 22px;
+  }
+
+  .habit-title {
+    font-size: 15px;
+  }
+
+  .habit-description {
+    font-size: 12px;
+  }
+
+  .limits-legend {
+    padding: 16px;
+  }
+
+  .limits-legend h4 {
+    font-size: 15px;
+  }
+
+  .limits-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    font-size: 12px;
   }
 }
 
+/* Mobile - 480px */
+@media (max-width: 480px) {
+  .habit-tracker-container {
+    max-width: 440px;
+    padding: 12px;
+  }
+
+  .habit-header {
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    border-radius: 14px;
+  }
+
+  .habit-header h2 {
+    font-size: 16px;
+  }
+
+  .habi-logo,
+  .habi-logo-k {
+    height: 20px;
+  }
+
+  .habit-form {
+    padding: 16px;
+    border-radius: 14px;
+    margin-bottom: 16px;
+  }
+
+  .form-group {
+    margin-bottom: 18px;
+  }
+
+  .form-label {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  .form-input,
+  .form-textarea {
+    padding: 14px 16px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+
+  .icon-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+
+  .icon-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+    border-radius: 10px;
+  }
+
+  .submit-btn,
+  .add-habit-btn {
+    padding: 14px 20px;
+    font-size: 15px;
+    border-radius: 14px;
+  }
+
+  .habit-card {
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+  }
+
+  .habit-main-info {
+    gap: 10px;
+  }
+
+  .habit-icon {
+    font-size: 20px;
+  }
+
+  .habit-title {
+    font-size: 14px;
+  }
+
+  .habit-description {
+    font-size: 11px;
+  }
+
+  .habit-actions {
+    gap: 8px;
+  }
+
+  .habit-reward {
+    padding: 5px 8px;
+  }
+
+  .habit-reward span:first-child {
+    font-size: 12px;
+  }
+
+  .habit-reward span:last-child {
+    font-size: 11px;
+  }
+
+  .habit-delete-btn {
+    font-size: 16px;
+  }
+
+  .completed-indicator {
+    font-size: 12px;
+    padding: 8px;
+    margin-top: 10px;
+  }
+
+  .limits-legend {
+    padding: 14px;
+    margin: 16px 0;
+    border-radius: 14px;
+  }
+
+  .limits-legend h4 {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  .limits-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    font-size: 11px;
+  }
+
+  .limits-grid > div {
+    padding: 6px 4px;
+    border-radius: 6px;
+  }
+
+  .limit-info {
+    padding: 10px 12px;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+
+  .empty-state {
+    padding: 36px 20px;
+  }
+
+  .empty-state-icon {
+    font-size: 48px;
+  }
+
+  .empty-state h3 {
+    font-size: 18px;
+  }
+
+  .empty-state p {
+    font-size: 14px;
+  }
+
+  .error-message,
+  .offline-indicator {
+    padding: 12px 16px;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+}
+
+/* Focus states */
+.submit-btn:focus-visible,
+.add-habit-btn:focus-visible {
+  outline: 3px solid #f4d03f;
+  outline-offset: 2px;
+}
+
+.form-input:focus-visible,
+.form-textarea:focus-visible {
+  outline: 3px solid #f4d03f;
+  outline-offset: -2px;
+}
+
+.icon-btn:focus-visible {
+  outline: 2px solid #f4d03f;
+  outline-offset: 2px;
+}
+
+/* Dark mode */
 @media (prefers-color-scheme: dark) {
   .habit-tracker {
     background: linear-gradient(135deg, #2c2c2c 0%, #3c3c3c 100%);
@@ -682,7 +886,6 @@
     border-color: #4a5568;
   }
 
-  /* Dark mode dla limitów */
   .limits-legend {
     background: linear-gradient(135deg, #3d4142 0%, #4a5568 100%);
     border-color: #f4d03f;
@@ -717,217 +920,5 @@
     background: linear-gradient(135deg, #744210 0%, #975a16 100%);
     border-color: #d69e2e;
     color: #faf089;
-  }
-}
-
-@media (max-width: 768px) {
-  .limits-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
-    font-size: 10px;
-  }
-
-  .limits-grid > div {
-    padding: 4px 2px;
-  }
-
-  .limits-legend {
-    padding: 12px;
-    margin: 16px 0;
-  }
-
-  .limits-legend h4 {
-    font-size: 13px;
-  }
-
-  .limit-info {
-    font-size: 12px;
-    padding: 6px 10px;
-  }
-
-  .habi-logo, .habi-logo-k {
-    height: 20px;
-  }
-}
-
-@media (max-width: 480px) {
-  .habit-tracker-container {
-    padding: env(safe-area-inset-top, 16px) env(safe-area-inset-right, 16px) env(safe-area-inset-bottom, 16px) env(safe-area-inset-left, 16px);
-  }
-
-  .habit-header {
-    padding: 12px;
-    margin-bottom: 12px;
-  }
-
-  .habit-header h2 {
-    font-size: 16px;
-  }
-
-  .habit-form {
-    padding: 16px;
-  }
-
-  .icon-grid {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
-  }
-
-  .icon-btn {
-    width: 44px;
-    height: 44px;
-    font-size: 18px;
-  }
-
-  .habit-card {
-    padding: 10px 14px;
-  }
-
-  .habit-main-info {
-    gap: 8px;
-  }
-
-  .habit-icon {
-    font-size: 18px;
-  }
-
-  .habit-title {
-    font-size: 13px;
-  }
-
-  .habit-description {
-    font-size: 10px;
-  }
-
-  .habit-actions {
-    gap: 6px;
-  }
-
-  .habit-reward {
-    padding: 3px 6px;
-  }
-
-  .habit-reward span:first-child {
-    font-size: 11px;
-  }
-
-  .habit-reward span:last-child {
-    font-size: 10px;
-  }
-
-  .habit-delete-btn {
-    font-size: 14px;
-    padding: 0;
-    margin: 0;
-  }
-
-  .completed-indicator {
-    font-size: 11px;
-    padding: 6px;
-  }
-
-  .limits-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 4px;
-    font-size: 9px;
-  }
-
-  .error-message {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .error-message button {
-    width: 100%;
-    margin-top: 8px;
-  }
-}
-
-@media (max-width: 360px) {
-  .habit-tracker-container {
-    padding: env(safe-area-inset-top, 12px) env(safe-area-inset-right, 12px) env(safe-area-inset-bottom, 12px) env(safe-area-inset-left, 12px);
-  }
-
-  .habit-header h2 {
-    font-size: 15px;
-  }
-
-  .icon-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-
-  .habit-card {
-    padding: 8px 12px;
-  }
-
-  .habit-title {
-    font-size: 12px;
-  }
-
-  .habit-description {
-    font-size: 9px;
-  }
-}
-
-/* Large screen optimizations */
-@media (min-width: 768px) {
-  .habit-header {
-    padding: 16px 20px;
-    margin-bottom: 20px;
-  }
-
-  .habit-header h2 {
-    font-size: 20px;
-  }
-
-  .habit-form {
-    padding: 24px;
-    max-width: 800px;
-  }
-
-  .form-group {
-    margin-bottom: 24px;
-  }
-
-  .add-habit-btn {
-    padding: 18px;
-    margin-bottom: 20px;
-    font-size: 17px;
-  }
-
-  .habit-title {
-    font-size: 15px;
-  }
-
-  .habit-description {
-    font-size: 12px;
-  }
-
-  .completed-indicator {
-    font-size: 13px;
-    padding: 10px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .habit-header h2 {
-    font-size: 22px;
-  }
-
-  .habit-form {
-    padding: 28px;
-    max-width: 900px;
-  }
-
-  .form-group {
-    margin-bottom: 28px;
-  }
-
-  .habit-title {
-    font-size: 16px;
-  }
-
-  .habit-description {
-    font-size: 13px;
   }
 }

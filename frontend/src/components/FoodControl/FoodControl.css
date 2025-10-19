@@ -1,36 +1,44 @@
 .food-control-compact {
   background: white;
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 16px;
+  padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   margin: 0 auto;
   max-width: 500px;
   position: relative;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
 }
 
 .food-control-header {
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .food-control-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .info-btn {
   background: none;
   border: none;
-  font-size: 16px;
+  font-size: 18px;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
   opacity: 0.7;
-  hover: opacity: 1;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .info-btn:hover {
@@ -43,8 +51,13 @@
   transform: scale(0.95);
 }
 
+.info-btn:focus-visible {
+  outline: 2px solid #f4d03f;
+  outline-offset: 2px;
+}
+
 .habi-mood-small {
-  font-size: 20px;
+  font-size: 22px;
   animation: float-small 3s ease-in-out infinite;
 }
 
@@ -54,23 +67,22 @@
 }
 
 .food-control-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: #6c5b2f;
+  letter-spacing: 0.3px;
 }
-
-
 
 /* Compact Food Bar */
 .food-bar-compact {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .food-bar-background-compact {
   width: 100%;
-  height: 8px;
+  height: 10px;
   background-color: #e9ecef;
-  border-radius: 4px;
+  border-radius: 6px;
   overflow: hidden;
   position: relative;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
@@ -78,7 +90,7 @@
 
 .food-bar-fill-compact {
   height: 100%;
-  border-radius: 4px;
+  border-radius: 6px;
   position: relative;
   transition: width 0.3s ease, background-color 0.3s ease;
 }
@@ -91,18 +103,19 @@
   right: 0;
   height: 50%;
   background: rgba(255, 255, 255, 0.4);
-  border-radius: 4px 4px 0 0;
+  border-radius: 6px 6px 0 0;
 }
 
 .food-status-compact {
   text-align: center;
-  font-size: 13px;
+  font-size: 14px;
   color: #6c5b2f;
   font-weight: 500;
-  padding: 4px 8px;
+  padding: 8px 12px;
   background: linear-gradient(135deg, #faf5cc 0%, #fff9c3 100%);
-  border-radius: 8px;
+  border-radius: 10px;
   margin: 0;
+  box-sizing: border-box;
 }
 
 .info-popup-overlay {
@@ -123,68 +136,82 @@
 
 .info-popup {
   background: white;
-  border-radius: 16px;
-  max-width: 450px;
+  border-radius: 20px;
+  max-width: 480px;
   width: 100%;
   max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   animation: popIn 0.3s ease;
+  box-sizing: border-box;
 }
 
 .info-popup-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 20px 0 20px;
+  padding: 24px 24px 0 24px;
   border-bottom: 1px solid #e9ecef;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .info-popup-header h3 {
   margin: 0;
   color: #6c5b2f;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
+  letter-spacing: -0.3px;
 }
 
 .close-popup-btn {
   background: none;
   border: none;
-  font-size: 18px;
+  font-size: 20px;
   cursor: pointer;
   color: #6c757d;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-  width: 28px;
-  height: 28px;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .close-popup-btn:hover {
   background: #f8f9fa;
   color: #495057;
+  transform: scale(1.05);
+}
+
+.close-popup-btn:active {
+  transform: scale(0.95);
+}
+
+.close-popup-btn:focus-visible {
+  outline: 2px solid #f4d03f;
+  outline-offset: 2px;
 }
 
 .info-popup-content {
-  padding: 0 20px 20px 20px;
+  padding: 0 24px 24px 24px;
 }
 
 /* Habi Avatar in Popup */
 .habi-avatar {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .habi-face-popup {
-  width: 60px;
-  height: 60px;
+  width: 64px;
+  height: 64px;
   background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
   border-radius: 50%;
-  margin: 0 auto 8px;
+  margin: 0 auto 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -192,23 +219,24 @@
 }
 
 .habi-mood-popup {
-  font-size: 28px;
+  font-size: 30px;
 }
 
 .habi-name-popup {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
   color: #6c5b2f;
+  letter-spacing: 0.3px;
 }
 
 .info-section {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .info-section h4 {
-  margin: 0 0 12px 0;
+  margin: 0 0 14px 0;
   color: #6c5b2f;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -217,17 +245,24 @@
 .info-stats {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .info-stat {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
+  padding: 12px 14px;
   background: #f8f9fa;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.info-stat:hover {
+  background: #e9ecef;
+  transform: translateX(2px);
 }
 
 .info-stat .stat-label {
@@ -243,37 +278,45 @@
 .info-rules {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .rule-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: 10px;
+  padding: 12px 14px;
   background: #f8f9fa;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: 10px;
+  font-size: 14px;
   color: #6c757d;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.rule-item:hover {
+  background: #e9ecef;
+  transform: translateX(2px);
 }
 
 .rule-icon {
-  font-size: 14px;
+  font-size: 16px;
   flex-shrink: 0;
 }
 
 .tips-list {
   background: #f8f9fa;
-  padding: 12px;
-  border-radius: 8px;
+  padding: 16px;
+  border-radius: 10px;
   margin: 0;
+  box-sizing: border-box;
 }
 
 .tips-list p {
-  margin: 0 0 6px 0;
-  font-size: 13px;
+  margin: 0 0 8px 0;
+  font-size: 14px;
   color: #6c757d;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .tips-list p:last-child {
@@ -288,7 +331,7 @@
 @keyframes popIn {
   from {
     opacity: 0;
-    transform: scale(0.9) translateY(-20px);
+    transform: scale(0.95) translateY(-20px);
   }
   to {
     opacity: 1;
@@ -296,53 +339,197 @@
   }
 }
 
+/* Tablet - 768px */
+@media (max-width: 768px) {
+  .food-control-compact {
+    padding: 18px;
+    border-radius: 14px;
+  }
+
+  .food-control-title {
+    font-size: 14px;
+  }
+
+  .food-status-compact {
+    font-size: 13px;
+    padding: 7px 10px;
+    border-radius: 9px;
+  }
+
+  .info-popup {
+    max-width: 440px;
+    border-radius: 18px;
+  }
+
+  .info-popup-header {
+    padding: 22px 22px 0 22px;
+    margin-bottom: 22px;
+  }
+
+  .info-popup-header h3 {
+    font-size: 19px;
+  }
+
+  .info-popup-content {
+    padding: 0 22px 22px 22px;
+  }
+
+  .habi-face-popup {
+    width: 58px;
+    height: 58px;
+  }
+
+  .habi-mood-popup {
+    font-size: 28px;
+  }
+
+  .habi-name-popup {
+    font-size: 16px;
+  }
+
+  .info-section h4 {
+    font-size: 14px;
+  }
+
+  .info-stat,
+  .rule-item {
+    padding: 11px 13px;
+    font-size: 13px;
+  }
+
+  .tips-list {
+    padding: 14px;
+  }
+
+  .tips-list p {
+    font-size: 13px;
+  }
+}
+
+/* Mobile - 480px */
 @media (max-width: 480px) {
   .food-control-compact {
-    padding: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+  }
+
+  .food-control-header {
+    margin-bottom: 12px;
+  }
+
+  .food-control-left {
+    gap: 8px;
+  }
+
+  .info-btn {
+    font-size: 16px;
+    padding: 6px;
+  }
+
+  .habi-mood-small {
+    font-size: 20px;
   }
 
   .food-control-title {
     font-size: 13px;
   }
 
+  .food-bar-compact {
+    margin-bottom: 12px;
+  }
+
+  .food-bar-background-compact {
+    height: 8px;
+    border-radius: 5px;
+  }
+
   .food-status-compact {
     font-size: 12px;
-    padding: 3px 6px;
+    padding: 6px 10px;
+    border-radius: 8px;
   }
 
   .info-popup {
     margin: 10px;
     max-height: 85vh;
+    border-radius: 16px;
   }
 
   .info-popup-header {
-    padding: 16px 16px 0 16px;
+    padding: 18px 18px 0 18px;
+    margin-bottom: 18px;
+  }
+
+  .info-popup-header h3 {
+    font-size: 17px;
+  }
+
+  .close-popup-btn {
+    font-size: 18px;
+    width: 32px;
+    height: 32px;
   }
 
   .info-popup-content {
-    padding: 0 16px 16px 16px;
+    padding: 0 18px 18px 18px;
+  }
+
+  .habi-avatar {
+    margin-bottom: 22px;
   }
 
   .habi-face-popup {
-    width: 50px;
-    height: 50px;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 10px;
   }
 
   .habi-mood-popup {
-    font-size: 24px;
+    font-size: 26px;
+  }
+
+  .habi-name-popup {
+    font-size: 15px;
+  }
+
+  .info-section {
+    margin-bottom: 20px;
   }
 
   .info-section h4 {
     font-size: 13px;
+    margin-bottom: 12px;
+  }
+
+  .info-stats,
+  .info-rules {
+    gap: 8px;
   }
 
   .info-stat,
-  .rule-item,
+  .rule-item {
+    padding: 10px 12px;
+    font-size: 12px;
+    border-radius: 8px;
+  }
+
+  .rule-icon {
+    font-size: 14px;
+  }
+
+  .tips-list {
+    padding: 12px;
+    border-radius: 8px;
+  }
+
   .tips-list p {
     font-size: 12px;
+    margin-bottom: 6px;
+    line-height: 1.4;
   }
 }
 
+/* Dark mode */
 @media (prefers-color-scheme: dark) {
   .food-control-compact,
   .info-popup {
@@ -359,7 +546,7 @@
   }
 
   .food-status-compact {
-    background: #4a5568;
+    background: linear-gradient(135deg, #4a5568 0%, #3d4142 100%);
   }
 
   .info-btn:hover {
@@ -378,6 +565,11 @@
   .rule-item,
   .tips-list {
     background: #4a5568;
+  }
+
+  .info-stat:hover,
+  .rule-item:hover {
+    background: #5a6678;
   }
 
   .close-popup-btn {
@@ -400,26 +592,33 @@
   }
 }
 
+/* High contrast mode */
 @media (prefers-contrast: high) {
   .food-control-compact,
   .info-popup {
-    border: 2px solid #000;
+    border: 2px solid currentColor;
   }
 
   .food-bar-background-compact {
-    border: 1px solid #000;
+    border: 1px solid currentColor;
   }
 
-  .info-btn {
-    border: 1px solid #000;
+  .info-btn,
+  .close-popup-btn {
+    border: 1px solid currentColor;
   }
 }
 
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .habi-mood-small,
   .food-bar-fill-compact,
   .info-popup-overlay,
-  .info-popup {
+  .info-popup,
+  .info-btn,
+  .close-popup-btn,
+  .info-stat,
+  .rule-item {
     animation: none;
     transition: none;
   }
