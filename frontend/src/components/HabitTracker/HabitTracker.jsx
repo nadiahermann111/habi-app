@@ -474,25 +474,26 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     return (
       <div className="habit-tracker">
         <div className="habit-tracker-container">
-          {/* Nagłówek z przyciskiem powrotu i logo */}
+          {/* Nagłówek z przyciskiem powrotu i wycentrowanym logo */}
           <div className="habit-header">
-            <div className="habit-header-left">
-              <button
-                className="habit-back-btn"
-                onClick={() => setCurrentView('list')}
-                disabled={loading}
-              >
-                ←
-              </button>
+            <button
+              className="habit-back-btn"
+              onClick={() => setCurrentView('list')}
+              disabled={loading}
+            >
+              ←
+            </button>
+            <div className="habit-header-center">
               <img src={HabiLogo} alt="Habi" className="habi-logo-k" />
             </div>
+            <div></div>
           </div>
 
           {/* Formularz dodawania nawyku */}
           <div className="habit-form">
             {error && (
               <div className="error-message">
-                {error}
+                <div>{error}</div>
                 <button onClick={retryConnection} disabled={loading}>
                   Spróbuj ponownie
                 </button>
@@ -602,19 +603,18 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
   return (
     <div className="habit-tracker">
       <div className="habit-tracker-container">
-        {/* Nagłówek z logo i komponentem monet */}
+        {/* Nagłówek z wycentrowanym logo i monetami */}
         <div className="habit-header">
-          <div className="habit-header-left">
-            <button
-              className="habit-back-btn"
-              onClick={onBack}
-              disabled={loading}
-            >
-              ←
-            </button>
+          <button
+            className="habit-back-btn"
+            onClick={onBack}
+            disabled={loading}
+          >
+            ←
+          </button>
+          <div className="habit-header-center">
             <img src={HabiLogo} alt="Habi" className="habi-logo" />
           </div>
-
           <div className="habit-coins-display">
             <CoinSlot
               initialCoins={userCoins}
