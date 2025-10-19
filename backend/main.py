@@ -150,7 +150,7 @@ async def register(user_data: UserRegister):
 
         # tworzenie nowego użytkownika z zahashowanym hasłem
         hashed_password = hash_password(user_data.password)
-        cursor = await db.execute(
+        cursor = await db.execute( #ORM - poszukać, SQL ALCHEMY
             "INSERT INTO users (username, email, password_hash, coins) VALUES (?, ?, ?, ?)",
             (user_data.username, user_data.email, hashed_password, 20)
         )
