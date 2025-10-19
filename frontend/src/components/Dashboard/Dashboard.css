@@ -11,7 +11,7 @@
 .dashboard-container {
   max-width: 100%;
   margin: 0 auto;
-  padding: 8px;
+  padding: 6px;
   box-sizing: border-box;
   width: 100%;
 }
@@ -21,7 +21,7 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
-  font-size: 1.2em;
+  font-size: 1.4em;
   color: #6c5b2f;
   font-weight: 500;
 }
@@ -29,11 +29,11 @@
 .error-message {
   background: linear-gradient(135deg, #ffe6e6 0%, #ffcccc 100%);
   border: 2px solid #dc3545;
-  border-radius: 12px;
-  padding: 20px 24px;
+  border-radius: 14px;
+  padding: 24px 28px;
   margin: 12px 0;
   color: #dc3545;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 500;
   text-align: center;
   box-sizing: border-box;
@@ -54,10 +54,10 @@
 
 .welcome-section {
   text-align: center;
-  margin-bottom: 16px;
-  padding: 32px 24px;
+  margin-bottom: 14px;
+  padding: 40px 28px;
   background: rgba(255, 255, 255, 0.5);
-  border-radius: 20px;
+  border-radius: 22px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -78,7 +78,7 @@
 
 .welcome-message {
   color: #6c5b2f;
-  font-size: 30px;
+  font-size: 36px;
   margin: 0;
   font-weight: 700;
   letter-spacing: -0.5px;
@@ -87,10 +87,10 @@
 
 .quick-actions {
   background: white;
-  border-radius: 16px;
-  padding: 28px 24px;
+  border-radius: 18px;
+  padding: 32px 28px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   box-sizing: border-box;
   animation: slideUp 0.6s ease-out;
 }
@@ -107,9 +107,9 @@
 }
 
 .quick-actions h3 {
-  margin: 0 0 22px 0;
+  margin: 0 0 24px 0;
   color: #6c5b2f;
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 600;
   letter-spacing: 0.3px;
 }
@@ -117,28 +117,28 @@
 .action-buttons {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
-  gap: 16px;
+  gap: 18px;
 }
 
 .action-btn {
   background: linear-gradient(135deg, #f4d03f 0%, #f1c40f 100%);
   color: #6c5b2f;
   border: none;
-  padding: 22px 28px;
-  border-radius: 12px;
-  font-size: 18px;
+  padding: 28px 32px;
+  border-radius: 14px;
+  font-size: 20px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(244, 208, 63, 0.3);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  min-height: 68px;
+  min-height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
   box-sizing: border-box;
   position: relative;
   overflow: hidden;
@@ -192,25 +192,32 @@
 
   .action-buttons {
     grid-template-columns: repeat(2, 1fr);
-    gap: 18px;
+    gap: 20px;
   }
 
   .welcome-message {
-    font-size: 32px;
+    font-size: 38px;
   }
 
   .welcome-section {
     margin-bottom: 24px;
+    padding: 44px 32px;
   }
 
   .quick-actions {
-    padding: 32px 28px;
+    padding: 36px 32px;
     margin-bottom: 24px;
   }
 
   .quick-actions h3 {
-    font-size: 24px;
-    margin-bottom: 26px;
+    font-size: 28px;
+    margin-bottom: 28px;
+  }
+
+  .action-btn {
+    padding: 30px 36px;
+    font-size: 21px;
+    min-height: 85px;
   }
 }
 
@@ -222,12 +229,26 @@
   }
 
   .welcome-section {
-    padding: 36px 28px;
+    padding: 48px 36px;
     margin-bottom: 28px;
   }
 
+  .welcome-message {
+    font-size: 42px;
+  }
+
   .quick-actions {
-    padding: 36px 32px;
+    padding: 40px 36px;
+  }
+
+  .quick-actions h3 {
+    font-size: 30px;
+  }
+
+  .action-btn {
+    padding: 32px 40px;
+    font-size: 22px;
+    min-height: 90px;
   }
 }
 
@@ -239,8 +260,8 @@
   }
 
   .dashboard-container {
-    padding-left: max(env(safe-area-inset-left), 8px);
-    padding-right: max(env(safe-area-inset-right), 8px);
+    padding-left: max(env(safe-area-inset-left), 6px);
+    padding-right: max(env(safe-area-inset-right), 6px);
   }
 }
 
