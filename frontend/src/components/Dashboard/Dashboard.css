@@ -9,10 +9,11 @@
 }
 
 .dashboard-container {
-  max-width: 1200px;
+  max-width: 800px;
   margin: 0 auto;
   padding: 20px;
   box-sizing: border-box;
+  width: 100%;
 }
 
 .loading {
@@ -184,7 +185,6 @@
 /* Tablet - 768px */
 @media (max-width: 768px) {
   .dashboard-container {
-    max-width: 720px;
     padding: 16px;
   }
 
@@ -226,7 +226,6 @@
 /* Mobile - 480px */
 @media (max-width: 480px) {
   .dashboard-container {
-    max-width: 440px;
     padding: 12px;
   }
 
