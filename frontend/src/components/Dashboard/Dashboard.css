@@ -9,9 +9,9 @@
 }
 
 .dashboard-container {
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 20px;
+  padding: 16px;
   box-sizing: border-box;
   width: 100%;
 }
@@ -54,8 +54,8 @@
 
 .welcome-section {
   text-align: center;
-  margin-bottom: 28px;
-  padding: 32px 24px;
+  margin-bottom: 20px;
+  padding: 28px 20px;
   background: rgba(255, 255, 255, 0.5);
   border-radius: 20px;
   backdrop-filter: blur(10px);
@@ -78,7 +78,7 @@
 
 .welcome-message {
   color: #6c5b2f;
-  font-size: 32px;
+  font-size: 28px;
   margin: 0;
   font-weight: 700;
   letter-spacing: -0.5px;
@@ -88,7 +88,7 @@
 .quick-actions {
   background: white;
   border-radius: 16px;
-  padding: 28px;
+  padding: 24px 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   margin-bottom: 20px;
   box-sizing: border-box;
@@ -107,24 +107,24 @@
 }
 
 .quick-actions h3 {
-  margin: 0 0 24px 0;
+  margin: 0 0 20px 0;
   color: #6c5b2f;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 600;
   letter-spacing: 0.3px;
 }
 
 .action-buttons {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 18px;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 16px;
 }
 
 .action-btn {
   background: linear-gradient(135deg, #f4d03f 0%, #f1c40f 100%);
   color: #6c5b2f;
   border: none;
-  padding: 20px 28px;
+  padding: 20px 24px;
   border-radius: 12px;
   font-size: 17px;
   font-weight: 600;
@@ -142,6 +142,7 @@
   box-sizing: border-box;
   position: relative;
   overflow: hidden;
+  width: 100%;
 }
 
 .action-btn::before {
@@ -182,96 +183,46 @@
   background: linear-gradient(135deg, #ccc 0%, #999 100%);
 }
 
-/* Tablet - 768px */
-@media (max-width: 768px) {
+/* Tablet - 768px and above */
+@media (min-width: 768px) {
   .dashboard-container {
-    padding: 18px;
-  }
-
-  .welcome-section {
-    padding: 26px 20px;
-    margin-bottom: 24px;
-  }
-
-  .welcome-message {
-    font-size: 28px;
-  }
-
-  .quick-actions {
+    max-width: 800px;
     padding: 24px;
-    margin-bottom: 18px;
-  }
-
-  .quick-actions h3 {
-    font-size: 20px;
-    margin-bottom: 20px;
   }
 
   .action-buttons {
-    gap: 16px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
   }
 
-  .action-btn {
-    padding: 18px 24px;
-    font-size: 16px;
-    min-height: 60px;
+  .welcome-message {
+    font-size: 32px;
   }
 
-  .error-message {
-    padding: 18px 22px;
-    font-size: 15px;
-    margin: 18px 0;
+  .quick-actions {
+    padding: 28px;
+  }
+
+  .quick-actions h3 {
+    font-size: 22px;
+    margin-bottom: 24px;
   }
 }
 
-/* Mobile - 480px */
-@media (max-width: 480px) {
+/* Desktop - 1024px and above */
+@media (min-width: 1024px) {
   .dashboard-container {
-    padding: 16px;
+    max-width: 1000px;
+    padding: 32px;
   }
 
   .welcome-section {
-    padding: 24px 18px;
-    margin-bottom: 20px;
-    border-radius: 18px;
-  }
-
-  .welcome-message {
-    font-size: 26px;
+    padding: 36px 28px;
+    margin-bottom: 28px;
   }
 
   .quick-actions {
-    padding: 22px;
-    margin-bottom: 16px;
-    border-radius: 16px;
-  }
-
-  .quick-actions h3 {
-    font-size: 19px;
-    margin-bottom: 18px;
-  }
-
-  .action-buttons {
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
-
-  .action-btn {
-    padding: 18px 24px;
-    font-size: 16px;
-    border-radius: 14px;
-    min-height: 60px;
-  }
-
-  .error-message {
-    padding: 16px 20px;
-    font-size: 14px;
-    margin: 16px 0;
-    border-radius: 12px;
-  }
-
-  .loading {
-    font-size: 1.15em;
+    padding: 32px;
   }
 }
 
@@ -352,32 +303,3 @@
     transition: none;
   }
 }
-
-/* Extra small devices */
-@media (max-width: 360px) {
-  .dashboard-container {
-    padding: 14px;
-  }
-
-  .welcome-section {
-    padding: 20px 16px;
-  }
-
-  .welcome-message {
-    font-size: 24px;
-  }
-
-  .quick-actions {
-    padding: 20px;
-  }
-
-  .quick-actions h3 {
-    font-size: 18px;
-    margin-bottom: 16px;
-  }
-
-  .action-btn {
-    font-size: 15px;
-    padding: 16px 20px;
-    min-height: 58px;
-  }
