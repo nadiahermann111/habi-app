@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { authAPI, tokenUtils } from '../../services/api.jsx';
 import './Login.css';
@@ -111,7 +112,7 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
         {/* Wyświetlenie komunikatu błędu jeśli wystąpił */}
         {error && (
           <div className="login-error-message">
-            <span className="error-icon">⚠️</span>
+            <span className="error-icon">❌</span>
             <span>{error}</span>
           </div>
         )}
