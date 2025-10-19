@@ -13,6 +13,7 @@
   margin: 0 auto;
   padding: 20px;
   box-sizing: border-box;
+  width: 100%;
 }
 
 /* Header */
@@ -403,7 +404,7 @@
 /* Tablet - 768px */
 @media (max-width: 768px) {
   .feed-habi-container {
-    max-width: 720px;
+    max-width: 100%;
     padding: 16px;
   }
 
@@ -470,7 +471,7 @@
 /* Mobile - 480px */
 @media (max-width: 480px) {
   .feed-habi-container {
-    max-width: 440px;
+    max-width: 100%;
     padding: 12px;
   }
 
