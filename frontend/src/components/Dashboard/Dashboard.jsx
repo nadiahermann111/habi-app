@@ -3,6 +3,7 @@ import { authAPI, tokenUtils } from "../../services/api.jsx";
 import MenuHeader from '../MenuHeader/MenuHeader';
 import HabitTracker from '../HabitTracker/HabitTracker.jsx';
 import FeedHabi from '../FeedHabi/FeedHabi.jsx';
+import DressHabi from '../DressHabi/DressHabi.jsx';
 import HabiSection from '../HabiSection/HabiSection';
 import './Dashboard.css';
 
@@ -102,6 +103,10 @@ const Dashboard = ({ user, onLogout }) => {
     setCurrentView('feed');
   };
 
+  const handleNavigateToDress = () => {
+    setCurrentView('dress');
+  };
+
   const handleBackToDashboard = () => {
     setCurrentView('dashboard');
   };
@@ -126,6 +131,17 @@ const Dashboard = ({ user, onLogout }) => {
   if (currentView === 'feed') {
     return (
       <FeedHabi
+        onBack={handleBackToDashboard}
+        userCoins={profile?.coins || 0}
+        onCoinsUpdate={handleCoinsUpdate}
+      />
+    );
+  }
+
+  // Renderowanie widoku ubierania Habi
+  if (currentView === 'dress') {
+    return (
+      <DressHabi
         onBack={handleBackToDashboard}
         userCoins={profile?.coins || 0}
         onCoinsUpdate={handleCoinsUpdate}
@@ -169,8 +185,8 @@ const Dashboard = ({ user, onLogout }) => {
               <button className="action-btn">
                 📊 Zobacz statystyki
               </button>
-              <button className="action-btn">
-                Personalizuj Habi
+              <button className="action-btn" onClick={handleNavigateToDress}>
+                👗 Personalizuj Habi
               </button>
             </div>
           </div>

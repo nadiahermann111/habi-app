@@ -1,0 +1,759 @@
+.dress-habi {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+  padding: 0;
+  font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+.dress-habi-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 8px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Header */
+.dress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+}
+
+.dress-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.dress-back-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #9c27b0;
+  transition: all 0.3s ease;
+  padding: 8px;
+  border-radius: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dress-back-btn:hover {
+  background-color: rgba(156, 39, 176, 0.1);
+  transform: scale(1.05);
+}
+
+.dress-back-btn:active {
+  transform: scale(0.95);
+}
+
+.dress-back-btn:focus-visible {
+  outline: 2px solid #9c27b0;
+  outline-offset: 2px;
+}
+
+.dress-header h2 {
+  margin: 0;
+  color: #9c27b0;
+  font-weight: 700;
+  font-size: 28px;
+  text-transform: lowercase;
+  letter-spacing: 2px;
+}
+
+.habi-logo-m {
+  height: 32px;
+  margin-left: 20px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+/* Clothing Grid */
+.clothing-items-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.clothing-item {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  aspect-ratio: 0.85;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  border: 2px solid #ce93d8;
+  min-height: 140px;
+  gap: 10px;
+  box-sizing: border-box;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.clothing-item:hover:not(.disabled):not(.loading):not(.owned) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border-color: #ab47bc;
+}
+
+.clothing-item:active:not(.disabled):not(.loading):not(.owned) {
+  transform: scale(0.98);
+}
+
+.clothing-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.clothing-item.owned {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border-color: #66bb6a;
+  cursor: default;
+}
+
+.clothing-item.loading {
+  opacity: 0.6;
+  cursor: not-allowed;
+  position: relative;
+}
+
+.clothing-item.loading::after {
+  content: '⏳';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: spin 1s linear infinite;
+}
+
+.clothing-item-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.clothing-item-overlay.owned-overlay {
+  background: rgba(76, 175, 80, 0.85);
+  color: white;
+}
+
+.clothing-item-image {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 8px;
+}
+
+.clothing-item-price {
+  background: #ce93d8;
+  border-radius: 12px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  order: -1;
+  margin-bottom: 6px;
+  box-sizing: border-box;
+}
+
+.coin-icon {
+  font-size: 12px;
+}
+
+.price-value {
+  font-weight: 700;
+  color: #4a148c;
+  font-size: 13px;
+}
+
+.clothing-emoji {
+  font-size: 40px;
+  transition: transform 0.3s ease;
+  margin-bottom: 6px;
+}
+
+.clothing-item:hover:not(.disabled):not(.loading):not(.owned) .clothing-emoji {
+  transform: scale(1.1);
+}
+
+.clothing-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  text-align: center;
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* Habi Character Section */
+.habi-character-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 32px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+}
+
+.habi-avatar-large {
+  flex-shrink: 0;
+}
+
+.habi-image {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
+  animation: float-habi 3s ease-in-out infinite;
+}
+
+@keyframes float-habi {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.wardrobe-info {
+  flex: 1;
+  max-width: 400px;
+  text-align: center;
+}
+
+.wardrobe-info h3 {
+  color: #9c27b0;
+  font-size: 24px;
+  margin: 0 0 12px 0;
+  font-weight: 700;
+}
+
+.wardrobe-info p {
+  color: #6b7280;
+  font-size: 16px;
+  margin: 0 0 16px 0;
+  font-weight: 500;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 24px;
+  background: rgba(156, 39, 176, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid #ce93d8;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #9c27b0 0%, #ab47bc 100%);
+  transition: width 0.5s ease;
+  border-radius: 10px;
+}
+
+/* Purchase Animation */
+.purchase-animation {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  animation: slideInFromTop 0.4s ease-out;
+  pointer-events: none;
+}
+
+.purchase-popup {
+  background: white;
+  padding: 24px 32px;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  animation: bounceIn 0.4s ease-out;
+  max-width: 280px;
+  border: 3px solid #9c27b0;
+  box-sizing: border-box;
+}
+
+.purchase-icon {
+  font-size: 42px;
+  margin-bottom: 12px;
+  animation: pulseIcon 1s ease-in-out infinite;
+}
+
+.purchase-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #9c27b0;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.purchase-subtitle {
+  font-size: 13px;
+  color: #7b1fa2;
+  font-weight: 500;
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  70% {
+    transform: scale(0.9);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulseIcon {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Tips Section */
+.dress-tips {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tip-card {
+  background: rgba(255, 255, 255, 0.8);
+  padding: 16px 20px;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.tip-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.tip-card.warning {
+  background: rgba(255, 243, 205, 0.9);
+  border: 1px solid #fbbf24;
+}
+
+.tip-card.success {
+  background: rgba(220, 252, 231, 0.9);
+  border: 1px solid #10b981;
+}
+
+.tip-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.tip-content {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #374151;
+}
+
+.tip-content strong {
+  color: #9c27b0;
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+/* Tablet - 768px */
+@media (max-width: 768px) {
+  .dress-header {
+    padding: 14px 18px;
+    margin-bottom: 20px;
+  }
+
+  .dress-header h2 {
+    font-size: 24px;
+  }
+
+  .habi-logo-m {
+    height: 28px;
+    margin-left: 15px;
+  }
+
+  .clothing-items-grid {
+    gap: 14px;
+  }
+
+  .clothing-item {
+    padding: 14px;
+    min-height: 130px;
+  }
+
+  .clothing-emoji {
+    font-size: 36px;
+  }
+
+  .clothing-item-name {
+    font-size: 12px;
+  }
+
+  .habi-character-section {
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+  }
+
+  .habi-image {
+    width: 160px;
+    height: 160px;
+  }
+
+  .wardrobe-info {
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .tip-card {
+    padding: 14px 18px;
+  }
+
+  .tip-icon {
+    font-size: 18px;
+  }
+
+  .tip-content {
+    font-size: 13px;
+  }
+}
+
+/* Mobile - 480px */
+@media (max-width: 480px) {
+  .dress-habi-container {
+    padding: 12px;
+  }
+
+  .dress-header {
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    border-radius: 14px;
+  }
+
+  .dress-header h2 {
+    font-size: 20px;
+    letter-spacing: 1.5px;
+  }
+
+  .dress-back-btn {
+    font-size: 20px;
+    padding: 6px;
+  }
+
+  .habi-logo-m {
+    height: 24px;
+    margin-left: 10px;
+  }
+
+  .clothing-items-grid {
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .clothing-item {
+    padding: 10px;
+    border-radius: 12px;
+    min-height: 110px;
+    gap: 6px;
+  }
+
+  .clothing-item.loading::after {
+    font-size: 20px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .clothing-item-overlay {
+    font-size: 11px;
+    padding: 6px;
+  }
+
+  .clothing-item-price {
+    padding: 4px 8px;
+    border-radius: 10px;
+    gap: 3px;
+    margin-bottom: 4px;
+  }
+
+  .coin-icon {
+    font-size: 10px;
+  }
+
+  .price-value {
+    font-size: 11px;
+  }
+
+  .clothing-emoji {
+    font-size: 32px;
+    margin-bottom: 4px;
+  }
+
+  .clothing-item-name {
+    font-size: 11px;
+  }
+
+  .habi-character-section {
+    padding: 16px;
+    margin-bottom: 24px;
+    gap: 16px;
+    border-radius: 16px;
+  }
+
+  .habi-image {
+    width: 120px;
+    height: 120px;
+  }
+
+  .wardrobe-info {
+    max-width: 100%;
+  }
+
+  .wardrobe-info h3 {
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+
+  .wardrobe-info p {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  .progress-bar {
+    height: 20px;
+  }
+
+  .purchase-animation {
+    top: 15%;
+  }
+
+  .purchase-popup {
+    padding: 18px 24px;
+    max-width: 240px;
+    margin: 0 20px;
+    border-radius: 16px;
+  }
+
+  .purchase-icon {
+    font-size: 36px;
+    margin-bottom: 10px;
+  }
+
+  .purchase-text {
+    font-size: 15px;
+    margin-bottom: 5px;
+  }
+
+  .purchase-subtitle {
+    font-size: 12px;
+  }
+
+  .dress-tips {
+    gap: 10px;
+  }
+
+  .tip-card {
+    padding: 12px 14px;
+    border-radius: 12px;
+    gap: 10px;
+  }
+
+  .tip-icon {
+    font-size: 16px;
+  }
+
+  .tip-content {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .tip-content strong {
+    margin-bottom: 4px;
+  }
+}
+
+/* Focus states */
+.clothing-item:focus-visible {
+  outline: 3px solid #ab47bc;
+  outline-offset: 2px;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .dress-habi {
+    background: linear-gradient(135deg, #4a148c 0%, #6a1b9a 100%);
+  }
+
+  .dress-header,
+  .clothing-item:not(.disabled),
+  .tip-card,
+  .purchase-popup,
+  .habi-character-section {
+    background: rgba(55, 65, 81, 0.9);
+    color: #f3f4f6;
+  }
+
+  .dress-header h2,
+  .purchase-text {
+    color: #ce93d8;
+  }
+
+  .dress-back-btn {
+    color: #ce93d8;
+  }
+
+  .dress-back-btn:hover {
+    background-color: rgba(206, 147, 216, 0.1);
+  }
+
+  .tip-content {
+    color: #d1d5db;
+  }
+
+  .tip-content strong {
+    color: #ce93d8;
+  }
+
+  .clothing-item.disabled {
+    background: rgba(31, 41, 55, 0.8);
+  }
+
+  .clothing-item-overlay {
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  .wardrobe-info h3 {
+    color: #ce93d8;
+  }
+
+  .wardrobe-info p {
+    color: #d1d5db;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .dress-header,
+  .clothing-item,
+  .tip-card,
+  .purchase-popup {
+    border: 2px solid currentColor;
+  }
+
+  .dress-back-btn {
+    border: 1px solid currentColor;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .habi-image,
+  .clothing-emoji,
+  .purchase-animation,
+  .purchase-popup,
+  .purchase-icon,
+  .clothing-item,
+  .tip-card,
+  .dress-back-btn,
+  .clothing-item.loading::after,
+  .progress-fill {
+    animation: none;
+    transition: none;
+  }
+}
