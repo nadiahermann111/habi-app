@@ -13,14 +13,15 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
 
   // Tablica dostępnych ubranek z ich właściwościami
   const clothingItems = [
+    { id: 4, name: 'Kolczyki', cost: 50, icon: "💎", category: 'Biżuteria' },
     { id: 1, name: 'Kokardka', cost: 50, icon: "🎀", category: 'Dodatki' },
     { id: 2, name: 'Opaska w Panterke', cost: 70, icon: "🐆", category: 'Dodatki' },
     { id: 3, name: 'Kwiatek Hibiskus', cost: 70, icon: "🌺", category: 'Dodatki' },
-    { id: 4, name: 'Kolczyki', cost: 50, icon: "💎", category: 'Biżuteria' },
     { id: 5, name: 'Tatuaże', cost: 100, icon: "🦋", category: 'Dekoracje' },
     { id: 6, name: 'Koszulka i❤️ Habi', cost: 150, icon: "👕", category: 'Ubrania' },
     { id: 7, name: 'Koszulka Banan', cost: 150, icon: "🍌", category: 'Ubrania' },
-    { id: 8, name: 'Ogrodniczki', cost: 200, icon: "👗", category: 'Ubrania' }
+    { id: 8, name: 'Ogrodniczki', cost: 200, icon: "👗", category: 'Ubrania' },
+    { id: 9, name: 'Tajemnicza opcja', cost: 300, icon: "❓", category: 'Specjalne' }
   ];
 
   // Funkcja obsługująca zakup ubranka (na razie bez API)
@@ -121,7 +122,6 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
             <button className="dress-back-btn" onClick={onBack} disabled={loading}>
               ←
             </button>
-            <h2>garderoba</h2>
             <img src={HabiLogo} alt="Habi" className="habi-logo-m" />
           </div>
 
@@ -180,43 +180,44 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
           </div>
         )}
 
-        {/* Siatka dostępnych ubranek */}
-        <div className="clothing-items-grid">
-          {clothingItems.map(item => {
-            const canAfford = currentCoins >= item.cost && !loading;
-            const isOwned = ownedClothes.includes(item.id);
+        {/* Slider z dostępnymi ubraniami */}
+        <div className="clothing-slider-container">
+          <div className="clothing-items-slider">
+            {clothingItems.map(item => {
+              const canAfford = currentCoins >= item.cost && !loading;
+              const isOwned = ownedClothes.includes(item.id);
 
-            return (
-              <div
-                key={item.id}
-                className={`clothing-item ${!canAfford && !isOwned ? 'disabled' : ''} ${loading ? 'loading' : ''} ${isOwned ? 'owned' : ''}`}
-                onClick={() => !isOwned && canAfford && handlePurchase(item)}
-              >
-                <div className="clothing-item-image">
-                  <span className="clothing-emoji">{item.icon}</span>
-                </div>
-                <div className="clothing-item-price">
-                  <span className="coin-icon">🪙</span>
-                  <span className="price-value">{item.cost}</span>
-                </div>
-                <p className="clothing-item-name">{item.name}</p>
-
-                {/* Overlay dla niedostępnych przedmiotów */}
-                {!canAfford && !isOwned && (
-                  <div className="clothing-item-overlay">
-                    <span>{loading ? 'Kupowanie...' : 'Brak monet'}</span>
+              return (
+                <div
+                  key={item.id}
+                  className={`clothing-item ${!canAfford && !isOwned ? 'disabled' : ''} ${loading ? 'loading' : ''} ${isOwned ? 'owned' : ''}`}
+                  onClick={() => !isOwned && canAfford && handlePurchase(item)}
+                >
+                  <div className="clothing-item-image">
+                    <span className="clothing-emoji">{item.icon}</span>
                   </div>
-                )}
-
-                {/* Badge dla posiadanych przedmiotów */}
-                {isOwned && (
-                  <div className="clothing-item-overlay owned-overlay">
-                    <span>✅ Posiadane</span>
+                  <div className="clothing-item-price">
+                    <span className="coin-icon">🪙</span>
+                    <span className="price-value">{item.cost}</span>
                   </div>
-                )}
-              </div>
-            );
-          })}
+
+                  {/* Overlay dla niedostępnych przedmiotów */}
+                  {!canAfford && !isOwned && (
+                    <div className="clothing-item-overlay">
+                      <span>{loading ? 'Kupowanie...' : 'Brak monet'}</span>
+                    </div>
+                  )}
+
+                  {/* Badge dla posiadanych przedmiotów */}
+                  {isOwned && (
+                    <div className="clothing-item-overlay owned-overlay">
+                      <span>✅ Posiadane</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Sekcja z avatarem Habi */}
