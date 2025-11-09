@@ -14,6 +14,11 @@ const Dashboard = ({ user, onLogout }) => {
   const [error, setError] = useState('');
   const [currentView, setCurrentView] = useState('dashboard');
 
+  // Debug - monitoruj zmiany currentView
+  useEffect(() => {
+    console.log('📍 Current view changed to:', currentView);
+  }, [currentView]);
+
   // Pobranie profilu użytkownika przy pierwszym załadowaniu komponentu
   useEffect(() => {
     fetchProfile();
@@ -97,22 +102,27 @@ const Dashboard = ({ user, onLogout }) => {
 
   // Funkcje nawigacji między różnymi widokami aplikacji
   const handleNavigateToHabits = () => {
+    console.log('🎯 Navigating to habits');
     setCurrentView('habits');
   };
 
   const handleNavigateToStats = () => {
+    console.log('📊 Navigating to stats');
     setCurrentView('stats');
   };
 
   const handleNavigateToFeed = () => {
+    console.log('🍌 Navigating to feed');
     setCurrentView('feed');
   };
 
   const handleNavigateToDress = () => {
+    console.log('👗 Navigating to dress');
     setCurrentView('dress');
   };
 
   const handleBackToDashboard = () => {
+    console.log('🏠 Navigating back to dashboard');
     setCurrentView('dashboard');
   };
 
@@ -121,8 +131,21 @@ const Dashboard = ({ user, onLogout }) => {
     return <div className="loading">Ładowanie profilu...</div>;
   }
 
+  // WAŻNE: Sprawdzanie widoków w odpowiedniej kolejności
+
+  // Renderowanie widoku statystyk nawyków
+  if (currentView === 'stats') {
+    console.log('✅ Rendering HabitStats component');
+    return (
+      <HabitStats
+        onBack={handleBackToDashboard}
+      />
+    );
+  }
+
   // Renderowanie widoku trackera nawyków (dodawanie nawyków)
   if (currentView === 'habits') {
+    console.log('✅ Rendering HabitTracker component');
     return (
       <HabitTracker
         onBack={handleBackToDashboard}
@@ -132,17 +155,9 @@ const Dashboard = ({ user, onLogout }) => {
     );
   }
 
-  // Renderowanie widoku statystyk nawyków
-  if (currentView === 'stats') {
-    return (
-      <HabitStats
-        onBack={handleBackToDashboard}
-      />
-    );
-  }
-
   // Renderowanie widoku karmienia Habi
   if (currentView === 'feed') {
+    console.log('✅ Rendering FeedHabi component');
     return (
       <FeedHabi
         onBack={handleBackToDashboard}
@@ -154,6 +169,7 @@ const Dashboard = ({ user, onLogout }) => {
 
   // Renderowanie widoku ubierania Habi
   if (currentView === 'dress') {
+    console.log('✅ Rendering DressHabi component');
     return (
       <DressHabi
         onBack={handleBackToDashboard}
@@ -164,6 +180,7 @@ const Dashboard = ({ user, onLogout }) => {
   }
 
   // Renderowanie głównego widoku Dashboard
+  console.log('✅ Rendering main Dashboard');
   return (
     <div className="dashboard">
       {/* Nagłówek z menu i informacjami o monetach */}
