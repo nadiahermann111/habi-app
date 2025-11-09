@@ -2,20 +2,28 @@ import React, { useState, useEffect } from 'react';
 import './SlotMachine.css';
 
 const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins }) => {
-  const [reels, setReels] = useState(['🍌', '🍎', '🍇']);
+  const [reels, setReels] = useState([
+    ['🍌', '🍎', '🍇'],
+    ['🍎', '🍇', '🍊'],
+    ['🍇', '🍊', '🍓']
+  ]);
   const [isSpinning, setIsSpinning] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [wonCoins, setWonCoins] = useState(0);
   const [canPlay, setCanPlay] = useState(true);
   const [timeUntilReset, setTimeUntilReset] = useState('');
 
-  // Symbole na automatach
-  const symbols = ['🍌', '🍎', '🍇', '🍊', '🍓', '🥥'];
+  // Wszystkie symbole
+  const symbols = ['🍌', '🍎', '🍇', '🍊', '🍓', '🥥', '🍋', '🍑'];
 
-  // Sprawdź czy gracz może dzisiaj grać
   useEffect(() => {
-    checkDailyLimit();
-    const interval = setInterval(checkDailyLimit, 60000); // Sprawdzaj co minutę
+    if (isOpen) {
+      checkDailyLimit();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const interval = setInterval(checkDailyLimit, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -44,8 +52,12 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins }) => {
     setTimeUntilReset(`${hours}h ${minutes}m`);
   };
 
-  const getRandomSymbol = () => {
-    return symbols[Math.floor(Math.random() * symbols.length)];
+  const getRandomReel = () => {
+    const reel = [];
+    for (let i = 0; i < 3; i++) {
+      reel.push(symbols[Math.floor(Math.random() * symbols.length)]);
+    }
+    return reel;
   };
 
   const spinReels = () => {
@@ -54,62 +66,64 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins }) => {
     setIsSpinning(true);
     setShowResult(false);
 
-    // Animacja kręcenia - zmieniaj symbole szybko
-    let spinCount = 0;
-    const spinInterval = setInterval(() => {
-      setReels([getRandomSymbol(), getRandomSymbol(), getRandomSymbol()]);
-      spinCount++;
+    // Animacja - zmieniaj symbole w bębnach
+    let count = 0;
+    const interval = setInterval(() => {
+      setReels([getRandomReel(), getRandomReel(), getRandomReel()]);
+      count++;
 
-      if (spinCount >= 20) {
-        clearInterval(spinInterval);
-        // Ustal finalne symbole
-        determineResult();
+      if (count >= 15) {
+        clearInterval(interval);
+        setTimeout(determineResult, 300);
       }
     }, 100);
   };
 
   const determineResult = () => {
-    // Losuj finalne symbole z kontrolowanym prawdopodobieństwem
     const random = Math.random();
     let finalReels;
 
     if (random < 0.10) {
-      // 10% szans na 3 takie same (30 monet)
+      // 10% - 3 takie same (JACKPOT)
       const symbol = symbols[Math.floor(Math.random() * symbols.length)];
-      finalReels = [symbol, symbol, symbol];
+      finalReels = [
+        [symbol, symbol, symbol],
+        [symbol, symbol, symbol],
+        [symbol, symbol, symbol]
+      ];
     } else if (random < 0.40) {
-      // 30% szans na 2 takie same (15 monet)
+      // 30% - 2 takie same w środkowym rzędzie
       const symbol = symbols[Math.floor(Math.random() * symbols.length)];
-      const otherSymbol = symbols.find(s => s !== symbol);
-      const position = Math.floor(Math.random() * 3);
-      finalReels = [symbol, symbol, symbol];
-      finalReels[position] = otherSymbol;
+      const other1 = symbols.find(s => s !== symbol);
+      const other2 = symbols.find(s => s !== symbol && s !== other1);
+
+      finalReels = [
+        [other1, symbol, other2],
+        [other2, symbol, other1],
+        [other1, other2, symbol]
+      ];
     } else {
-      // 60% szans na wszystkie różne (5 monet)
-      const shuffled = [...symbols].sort(() => Math.random() - 0.5);
-      finalReels = [shuffled[0], shuffled[1], shuffled[2]];
-      // Upewnij się że są różne
-      while (finalReels[0] === finalReels[1] || finalReels[1] === finalReels[2] || finalReels[0] === finalReels[2]) {
-        const shuffled2 = [...symbols].sort(() => Math.random() - 0.5);
-        finalReels = [shuffled2[0], shuffled2[1], shuffled2[2]];
-      }
+      // 60% - wszystkie różne
+      const shuffled1 = [...symbols].sort(() => Math.random() - 0.5).slice(0, 3);
+      const shuffled2 = [...symbols].sort(() => Math.random() - 0.5).slice(0, 3);
+      const shuffled3 = [...symbols].sort(() => Math.random() - 0.5).slice(0, 3);
+
+      finalReels = [shuffled1, shuffled2, shuffled3];
     }
 
     setReels(finalReels);
 
-    // Oblicz wygraną
     setTimeout(() => {
-      const coins = calculateWinnings(finalReels);
+      const centerRow = [finalReels[0][1], finalReels[1][1], finalReels[2][1]];
+      const coins = calculateWinnings(centerRow);
+
       setWonCoins(coins);
       setIsSpinning(false);
       setShowResult(true);
 
-      // Zapisz że zagrał dzisiaj
-      const today = new Date().toDateString();
-      localStorage.setItem('slotMachineLastPlay', today);
+      localStorage.setItem('slotMachineLastPlay', new Date().toDateString());
       setCanPlay(false);
 
-      // Dodaj monety
       if (onWinCoins) {
         onWinCoins(coins);
       }
@@ -118,19 +132,16 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins }) => {
     }, 500);
   };
 
-  const calculateWinnings = (finalReels) => {
-    const [r1, r2, r3] = finalReels;
+  const calculateWinnings = (centerRow) => {
+    const [r1, r2, r3] = centerRow;
 
-    // 3 takie same
     if (r1 === r2 && r2 === r3) {
-      return 30;
+      return 30; // JACKPOT
     }
-    // 2 takie same
     if (r1 === r2 || r2 === r3 || r1 === r3) {
-      return 15;
+      return 15; // 2 takie same
     }
-    // Wszystkie różne (pocieszenie)
-    return 5;
+    return 5; // Pocieszenie
   };
 
   const handleClose = () => {
@@ -141,6 +152,8 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins }) => {
   };
 
   if (!isOpen) return null;
+
+  const centerRow = [reels[0][1], reels[1][1], reels[2][1]];
 
   return (
     <div className="slot-machine-overlay" onClick={handleClose}>
@@ -155,18 +168,40 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins }) => {
         </button>
 
         <div className="slot-header">
-          <h2>🎰 automat z owocami 🎰</h2>
-          <p className="slot-subtitle">Zagrywaj codziennie i wygrywaj!</p>
+          <h2>🎰 automat 🎰</h2>
+          <p className="slot-subtitle">Zagraj i wygraj monety!</p>
         </div>
 
-        {/* Automat */}
-        <div className="slot-machine-container">
-          <div className={`slot-reels ${isSpinning ? 'spinning' : ''}`}>
-            {reels.map((symbol, index) => (
-              <div key={index} className="slot-reel">
-                <div className="reel-symbol">{symbol}</div>
-              </div>
-            ))}
+        {/* PRAWDZIWY AUTOMAT */}
+        <div className="slot-machine-box">
+          <div className="slot-machine-screen">
+            {/* Wskaźnik linii wygranej */}
+            <div className="win-line"></div>
+
+            {/* 3 PIONOWE BĘBNY */}
+            <div className="slot-reels-container">
+              {reels.map((reel, reelIndex) => (
+                <div key={reelIndex} className={`slot-reel-column ${isSpinning ? 'spinning' : ''}`}>
+                  {reel.map((symbol, symbolIndex) => (
+                    <div
+                      key={symbolIndex}
+                      className={`reel-symbol ${symbolIndex === 1 ? 'center' : ''}`}
+                    >
+                      {symbol}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Wynik - pokazuj środkowy rząd */}
+          <div className="center-display">
+            <div className="center-symbols">
+              {centerRow.map((symbol, idx) => (
+                <span key={idx} className="center-symbol">{symbol}</span>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -178,13 +213,13 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins }) => {
               onClick={spinReels}
               disabled={isSpinning}
             >
-              {isSpinning ? '⏳ Kręcę...' : '🎰 ZAGRAJ!'}
+              {isSpinning ? '⏳ KRĘCĘ...' : '🎰 ZAGRAJ!'}
             </button>
           ) : (
             <div className="slot-locked">
               <div className="locked-icon">🔒</div>
               <p className="locked-text">Już dzisiaj zagrałeś!</p>
-              <p className="locked-time">Następna szansa za: {timeUntilReset}</p>
+              <p className="locked-time">Następna gra za: {timeUntilReset}</p>
             </div>
           )}
 
@@ -194,7 +229,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins }) => {
           </div>
         </div>
 
-        {/* Wynik */}
+        {/* Pop-up wyniku */}
         {showResult && (
           <div className="slot-result-popup">
             <div className="slot-result-content">
@@ -204,28 +239,27 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins }) => {
               <h3 className="result-title">
                 {wonCoins === 30 ? 'JACKPOT!' : wonCoins === 15 ? 'Świetnie!' : 'Nie złe!'}
               </h3>
-              <p className="result-text">Wygrałeś/aś</p>
+              <p className="result-text">Wygrałeś</p>
               <div className="result-coins">
-                <span className="result-coins-icon">🪙</span>
                 <span className="result-coins-value">{wonCoins}</span>
-                <span className="result-coins-text">monet!</span>
+                <span className="result-coins-text">🪙 monet!</span>
               </div>
               <button className="result-close-btn" onClick={handleClose}>
-                {wonCoins === 30 ? 'Wow! 🎉' : wonCoins === 15 ? 'Super! 🎊' : 'OK! 👌'}
+                {wonCoins === 30 ? 'WOW! 🎉' : wonCoins === 15 ? 'SUPER! 🎊' : 'OK! 👌'}
               </button>
             </div>
           </div>
         )}
 
-        {/* Informacje */}
+        {/* Info */}
         <div className="slot-info">
           <p className="info-text">
-            <span className="info-emoji">💡</span>
+            <span className="info-emoji">🎯</span>
             <span>3 takie same: 30🪙 • 2 takie same: 15🪙 • Inne: 5🪙</span>
           </p>
           <p className="info-text">
             <span className="info-emoji">⏰</span>
-            <span>Możesz grać raz dziennie!</span>
+            <span>Grasz raz dziennie!</span>
           </p>
         </div>
       </div>
