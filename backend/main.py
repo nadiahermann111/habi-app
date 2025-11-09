@@ -766,6 +766,153 @@ async def delete_habit(habit_id: int, authorization: str = Header(None)):
         return {"message": "Nawyk usunięty pomyślnie"}
 
 
+# Endpointy dla ubrań
+
+@app.get("/api/clothing")
+async def get_clothing_items():
+    """
+    Pobiera wszystkie dostępne ubrania.
+
+    Returns:
+        list: Lista wszystkich ubrań w systemie
+    """
+    async with aiosqlite.connect("database.db") as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            "SELECT id, name, cost, icon, category FROM clothing_items ORDER BY cost ASC"
+        )
+        items = await cursor.fetchall()
+        return [dict(item) for item in items]
+
+
+@app.get("/api/clothing/owned")
+async def get_owned_clothing(authorization: str = Header(None)):
+    """
+    Pobiera ubrania posiadane przez użytkownika.
+
+    Args:
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        dict: Lista ID posiadanych ubrań
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
+
+    token = authorization.replace("Bearer ", "")
+    user_id = verify_token(token)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+
+    async with aiosqlite.connect("database.db") as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            "SELECT clothing_id FROM user_clothing WHERE user_id = ?",
+            (user_id,)
+        )
+        owned = await cursor.fetchall()
+        return {"owned_clothing_ids": [item["clothing_id"] for item in owned]}
+
+
+@app.post("/api/clothing/purchase/{clothing_id}")
+async def purchase_clothing(clothing_id: int, authorization: str = Header(None)):
+    """
+    Kupuje ubranie dla użytkownika.
+
+    Args:
+        clothing_id (int): ID ubrania do zakupu
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        dict: Potwierdzenie zakupu, pozostałe monety i nazwa przedmiotu
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy, przedmiot nie istnieje,
+                      użytkownik już posiada przedmiot, lub ma za mało monet
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
+
+    token = authorization.replace("Bearer ", "")
+    user_id = verify_token(token)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+
+    async with aiosqlite.connect("database.db") as db:
+        await db.execute("PRAGMA foreign_keys = ON")
+        db.row_factory = aiosqlite.Row
+
+        # Sprawdzenie czy przedmiot istnieje
+        cursor = await db.execute(
+            "SELECT id, name, cost, icon FROM clothing_items WHERE id = ?",
+            (clothing_id,)
+        )
+        clothing = await cursor.fetchone()
+
+        if not clothing:
+            raise HTTPException(status_code=404, detail="Przedmiot nie znaleziony")
+
+        # Sprawdzenie czy użytkownik już posiada ten przedmiot
+        cursor = await db.execute(
+            "SELECT id FROM user_clothing WHERE user_id = ? AND clothing_id = ?",
+            (user_id, clothing_id)
+        )
+        if await cursor.fetchone():
+            raise HTTPException(
+                status_code=400,
+                detail=f"Już posiadasz {clothing['name']}!"
+            )
+
+        # Sprawdzenie czy użytkownik ma wystarczająco monet
+        cursor = await db.execute(
+            "SELECT coins FROM users WHERE id = ?",
+            (user_id,)
+        )
+        user = await cursor.fetchone()
+
+        if not user:
+            raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
+
+        if user["coins"] < clothing["cost"]:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Potrzebujesz {clothing['cost']} monet, ale masz tylko {user['coins']}!"
+            )
+
+        # Odjęcie monet
+        await db.execute(
+            "UPDATE users SET coins = coins - ? WHERE id = ?",
+            (clothing["cost"], user_id)
+        )
+
+        # Dodanie przedmiotu do garderoby użytkownika
+        await db.execute(
+            "INSERT INTO user_clothing (user_id, clothing_id) VALUES (?, ?)",
+            (user_id, clothing_id)
+        )
+
+        await db.commit()
+
+        # Pobranie nowej liczby monet
+        cursor = await db.execute(
+            "SELECT coins FROM users WHERE id = ?",
+            (user_id,)
+        )
+        updated_user = await cursor.fetchone()
+
+        return {
+            "message": f"Zakupiono {clothing['name']}!",
+            "item_name": clothing["name"],
+            "item_icon": clothing["icon"],
+            "cost": clothing["cost"],
+            "remaining_coins": updated_user["coins"]
+        }
+
 
 if __name__ == "__main__":
     """

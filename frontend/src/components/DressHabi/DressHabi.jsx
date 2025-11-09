@@ -10,21 +10,51 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [ownedClothes, setOwnedClothes] = useState([]);
+  const [clothingItems, setClothingItems] = useState([]);
 
-  // Tablica dostępnych ubranek z ich właściwościami
-  const clothingItems = [
-    { id: 4, name: 'Kolczyki', cost: 50, icon: "💎", category: 'Biżuteria' },
-    { id: 1, name: 'Kokardka', cost: 50, icon: "🎀", category: 'Dodatki' },
-    { id: 2, name: 'Opaska w Panterke', cost: 70, icon: "🐆", category: 'Dodatki' },
-    { id: 3, name: 'Kwiatek Hibiskus', cost: 70, icon: "🌺", category: 'Dodatki' },
-    { id: 5, name: 'Tatuaże', cost: 100, icon: "🦋", category: 'Dekoracje' },
-    { id: 6, name: 'Koszulka i❤️ Habi', cost: 150, icon: "👕", category: 'Ubrania' },
-    { id: 7, name: 'Koszulka Banan', cost: 150, icon: "🍌", category: 'Ubrania' },
-    { id: 8, name: 'Ogrodniczki', cost: 200, icon: "👗", category: 'Ubrania' },
-    { id: 9, name: 'Tajemnicza opcja', cost: 300, icon: "❓", category: 'Specjalne' }
-  ];
+  const API_BASE_URL = 'https://habi-backend.onrender.com';
 
-  // Funkcja obsługująca zakup ubranka (na razie bez API)
+  // Pobieranie dostępnych ubrań z backendu
+  const fetchClothingItems = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/clothing`);
+      if (!response.ok) throw new Error('Błąd pobierania ubrań');
+
+      const data = await response.json();
+      setClothingItems(data);
+      console.log('✅ Pobrano ubrania:', data);
+    } catch (error) {
+      console.error('❌ Błąd fetchClothingItems:', error);
+      setError('Nie udało się pobrać listy ubrań');
+    }
+  };
+
+  // Pobieranie posiadanych ubrań użytkownika
+  const fetchOwnedClothing = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('⚠️ Brak tokenu - użytkownik niezalogowany');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/clothing/owned`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Błąd pobierania posiadanych ubrań');
+
+      const data = await response.json();
+      setOwnedClothes(data.owned_clothing_ids || []);
+      console.log('✅ Pobrano posiadane ubrania:', data.owned_clothing_ids);
+    } catch (error) {
+      console.error('❌ Błąd fetchOwnedClothing:', error);
+    }
+  };
+
+  // Funkcja obsługująca zakup ubranka
   const handlePurchase = async (item) => {
     console.log(`🛒 Próba zakupu ${item.name} za ${item.cost} monet`);
     setError(null);
@@ -48,13 +78,29 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
     setLoading(true);
 
     try {
-      // Symulacja opóźnienia zakupu (na razie bez API)
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Brak tokenu autoryzacji');
+      }
 
-      console.log(`✅ Zakup udany! ${item.name} kupione!`);
+      const response = await fetch(`${API_BASE_URL}/api/clothing/purchase/${item.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Błąd podczas zakupu');
+      }
+
+      const data = await response.json();
+      console.log(`✅ Zakup udany!`, data);
 
       // Aktualizacja lokalnego stanu monet
-      const newCoins = currentCoins - item.cost;
+      const newCoins = data.remaining_coins;
       setCurrentCoins(newCoins);
       if (onCoinsUpdate) {
         onCoinsUpdate(newCoins);
@@ -63,10 +109,6 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
       // Dodanie przedmiotu do posiadanych
       setOwnedClothes([...ownedClothes, item.id]);
 
-      // Zapisanie posiadanych ubranek w localStorage
-      const updatedOwned = [...ownedClothes, item.id];
-      localStorage.setItem('ownedClothes', JSON.stringify(updatedOwned));
-
       // Wysłanie globalnego eventu o zmianie liczby monet
       window.dispatchEvent(new CustomEvent('coinsUpdated', {
         detail: { coins: newCoins }
@@ -74,9 +116,9 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
 
       // Wyświetlenie animacji potwierdzającej zakup
       setPurchaseAnimation({
-        itemName: item.name,
-        icon: item.icon,
-        cost: item.cost
+        itemName: data.item_name,
+        icon: data.item_icon,
+        cost: data.cost
       });
 
       // Ukrycie animacji po 3 sekundach
@@ -84,7 +126,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
 
     } catch (error) {
       console.error('❌ Błąd handlePurchase:', error);
-      const errorMsg = 'Błąd podczas zakupu';
+      const errorMsg = error.message || 'Błąd podczas zakupu';
       setError(errorMsg);
       alert(errorMsg);
     } finally {
@@ -105,12 +147,10 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
     setCurrentCoins(userCoins);
   }, [userCoins]);
 
-  // Wczytanie posiadanych ubranek z localStorage przy montowaniu komponentu
+  // Wczytanie danych przy montowaniu komponentu
   useEffect(() => {
-    const saved = localStorage.getItem('ownedClothes');
-    if (saved) {
-      setOwnedClothes(JSON.parse(saved));
-    }
+    fetchClothingItems();
+    fetchOwnedClothing();
   }, []);
 
   return (
@@ -196,9 +236,12 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
                   <div className="clothing-item-image">
                     <span className="clothing-emoji">{item.icon}</span>
                   </div>
-                  <div className="clothing-item-price">
-                    <span className="coin-icon">🪙</span>
-                    <span className="price-value">{item.cost}</span>
+                  <div className="clothing-item-info">
+                    <div className="clothing-item-name">{item.name}</div>
+                    <div className="clothing-item-price">
+                      <span className="coin-icon">🪙</span>
+                      <span className="price-value">{item.cost}</span>
+                    </div>
                   </div>
 
                   {/* Overlay dla niedostępnych przedmiotów */}
@@ -232,7 +275,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
             <div className="progress-bar">
               <div
                 className="progress-fill"
-                style={{ width: `${(ownedClothes.length / clothingItems.length) * 100}%` }}
+                style={{ width: `${clothingItems.length > 0 ? (ownedClothes.length / clothingItems.length) * 100 : 0}%` }}
               ></div>
             </div>
           </div>
@@ -259,7 +302,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
           )}
 
           {/* Gratulacje za kompletną garderobę */}
-          {ownedClothes.length === clothingItems.length && (
+          {ownedClothes.length === clothingItems.length && clothingItems.length > 0 && (
             <div className="tip-card success">
               <span className="tip-icon">🎉</span>
               <div className="tip-content">

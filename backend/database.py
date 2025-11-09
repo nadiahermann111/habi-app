@@ -74,6 +74,25 @@ CREATE TABLE IF NOT EXISTS purchases (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (reward_id) REFERENCES rewards(id)
 );
+
+CREATE TABLE IF NOT EXISTS clothing_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    cost INTEGER NOT NULL,
+    icon TEXT NOT NULL,
+    category TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS user_clothing (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    clothing_id INTEGER NOT NULL,
+    purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (clothing_id) REFERENCES clothing_items(id),
+    UNIQUE (user_id, clothing_id)
+);
 """
 
 # domyślne nagrody dodawane przy inicjalizacji bazy danych
@@ -86,13 +105,27 @@ DEFAULT_REWARDS = [
     ("Kawa", 20, 40, "☕", "food")
 ]
 
+# domyślne ubrania dodawane przy inicjalizacji bazy danych
+DEFAULT_CLOTHING = [
+    ("Kolczyki", 50, "💎", "Biżuteria"),
+    ("Kokardka", 50, "🎀", "Dodatki"),
+    ("Opaska w Panterke", 70, "🐆", "Dodatki"),
+    ("Kwiatek Hibiskus", 70, "🌺", "Dodatki"),
+    ("Tatuaże", 100, "🦋", "Dekoracje"),
+    ("Koszulka i❤️ Habi", 150, "👕", "Ubrania"),
+    ("Koszulka Banan", 150, "🍌", "Ubrania"),
+    ("Ogrodniczki", 200, "👗", "Ubrania"),
+    ("Tajemnicza opcja", 300, "❓", "Specjalne"),
+    ("Strój Playboy", 500, "🐰", "Premium")
+]
+
 
 async def init_db():
     """
     Inicjalizuje bazę danych SQLite.
 
     Funkcja tworzy wszystkie wymagane tabele dla aplikacji Habi i dodaje
-    domyślne nagrody jeśli baza danych jest pusta. Włącza również obsługę
+    domyślne nagrody oraz ubrania jeśli baza danych jest pusta. Włącza również obsługę
     kluczy obcych dla zachowania integralności danych.
 
     Raises:
@@ -119,6 +152,17 @@ async def init_db():
             await db.executemany(
                 "INSERT INTO rewards (name, cost, nutrition_value, icon, type) VALUES (?, ?, ?, ?, ?)",
                 DEFAULT_REWARDS
+            )
+
+        # sprawdzenie czy tabela clothing_items jest pusta
+        cursor = await db.execute("SELECT COUNT(*) FROM clothing_items")
+        count = await cursor.fetchone()
+
+        # dodanie domyślnych ubrań jeśli tabela jest pusta
+        if count[0] == 0:
+            await db.executemany(
+                "INSERT INTO clothing_items (name, cost, icon, category) VALUES (?, ?, ?, ?)",
+                DEFAULT_CLOTHING
             )
 
         await db.commit()
