@@ -109,8 +109,8 @@ const HabitStats = ({ onBack }) => {
 
   if (loading) {
     return (
-      <div className="habit-tracker">
-        <div className="habit-tracker-container">
+      <div className="habit-stats">
+        <div className="habit-stats-container">
           <div className="loading-screen">
             <div style={{ fontSize: '48px' }}>📊</div>
             <div>Ładowanie statystyk...</div>
@@ -121,17 +121,17 @@ const HabitStats = ({ onBack }) => {
   }
 
   return (
-    <div className="habit-tracker">
-      <div className="habit-tracker-container">
+    <div className="habit-stats">
+      <div className="habit-stats-container">
         {/* Header */}
-        <div className="tracker-header">
-          <div className="tracker-header-left">
-            <button className="tracker-back-btn" onClick={onBack}>
+        <div className="stats-header">
+          <div className="stats-header-left">
+            <button className="stats-back-btn" onClick={onBack}>
               ←
             </button>
-            <img src={HabiLogo} alt="Habi" className="habi-logo-tracker" />
+            <img src={HabiLogo} alt="Habi" className="habi-logo-stats" />
           </div>
-          <h2 className="tracker-title">Habit Tracker</h2>
+          <h2 className="stats-title">Statystyki Nawyków</h2>
         </div>
 
         {error && (

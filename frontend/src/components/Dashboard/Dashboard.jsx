@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { authAPI, tokenUtils } from "../../services/api.jsx";
 import MenuHeader from '../MenuHeader/MenuHeader';
 import HabitTracker from '../HabitTracker/HabitTracker.jsx';
+import HabitStats from '../HabitStats/HabitStats.jsx';
 import FeedHabi from '../FeedHabi/FeedHabi.jsx';
 import DressHabi from '../DressHabi/DressHabi.jsx';
 import HabiSection from '../HabiSection/HabiSection';
@@ -99,6 +100,10 @@ const Dashboard = ({ user, onLogout }) => {
     setCurrentView('habits');
   };
 
+  const handleNavigateToStats = () => {
+    setCurrentView('stats');
+  };
+
   const handleNavigateToFeed = () => {
     setCurrentView('feed');
   };
@@ -116,13 +121,22 @@ const Dashboard = ({ user, onLogout }) => {
     return <div className="loading">Ładowanie profilu...</div>;
   }
 
-  // Renderowanie widoku trackera nawyków
+  // Renderowanie widoku trackera nawyków (dodawanie nawyków)
   if (currentView === 'habits') {
     return (
       <HabitTracker
         onBack={handleBackToDashboard}
         initialCoins={profile?.coins || 0}
         onCoinsUpdate={handleCoinsUpdate}
+      />
+    );
+  }
+
+  // Renderowanie widoku statystyk nawyków
+  if (currentView === 'stats') {
+    return (
+      <HabitStats
+        onBack={handleBackToDashboard}
       />
     );
   }
@@ -182,7 +196,7 @@ const Dashboard = ({ user, onLogout }) => {
               <button className="action-btn" onClick={handleNavigateToFeed}>
                 🍌 Nakarm Habi
               </button>
-              <button className="action-btn">
+              <button className="action-btn" onClick={handleNavigateToStats}>
                 📊 Zobacz statystyki
               </button>
               <button className="action-btn" onClick={handleNavigateToDress}>
