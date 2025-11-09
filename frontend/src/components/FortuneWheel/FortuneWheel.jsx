@@ -1,192 +1,173 @@
-// FortuneWheel.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import './FortuneWheel.css';
 
-const FortuneWheel = ({ isOpen, onClose, onSpinComplete }) => {
+const FortuneWheel = ({ isOpen, onClose, onWinCoins, userCoins }) => {
   const [isSpinning, setIsSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
-  const [canSpin, setCanSpin] = useState(true);
-  const [prize, setPrize] = useState(null);
-  const [showPrizeModal, setShowPrizeModal] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+  const [wonCoins, setWonCoins] = useState(0);
+  const wheelRef = useRef(null);
 
-  const segments = [
-    { id: 1, label: '5 monet', coins: 5, weight: 30, color: '#FFB6D9' },
-    { id: 2, label: 'Puste', coins: 0, weight: 20, color: '#FFF4B8' },
-    { id: 3, label: '10 monet', coins: 10, weight: 25, color: '#D4F4DD' },
-    { id: 4, label: 'Puste', coins: 0, weight: 20, color: '#E8D5F2' },
-    { id: 5, label: '20 monet', coins: 20, weight: 15, color: '#FFD4B8' },
-    { id: 6, label: 'Puste', coins: 0, weight: 20, color: '#B8E6FF' },
-    { id: 7, label: '50 monet', coins: 50, weight: 5, color: '#FFDAF0' },
-    { id: 8, label: 'Puste', coins: 0, weight: 20, color: '#FFF9C4' }
+  // Nagrody z różnymi prawdopodobieństwami
+  const prizes = [
+    { coins: 5, probability: 0.45, color: '#fde68a', angle: 0 },      // 45% - żółty pastel
+    { coins: 10, probability: 0.30, color: '#bfdbfe', angle: 90 },    // 30% - niebieski pastel
+    { coins: 5, probability: 0.45, color: '#fde68a', angle: 180 },    // 45% - żółty pastel
+    { coins: 20, probability: 0.15, color: '#d8b4fe', angle: 270 },   // 15% - fioletowy pastel
+    { coins: 5, probability: 0.45, color: '#fde68a', angle: 360 },    // 45% - żółty pastel
+    { coins: 10, probability: 0.30, color: '#bfdbfe', angle: 450 },   // 30% - niebieski pastel
+    { coins: 5, probability: 0.45, color: '#fde68a', angle: 540 },    // 45% - żółty pastel
+    { coins: 50, probability: 0.05, color: '#fecaca', angle: 630 }    // 5% - różowy pastel (najtrudniejszy)
   ];
 
-  useEffect(() => {
-    const lastSpinDate = sessionStorage.getItem('lastSpinDate');
-    const today = new Date().toDateString();
-    if (lastSpinDate === today) {
-      setCanSpin(false);
-    }
-  }, []);
-
-  const selectPrize = () => {
-    const totalWeight = segments.reduce((sum, seg) => sum + seg.weight, 0);
-    let random = Math.random() * totalWeight;
-    for (let segment of segments) {
-      if (random < segment.weight) return segment;
-      random -= segment.weight;
-    }
-    return segments[0];
-  };
-
   const spinWheel = () => {
-    if (!canSpin || isSpinning) return;
+    if (isSpinning) return;
+
     setIsSpinning(true);
-    setPrize(null);
+    setShowResult(false);
 
-    const selectedPrize = selectPrize();
-    const segmentAngle = 360 / segments.length;
-    const index = segments.findIndex(s => s.id === selectedPrize.id);
-    const targetAngle = index * segmentAngle;
-    const spins = 5 + Math.random() * 2;
-    const totalRotation = rotation + (360 * spins) + (360 - targetAngle) + (segmentAngle / 2);
+    // Losowanie nagrody na podstawie prawdopodobieństwa
+    const random = Math.random();
+    let cumulativeProbability = 0;
+    let selectedPrize = prizes[0];
 
-    setRotation(totalRotation);
+    for (const prize of prizes) {
+      cumulativeProbability += prize.probability;
+      if (random <= cumulativeProbability) {
+        selectedPrize = prize;
+        break;
+      }
+    }
 
+    // Oblicz kąt obrotu (kilka pełnych obrotów + docelowy segment)
+    const spinRotations = 5 + Math.random() * 3; // 5-8 pełnych obrotów
+    const segmentAngle = 360 / prizes.length; // 45 stopni na segment
+    const prizeIndex = prizes.findIndex(p => p.coins === selectedPrize.coins && p.angle === selectedPrize.angle);
+    const targetAngle = prizeIndex * segmentAngle;
+
+    // Dodaj losowy offset w obrębie segmentu dla bardziej naturalnego efektu
+    const offset = (Math.random() - 0.5) * segmentAngle * 0.6;
+    const finalRotation = rotation + (spinRotations * 360) + (360 - targetAngle) + offset;
+
+    setRotation(finalRotation);
+
+    // Po zakończeniu animacji
     setTimeout(() => {
       setIsSpinning(false);
-      setPrize(selectedPrize);
-      setShowPrizeModal(true);
-      setCanSpin(false);
-      sessionStorage.setItem('lastSpinDate', new Date().toDateString());
-      if (selectedPrize.coins > 0 && onSpinComplete) {
-        onSpinComplete(selectedPrize.coins);
+      setWonCoins(selectedPrize.coins);
+      setShowResult(true);
+
+      // Dodaj monety do konta użytkownika
+      if (onWinCoins) {
+        onWinCoins(selectedPrize.coins);
       }
-    }, 5000);
+    }, 5000); // Czas trwania animacji
   };
 
-  const resetDaily = () => {
-    sessionStorage.removeItem('lastSpinDate');
-    setCanSpin(true);
-    setPrize(null);
-    setShowPrizeModal(false);
+  const handleClose = () => {
+    if (!isSpinning) {
+      setShowResult(false);
+      setRotation(0);
+      onClose();
+    }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>×</button>
+    <div className="fortune-wheel-overlay" onClick={handleClose}>
+      <div className="fortune-wheel-popup" onClick={(e) => e.stopPropagation()}>
+        <button
+          className="wheel-close-btn"
+          onClick={handleClose}
+          disabled={isSpinning}
+          aria-label="Zamknij koło fortuny"
+        >
+          ✕
+        </button>
 
         <div className="wheel-header">
-          <h2 className="wheel-title">🎡 Koło Fortuny</h2>
-          <p className="wheel-subtitle">Zakręć raz dziennie i wygraj monety!</p>
+          <h2>🎡 Koło Fortuny 🎡</h2>
+          <p className="wheel-subtitle">Kręć i wygrywaj monety!</p>
         </div>
 
         <div className="wheel-container">
+          {/* Wskaźnik (strzałka) */}
           <div className="wheel-pointer">▼</div>
 
-          <svg 
-            className={`wheel-svg ${isSpinning ? 'spinning' : ''}`}
-            width="350" 
-            height="350" 
-            viewBox="0 0 350 350"
-            style={{ transform: `rotate(${rotation}deg)` }}
+          {/* Koło z nagrodami */}
+          <div
+            className="wheel"
+            ref={wheelRef}
+            style={{
+              transform: `rotate(${rotation}deg)`,
+              transition: isSpinning ? 'transform 5s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none'
+            }}
           >
-            <circle cx="175" cy="175" r="165" fill="white" stroke="#FFB6D9" strokeWidth="3"/>
+            {prizes.map((prize, index) => (
+              <div
+                key={index}
+                className="wheel-segment"
+                style={{
+                  backgroundColor: prize.color,
+                  transform: `rotate(${index * (360 / prizes.length)}deg)`
+                }}
+              >
+                <div className="segment-content">
+                  <span className="segment-coins">{prize.coins}</span>
+                  <span className="segment-icon">🪙</span>
+                </div>
+              </div>
+            ))}
 
-            {segments.map((segment, index) => {
-              const segmentAngle = 360 / segments.length;
-              const startAngle = (segmentAngle * index) - 90;
-              const endAngle = startAngle + segmentAngle;
-
-              const startRad = (startAngle * Math.PI) / 180;
-              const endRad = (endAngle * Math.PI) / 180;
-
-              const x1 = 175 + 165 * Math.cos(startRad);
-              const y1 = 175 + 165 * Math.sin(startRad);
-              const x2 = 175 + 165 * Math.cos(endRad);
-              const y2 = 175 + 165 * Math.sin(endRad);
-
-              const textAngle = (segmentAngle * index);
-              const textRad = (textAngle * Math.PI) / 180;
-              const textX = 175 + 110 * Math.cos(textRad);
-              const textY = 175 + 110 * Math.sin(textRad);
-
-              return (
-                <g key={segment.id}>
-                  <path
-                    d={`M 175 175 L ${x1} ${y1} A 165 165 0 0 1 ${x2} ${y2} Z`}
-                    fill={segment.color}
-                    stroke="white"
-                    strokeWidth="2"
-                  />
-                  <text
-                    x={textX}
-                    y={textY}
-                    fill="#333"
-                    fontSize="16"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    transform={`rotate(${textAngle}, ${textX}, ${textY})`}
-                  >
-                    {segment.label}
-                  </text>
-                </g>
-              );
-            })}
-
-            <defs>
-              <linearGradient id="centerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#FF69B4"/>
-                <stop offset="100%" stopColor="#FFB6D9"/>
-              </linearGradient>
-            </defs>
-            <circle cx="175" cy="175" r="40" fill="url(#centerGradient)"/>
-            <text x="175" y="175" fill="white" fontSize="18" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">
-              SPIN
-            </text>
-          </svg>
+            {/* Środek koła */}
+            <div className="wheel-center">
+              <div className="wheel-center-inner">🎰</div>
+            </div>
+          </div>
         </div>
 
         <div className="wheel-controls">
-          <button 
-            className={`spin-button ${!canSpin || isSpinning ? 'disabled' : ''}`}
+          <button
+            className="spin-button"
             onClick={spinWheel}
-            disabled={!canSpin || isSpinning}
+            disabled={isSpinning}
           >
-            {isSpinning ? '⏳ Kręcenie...' : !canSpin ? '🔒 Wróć jutro!' : '✨ Zakręć kołem!'}
+            {isSpinning ? '⏳ Kręcę...' : '🎯 ZAKRĘĆ!'}
           </button>
 
-          <button className="reset-button" onClick={resetDaily}>
-            🔄 Reset (test)
-          </button>
+          <div className="user-coins-display">
+            <span className="coins-label">Twoje monety:</span>
+            <span className="coins-amount">🪙 {userCoins}</span>
+          </div>
         </div>
 
-        {showPrizeModal && prize && (
-          <div className="prize-overlay" onClick={() => setShowPrizeModal(false)}>
-            <div className="prize-content" onClick={(e) => e.stopPropagation()}>
-              {prize.coins > 0 ? (
-                <>
-                  <h2 className="prize-title">🎉 Gratulacje!</h2>
-                  <div className="prize-coin-icon">🪙</div>
-                  <div className="prize-amount">+{prize.coins}</div>
-                  <p className="prize-text">Wygrałeś {prize.coins} monet!</p>
-                </>
-              ) : (
-                <>
-                  <h2 className="prize-title">😔 Niestety...</h2>
-                  <p className="prize-empty">Tym razem puste pole</p>
-                  <p className="prize-text">Spróbuj szczęścia jutro!</p>
-                </>
-              )}
-              <button className="prize-button" onClick={() => setShowPrizeModal(false)}>
-                OK
+        {/* Wynik */}
+        {showResult && (
+          <div className="result-popup">
+            <div className="result-content">
+              <div className="result-icon">🎉</div>
+              <h3 className="result-title">Gratulacje!</h3>
+              <p className="result-text">Wygrałeś/aś</p>
+              <div className="result-coins">
+                <span className="result-coins-icon">🪙</span>
+                <span className="result-coins-value">{wonCoins}</span>
+                <span className="result-coins-text">monet!</span>
+              </div>
+              <button className="result-close-btn" onClick={handleClose}>
+                Super! 🎊
               </button>
             </div>
           </div>
         )}
+
+        {/* Informacje o szansach */}
+        <div className="wheel-info">
+          <p className="info-text">
+            <span className="info-emoji">💡</span>
+            <span>Szanse: 5🪙 (45%) • 10🪙 (30%) • 20🪙 (15%) • 50🪙 (5%)</span>
+          </p>
+        </div>
       </div>
     </div>
   );
