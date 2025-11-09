@@ -237,14 +237,7 @@ const Dashboard = ({ user, onLogout }) => {
               <button className="action-btn" onClick={handleNavigateToDress}>
                 👗 Personalizuj Habi
               </button>
-              <button
-                className="action-btn fortune-btn"
-                onClick={handleNavigateToFortuneWheel}
-                style={{
-                  background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
-                  color: 'white'
-                }}
-              >
+              <button className="action-btn fortune-btn" onClick={handleNavigateToFortuneWheel}>
                 🎰 Koło fortuny
               </button>
             </div>
