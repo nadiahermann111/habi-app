@@ -11,6 +11,8 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .stats-header {
@@ -23,6 +25,8 @@
   border-radius: 16px;
   backdrop-filter: blur(10px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .stats-header-left {
@@ -88,6 +92,8 @@
   margin-bottom: 20px;
   color: #c00;
   text-align: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Overall Stats */
@@ -96,6 +102,8 @@
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
   margin-bottom: 32px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .stat-card {
@@ -107,6 +115,8 @@
   align-items: center;
   gap: 16px;
   transition: transform 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .stat-card:hover {
@@ -142,6 +152,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 20px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .habit-stat-card {
@@ -152,6 +164,8 @@
   cursor: pointer;
   transition: all 0.3s ease;
   border: 2px solid transparent;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .habit-stat-card:hover {
@@ -264,6 +278,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
 .view-calendar-btn:hover {
@@ -296,6 +311,7 @@
   overflow-y: auto;
   position: relative;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
 }
 
 .close-modal {
@@ -489,6 +505,8 @@
   background: white;
   border-radius: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .empty-icon {
@@ -510,12 +528,18 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .habit-stats-container {
+    padding: 12px;
+  }
+
   .overall-stats {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .habits-list {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .calendar-content {
@@ -541,23 +565,119 @@
 }
 
 @media (max-width: 480px) {
-  .mini-calendar {
-    grid-template-columns: repeat(15, 1fr);
+  .habit-stats-container {
+    padding: 8px;
+    max-width: 100%;
   }
 
-  .stats-title {
-    font-size: 18px;
+  .stats-header {
+    padding: 12px 16px;
+    margin-bottom: 16px;
+  }
+
+  .habi-logo-stats {
+    height: 28px;
+  }
+
+  .overall-stats {
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    padding: 16px;
+  }
+
+  .stat-icon {
+    font-size: 32px;
   }
 
   .stat-value {
     font-size: 24px;
   }
 
+  .stat-label {
+    font-size: 12px;
+  }
+
+  .habits-list {
+    gap: 12px;
+  }
+
+  .habit-stat-card {
+    padding: 16px;
+  }
+
+  .habit-stat-icon {
+    font-size: 32px;
+  }
+
+  .habit-stat-info h3 {
+    font-size: 16px;
+  }
+
+  .badge {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  .mini-calendar {
+    grid-template-columns: repeat(31, 1fr);
+    gap: 1px;
+  }
+
+  .view-calendar-btn {
+    padding: 12px;
+    font-size: 13px;
+  }
+
+  .calendar-content {
+    padding: 16px;
+    max-width: 95%;
+  }
+
   .calendar-day {
     font-size: 10px;
+    border-radius: 6px;
   }
 
   .day-header {
     font-size: 10px;
+    padding: 4px;
+  }
+
+  .month-navigation button {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+
+  .month-year {
+    font-size: 16px;
+    min-width: 120px;
+  }
+
+  .habit-icon-large {
+    font-size: 32px;
+  }
+
+  .habit-title h3 {
+    font-size: 18px;
+  }
+
+  .empty-state {
+    padding: 40px 16px;
+  }
+
+  .empty-icon {
+    font-size: 48px;
+  }
+
+  .empty-state h3 {
+    font-size: 20px;
+  }
+
+  .empty-state p {
+    font-size: 14px;
   }
 }
