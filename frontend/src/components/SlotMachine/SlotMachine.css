@@ -1,5 +1,5 @@
-/* Fortune Wheel Overlay */
-.fortune-wheel-overlay {
+/* Slot Machine Overlay */
+.slot-machine-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -26,8 +26,8 @@
   }
 }
 
-/* Fortune Wheel Popup */
-.fortune-wheel-popup {
+/* Slot Machine Popup */
+.slot-machine-popup {
   background: linear-gradient(135deg, #fff9e6 0%, #fffbf0 100%);
   border-radius: 24px;
   padding: 32px;
@@ -53,7 +53,7 @@
 }
 
 /* Close Button */
-.wheel-close-btn {
+.slot-close-btn {
   position: absolute;
   top: 16px;
   right: 16px;
@@ -74,32 +74,32 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.wheel-close-btn:hover:not(:disabled) {
+.slot-close-btn:hover:not(:disabled) {
   background: rgba(217, 119, 6, 0.2);
   transform: rotate(90deg) scale(1.1);
 }
 
-.wheel-close-btn:active:not(:disabled) {
+.slot-close-btn:active:not(:disabled) {
   transform: rotate(90deg) scale(0.95);
 }
 
-.wheel-close-btn:disabled {
+.slot-close-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.wheel-close-btn:focus-visible {
+.slot-close-btn:focus-visible {
   outline: 2px solid #d97706;
   outline-offset: 2px;
 }
 
 /* Header */
-.wheel-header {
+.slot-header {
   text-align: center;
   margin-bottom: 24px;
 }
 
-.wheel-header h2 {
+.slot-header h2 {
   color: #d97706;
   font-size: 28px;
   font-weight: 700;
@@ -108,140 +108,79 @@
   letter-spacing: 2px;
 }
 
-.wheel-subtitle {
+.slot-subtitle {
   color: #92400e;
   font-size: 14px;
   font-weight: 500;
   margin: 0;
 }
 
-/* Wheel Container */
-.wheel-container {
-  position: relative;
-  width: 300px;
-  height: 300px;
-  margin: 0 auto 24px;
+/* Slot Machine Container */
+.slot-machine-container {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  border-radius: 20px;
+  padding: 32px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 24px rgba(220, 38, 38, 0.3),
+              inset 0 4px 8px rgba(255, 255, 255, 0.2);
+  border: 4px solid #fbbf24;
+}
+
+/* Reels */
+.slot-reels {
   display: flex;
-  align-items: center;
+  gap: 12px;
   justify-content: center;
+  align-items: center;
 }
 
-/* Pointer */
-.wheel-pointer {
-  position: absolute;
-  top: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 40px;
-  color: #d97706;
-  z-index: 10;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
-  animation: pointerBounce 2s ease-in-out infinite;
-}
-
-@keyframes pointerBounce {
-  0%, 100% {
-    transform: translateX(-50%) translateY(0);
-  }
-  50% {
-    transform: translateX(-50%) translateY(8px);
-  }
-}
-
-/* Wheel */
-.wheel {
-  width: 280px;
-  height: 280px;
-  border-radius: 50%;
-  position: relative;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2),
-              inset 0 0 0 12px #fff,
-              inset 0 0 0 16px #fbbf24;
+.slot-reel {
   background: white;
-  overflow: hidden;
-}
-
-/* Wheel Segments - circular pizza slices */
-.wheel-segment {
-  position: absolute;
-  width: 50%;
-  height: 50%;
-  top: 50%;
-  left: 50%;
-  transform-origin: 0% 0%;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.wheel-segment.empty-segment {
-  opacity: 0.6;
-}
-
-.segment-content {
-  position: absolute;
-  top: 20%;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
-  text-align: center;
-}
-
-.segment-coins {
-  font-size: 22px;
-  font-weight: 700;
-  color: #92400e;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
-}
-
-.segment-icon {
-  font-size: 18px;
-}
-
-/* Wheel Center */
-.wheel-center {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80px;
-  height: 80px;
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-  border-radius: 50%;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  width: 90px;
+  height: 110px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 4px solid white;
-  z-index: 5;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2),
+              inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 3px solid #fbbf24;
+  position: relative;
+  overflow: hidden;
 }
 
-.wheel-center-inner {
-  font-size: 32px;
-  animation: centerPulse 2s ease-in-out infinite;
+.reel-symbol {
+  font-size: 56px;
+  line-height: 1;
+  transition: transform 0.1s ease;
 }
 
-@keyframes centerPulse {
-  0%, 100% {
-    transform: scale(1);
+/* Spinning Animation */
+.slot-reels.spinning .reel-symbol {
+  animation: spinSymbol 0.1s linear infinite;
+}
+
+@keyframes spinSymbol {
+  0% {
+    transform: translateY(0) scale(1);
   }
   50% {
-    transform: scale(1.1);
+    transform: translateY(-10px) scale(0.9);
+  }
+  100% {
+    transform: translateY(0) scale(1);
   }
 }
 
 /* Controls */
-.wheel-controls {
+.slot-controls {
   display: flex;
   flex-direction: column;
   gap: 16px;
   align-items: center;
 }
 
-.spin-button {
+.slot-spin-button {
   background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
   border: none;
   color: white;
@@ -260,37 +199,59 @@
   max-width: 280px;
 }
 
-.spin-button:hover:not(:disabled) {
+.slot-spin-button:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(217, 119, 6, 0.4);
 }
 
-.spin-button:active:not(:disabled) {
+.slot-spin-button:active:not(:disabled) {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
 }
 
-.spin-button:disabled {
+.slot-spin-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
 }
 
-.spin-button:focus-visible {
+.slot-spin-button:focus-visible {
   outline: 3px solid #fbbf24;
   outline-offset: 2px;
 }
 
-.try-again-btn {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+/* Locked State */
+.slot-locked {
+  text-align: center;
+  padding: 20px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 16px;
+  border: 2px solid #ef4444;
+  width: 100%;
+  max-width: 280px;
 }
 
-.try-again-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+.locked-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
 }
 
-/* User Coins Display */
-.user-coins-display {
+.locked-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #dc2626;
+  margin: 0 0 8px 0;
+}
+
+.locked-time {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ef4444;
+  margin: 0;
+}
+
+/* Coins Display */
+.slot-coins-display {
   background: rgba(251, 191, 36, 0.15);
   padding: 12px 24px;
   border-radius: 12px;
@@ -313,7 +274,7 @@
 }
 
 /* Result Popup */
-.result-popup {
+.slot-result-popup {
   position: fixed;
   top: 0;
   left: 0;
@@ -331,7 +292,7 @@
   animation: fadeIn 0.3s ease;
 }
 
-.result-content {
+.slot-result-content {
   background: linear-gradient(135deg, #fff 0%, #fffef7 100%);
   border-radius: 24px;
   padding: 40px 32px;
@@ -431,28 +392,6 @@
   color: #92400e;
 }
 
-.result-empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 24px;
-  padding: 16px;
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-  border-radius: 16px;
-  border: 2px solid #ef4444;
-}
-
-.empty-icon {
-  font-size: 32px;
-}
-
-.empty-text {
-  font-size: 18px;
-  font-weight: 600;
-  color: #991b1b;
-}
-
 .result-close-btn {
   background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
   border: none;
@@ -483,8 +422,8 @@
   outline-offset: 2px;
 }
 
-/* Wheel Info */
-.wheel-info {
+/* Info */
+.slot-info {
   margin-top: 20px;
   padding: 12px 16px;
   background: rgba(251, 191, 36, 0.1);
@@ -493,7 +432,7 @@
 }
 
 .info-text {
-  margin: 0;
+  margin: 0 0 8px 0;
   font-size: 12px;
   color: #92400e;
   display: flex;
@@ -505,57 +444,38 @@
   line-height: 1.5;
 }
 
+.info-text:last-child {
+  margin-bottom: 0;
+}
+
 .info-emoji {
   font-size: 14px;
 }
 
 /* Tablet - 768px */
 @media (max-width: 768px) {
-  .fortune-wheel-popup {
+  .slot-machine-popup {
     padding: 24px;
-    max-width: 450px;
   }
 
-  .wheel-header h2 {
+  .slot-header h2 {
     font-size: 24px;
   }
 
-  .wheel-container {
-    width: 260px;
-    height: 260px;
+  .slot-machine-container {
+    padding: 28px 20px;
   }
 
-  .wheel {
-    width: 240px;
-    height: 240px;
+  .slot-reel {
+    width: 80px;
+    height: 100px;
   }
 
-  .wheel-pointer {
-    font-size: 36px;
+  .reel-symbol {
+    font-size: 48px;
   }
 
-  .segment-coins {
-    font-size: 16px;
-  }
-
-  .segment-icon {
-    font-size: 14px;
-  }
-
-  .segment-content {
-    top: 15%;
-  }
-
-  .wheel-center {
-    width: 70px;
-    height: 70px;
-  }
-
-  .wheel-center-inner {
-    font-size: 28px;
-  }
-
-  .spin-button {
+  .slot-spin-button {
     font-size: 16px;
     padding: 14px 40px;
   }
@@ -567,92 +487,68 @@
   .result-title {
     font-size: 24px;
   }
-
-  .result-coins-icon {
-    font-size: 28px;
-  }
-
-  .result-coins-value {
-    font-size: 36px;
-  }
-
-  .result-coins-text {
-    font-size: 16px;
-  }
 }
 
 /* Mobile - 480px */
 @media (max-width: 480px) {
-  .fortune-wheel-popup {
+  .slot-machine-popup {
     padding: 20px;
     border-radius: 20px;
-    max-width: 100%;
   }
 
-  .wheel-close-btn {
+  .slot-close-btn {
     width: 32px;
     height: 32px;
     font-size: 18px;
   }
 
-  .wheel-header h2 {
+  .slot-header h2 {
     font-size: 22px;
     letter-spacing: 1.5px;
   }
 
-  .wheel-subtitle {
+  .slot-subtitle {
     font-size: 13px;
   }
 
-  .wheel-container {
-    width: 240px;
-    height: 240px;
-    margin-bottom: 20px;
+  .slot-machine-container {
+    padding: 24px 16px;
+    border-width: 3px;
   }
 
-  .wheel {
-    width: 220px;
-    height: 220px;
+  .slot-reels {
+    gap: 8px;
   }
 
-  .wheel-pointer {
-    font-size: 32px;
-    top: -16px;
+  .slot-reel {
+    width: 70px;
+    height: 90px;
+    border-width: 2px;
   }
 
-  .segment-content {
-    padding-top: 16px;
+  .reel-symbol {
+    font-size: 42px;
   }
 
-  .segment-coins {
-    font-size: 14px;
-  }
-
-  .segment-icon {
-    font-size: 12px;
-  }
-
-  .segment-content {
-    top: 12%;
-  }
-
-  .wheel-center {
-    width: 60px;
-    height: 60px;
-    border: 3px solid white;
-  }
-
-  .wheel-center-inner {
-    font-size: 24px;
-  }
-
-  .spin-button {
+  .slot-spin-button {
     font-size: 15px;
     padding: 14px 32px;
-    border-radius: 14px;
   }
 
-  .user-coins-display {
+  .locked-icon {
+    font-size: 40px;
+    margin-bottom: 10px;
+  }
+
+  .locked-text {
+    font-size: 15px;
+  }
+
+  .locked-time {
+    font-size: 13px;
+  }
+
+  .slot-coins-display {
     padding: 10px 20px;
     gap: 10px;
   }
@@ -665,9 +561,8 @@
     font-size: 15px;
   }
 
-  .result-content {
+  .slot-result-content {
     padding: 32px 24px;
-    border-radius: 20px;
   }
 
   .result-icon {
@@ -686,8 +581,8 @@
 
   .result-coins {
     padding: 12px;
-    margin-bottom: 20px;
     gap: 6px;
+    margin-bottom: 20px;
   }
 
   .result-coins-icon {
@@ -707,13 +602,14 @@
     padding: 12px 28px;
   }
 
-  .wheel-info {
+  .slot-info {
     margin-top: 16px;
     padding: 10px 12px;
   }
 
   .info-text {
     font-size: 11px;
+    margin-bottom: 6px;
   }
 
   .info-emoji {
@@ -723,43 +619,40 @@
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .fortune-wheel-overlay,
-  .fortune-wheel-popup,
-  .wheel-pointer,
-  .wheel-center-inner,
-  .result-popup,
-  .result-content,
+  .slot-machine-overlay,
+  .slot-machine-popup,
+  .slot-result-popup,
+  .slot-result-content,
   .result-icon,
   .result-coins-icon,
-  .wheel-close-btn,
-  .spin-button,
-  .result-close-btn {
+  .slot-close-btn,
+  .slot-spin-button,
+  .result-close-btn,
+  .reel-symbol {
     animation: none;
     transition: none;
   }
 
-  .wheel {
-    transition: transform 1s linear !important;
+  .slot-reels.spinning .reel-symbol {
+    animation: none;
   }
 }
 
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
-  .fortune-wheel-popup {
+  .slot-machine-popup {
     background: linear-gradient(135deg, #451a03 0%, #7c2d12 100%);
   }
 
-  .wheel-header h2 {
+  .slot-header h2 {
     color: #fbbf24;
   }
 
-  .wheel-subtitle,
-  .coins-label,
-  .info-text {
+  .slot-subtitle {
     color: #fde68a;
   }
 
-  .result-content {
+  .slot-result-content {
     background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
   }
 
@@ -767,26 +660,37 @@
     color: #fbbf24;
   }
 
-  .result-text {
+  .result-text,
+  .coins-label,
+  .info-text {
     color: #fde68a;
   }
 
-  .user-coins-display {
+  .locked-text {
+    color: #fca5a5;
+  }
+
+  .locked-time {
+    color: #fca5a5;
+  }
+
+  .slot-coins-display,
+  .slot-locked {
     background: rgba(251, 191, 36, 0.2);
   }
 }
 
 /* High contrast mode */
 @media (prefers-contrast: high) {
-  .fortune-wheel-popup,
-  .wheel,
-  .result-content,
-  .user-coins-display,
-  .wheel-info {
+  .slot-machine-popup,
+  .slot-result-content,
+  .slot-coins-display,
+  .slot-info,
+  .slot-locked {
     border: 2px solid currentColor;
   }
 
-  .spin-button,
+  .slot-spin-button,
   .result-close-btn {
     border: 1px solid currentColor;
   }

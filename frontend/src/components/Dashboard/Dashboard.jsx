@@ -6,7 +6,7 @@ import HabitStats from '../HabitStats/HabitStats.jsx';
 import FeedHabi from '../FeedHabi/FeedHabi.jsx';
 import DressHabi from '../DressHabi/DressHabi.jsx';
 import HabiSection from '../HabiSection/HabiSection';
-import FortuneWheel from '../FortuneWheel/FortuneWheel.jsx';
+import SlotMachine from '../SlotMachine/SlotMachine.jsx';
 import './Dashboard.css';
 
 const Dashboard = ({ user, onLogout }) => {
@@ -14,7 +14,7 @@ const Dashboard = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [currentView, setCurrentView] = useState('dashboard');
-  const [isFortuneWheelOpen, setIsFortuneWheelOpen] = useState(false);
+  const [isSlotMachineOpen, setIsSlotMachineOpen] = useState(false);
 
   // Debug - monitoruj zmiany currentView
   useEffect(() => {
@@ -145,13 +145,13 @@ const Dashboard = ({ user, onLogout }) => {
   };
 
   const handleOpenFortuneWheel = () => {
-    console.log('🎰 Opening fortune wheel');
-    setIsFortuneWheelOpen(true);
+    console.log('🎰 Opening slot machine');
+    setIsSlotMachineOpen(true);
   };
 
   const handleCloseFortuneWheel = () => {
-    console.log('🎰 Closing fortune wheel');
-    setIsFortuneWheelOpen(false);
+    console.log('🎰 Closing slot machine');
+    setIsSlotMachineOpen(false);
   };
 
   const handleBackToDashboard = () => {
@@ -253,7 +253,7 @@ const Dashboard = ({ user, onLogout }) => {
                 👗 Personalizuj Habi
               </button>
               <button className="action-btn fortune-btn" onClick={handleOpenFortuneWheel}>
-                🎰 Koło fortuny
+                🎰 Automat z owocami
               </button>
             </div>
           </div>
@@ -272,9 +272,9 @@ const Dashboard = ({ user, onLogout }) => {
         </div>
       )}
 
-      {/* Koło fortuny jako popup modal */}
-      <FortuneWheel
-        isOpen={isFortuneWheelOpen}
+      {/* Automat jako popup modal */}
+      <SlotMachine
+        isOpen={isSlotMachineOpen}
         onClose={handleCloseFortuneWheel}
         onWinCoins={handleWinCoins}
         userCoins={profile?.coins || 0}
