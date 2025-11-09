@@ -14,6 +14,7 @@ const Dashboard = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [currentView, setCurrentView] = useState('dashboard');
+  const [isFortuneWheelOpen, setIsFortuneWheelOpen] = useState(false);
 
   // Debug - monitoruj zmiany currentView
   useEffect(() => {
@@ -101,6 +102,27 @@ const Dashboard = ({ user, onLogout }) => {
     }));
   };
 
+  // Funkcja obsługująca wygrane monety z koła fortuny
+  const handleWinCoins = async (amount) => {
+    try {
+      const result = await authAPI.addCoins(amount);
+
+      // Aktualizacja lokalnego stanu profilu z nową liczbą monet
+      setProfile(prev => ({
+        ...prev,
+        coins: result.coins
+      }));
+
+      // Wysłanie globalnego eventu o zmianie liczby monet
+      window.dispatchEvent(new CustomEvent('coinsUpdated'));
+
+      console.log(`🎉 Wygrałeś ${amount} monet! Nowy stan: ${result.coins}`);
+    } catch (error) {
+      console.error('Błąd dodawania wygranych monet:', error);
+      alert('Nie udało się dodać wygranych monet. Spróbuj ponownie.');
+    }
+  };
+
   // Funkcje nawigacji między różnymi widokami aplikacji
   const handleNavigateToHabits = () => {
     console.log('🎯 Navigating to habits');
@@ -122,9 +144,14 @@ const Dashboard = ({ user, onLogout }) => {
     setCurrentView('dress');
   };
 
-  const handleNavigateToFortuneWheel = () => {
-    console.log('🎰 Navigating to fortune wheel');
-    setCurrentView('fortune');
+  const handleOpenFortuneWheel = () => {
+    console.log('🎰 Opening fortune wheel');
+    setIsFortuneWheelOpen(true);
+  };
+
+  const handleCloseFortuneWheel = () => {
+    console.log('🎰 Closing fortune wheel');
+    setIsFortuneWheelOpen(false);
   };
 
   const handleBackToDashboard = () => {
@@ -185,18 +212,6 @@ const Dashboard = ({ user, onLogout }) => {
     );
   }
 
-  // Renderowanie widoku koła fortuny
-  if (currentView === 'fortune') {
-    console.log('✅ Rendering FortuneWheel component');
-    return (
-      <FortuneWheel
-        onBack={handleBackToDashboard}
-        userCoins={profile?.coins || 0}
-        onCoinsUpdate={handleCoinsUpdate}
-      />
-    );
-  }
-
   // Renderowanie głównego widoku Dashboard
   console.log('✅ Rendering main Dashboard');
   return (
@@ -237,7 +252,7 @@ const Dashboard = ({ user, onLogout }) => {
               <button className="action-btn" onClick={handleNavigateToDress}>
                 👗 Personalizuj Habi
               </button>
-              <button className="action-btn fortune-btn" onClick={handleNavigateToFortuneWheel}>
+              <button className="action-btn fortune-btn" onClick={handleOpenFortuneWheel}>
                 🎰 Koło fortuny
               </button>
             </div>
@@ -256,6 +271,14 @@ const Dashboard = ({ user, onLogout }) => {
           )}
         </div>
       )}
+
+      {/* Koło fortuny jako popup modal */}
+      <FortuneWheel
+        isOpen={isFortuneWheelOpen}
+        onClose={handleCloseFortuneWheel}
+        onWinCoins={handleWinCoins}
+        userCoins={profile?.coins || 0}
+      />
     </div>
   );
 };

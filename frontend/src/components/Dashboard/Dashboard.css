@@ -185,29 +185,45 @@
 
 /* Style dla przycisku Koła Fortuny */
 .fortune-btn {
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
-  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3) !important;
+  background: linear-gradient(135deg, #f4d03f 0%, #f1c40f 100%);
+  box-shadow: 0 4px 12px rgba(244, 208, 63, 0.3);
   animation: fortunePulse 2s ease-in-out infinite;
-  color: white !important;
+  position: relative;
+  border: 2px solid #e6a23c;
+  grid-column: span 1; /* Domyślnie na mobile zajmuje 1 kolumnę */
+}
+
+.fortune-btn::after {
+  content: '🎰';
+  position: absolute;
+  right: 20px;
+  font-size: 32px;
+  animation: spinIcon 3s linear infinite;
+}
+
+@keyframes spinIcon {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .fortune-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #c0392b 0%, #a93226 100%) !important;
-  box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4) !important;
+  background: linear-gradient(135deg, #f1c40f 0%, #e6a23c 100%);
+  box-shadow: 0 8px 20px rgba(244, 208, 63, 0.5);
   transform: translateY(-3px) scale(1.02);
+  border-color: #d68910;
 }
 
 .fortune-btn:active {
   transform: translateY(-1px) scale(1);
-  box-shadow: 0 3px 10px rgba(231, 76, 60, 0.3) !important;
+  box-shadow: 0 3px 10px rgba(244, 208, 63, 0.3);
 }
 
 @keyframes fortunePulse {
   0%, 100% {
-    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+    box-shadow: 0 4px 12px rgba(244, 208, 63, 0.3);
   }
   50% {
-    box-shadow: 0 4px 20px rgba(231, 76, 60, 0.5);
+    box-shadow: 0 4px 20px rgba(244, 208, 63, 0.6), 0 0 30px rgba(241, 196, 15, 0.3);
   }
 }
 
@@ -221,6 +237,11 @@
   .action-buttons {
     grid-template-columns: repeat(2, 1fr);
     gap: 22px;
+  }
+
+  /* Przycisk koła fortuny zajmuje 2 kolumny (całą szerokość) */
+  .fortune-btn {
+    grid-column: span 2;
   }
 
   .welcome-message {
@@ -278,6 +299,11 @@
     font-size: 24px;
     min-height: 100px;
   }
+
+  .fortune-btn::after {
+    font-size: 36px;
+    right: 30px;
+  }
 }
 
 /* Display mode - standalone (PWA) */
@@ -330,12 +356,13 @@
   }
 
   .fortune-btn {
-    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
-    color: white !important;
+    background: linear-gradient(135deg, #f4d03f 0%, #f1c40f 100%);
+    border-color: #e6a23c;
   }
 
   .fortune-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%) !important;
+    background: linear-gradient(135deg, #f1c40f 0%, #e6a23c 100%);
+    border-color: #d68910;
   }
 }
 
@@ -355,7 +382,7 @@
   }
 
   .fortune-btn {
-    border: 3px solid #e74c3c;
+    border: 3px solid #e6a23c;
   }
 }
 
@@ -370,7 +397,8 @@
     transition: none;
   }
 
-  .fortune-btn {
+  .fortune-btn,
+  .fortune-btn::after {
     animation: none;
   }
 }
