@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './SlotMachine.css';
 
-const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins }) => {
+const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId }) => {
   const [reels, setReels] = useState([
     ['🍌', '🍎', '🍇'],
     ['🍎', '🍇', '🍊'],
@@ -16,19 +16,27 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins }) => {
   // Wszystkie symbole
   const symbols = ['🍌', '🍎', '🍇', '🍊', '🍓', '🥥', '🍋', '🍑'];
 
+  // Klucz localStorage specyficzny dla użytkownika
+  const getStorageKey = () => `slotMachineLastPlay_user_${userId}`;
+
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && userId) {
       checkDailyLimit();
     }
-  }, [isOpen]);
+  }, [isOpen, userId]);
 
   useEffect(() => {
-    const interval = setInterval(checkDailyLimit, 60000);
-    return () => clearInterval(interval);
-  }, []);
+    if (userId) {
+      const interval = setInterval(checkDailyLimit, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [userId]);
 
   const checkDailyLimit = () => {
-    const lastPlayDate = localStorage.getItem('slotMachineLastPlay');
+    if (!userId) return;
+
+    const storageKey = getStorageKey();
+    const lastPlayDate = localStorage.getItem(storageKey);
     const today = new Date().toDateString();
 
     if (lastPlayDate === today) {
@@ -125,7 +133,9 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins }) => {
       setWonCoins(coins);
       setShowResult(true); // TERAZ pokaż wynik
 
-      localStorage.setItem('slotMachineLastPlay', new Date().toDateString());
+      // Zapisz z user_id w kluczu
+      const storageKey = getStorageKey();
+      localStorage.setItem(storageKey, new Date().toDateString());
       setCanPlay(false);
 
       if (onWinCoins) {

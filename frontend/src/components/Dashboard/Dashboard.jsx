@@ -278,6 +278,7 @@ const Dashboard = ({ user, onLogout }) => {
         onClose={handleCloseFortuneWheel}
         onWinCoins={handleWinCoins}
         userCoins={profile?.coins || 0}
+        userId={profile?.id}
       />
     </div>
   );
