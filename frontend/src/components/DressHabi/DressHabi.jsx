@@ -7,7 +7,7 @@ import './DressHabi.css';
 const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
   const [currentCoins, setCurrentCoins] = useState(userCoins);
   const [purchaseAnimation, setPurchaseAnimation] = useState(null);
-  const [loading, setLoading] = useState(true); // Zmieniono na true
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [ownedClothes, setOwnedClothes] = useState([]);
   const [clothingItems, setClothingItems] = useState([]);
@@ -219,13 +219,11 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
     const loadData = async () => {
       console.log('🚀 Inicjalizacja DressHabi...');
       setFetchingData(true);
-      setLoading(true);
 
       await fetchClothingItems();
       await fetchOwnedClothing();
 
       setFetchingData(false);
-      setLoading(false);
       console.log('✅ Inicjalizacja zakończona');
     };
 
@@ -350,16 +348,19 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
                   onClick={() => !isOwned && canAfford && handlePurchase(item)}
                   style={{ cursor: (!isOwned && canAfford) ? 'pointer' : 'not-allowed' }}
                 >
+                  {/* Cena na górze */}
+                  <div className="clothing-item-price">
+                    <span className="coin-icon">🪙</span>
+                    <span className="price-value">{item.cost}</span>
+                  </div>
+
+                  {/* Emoji w środku */}
                   <div className="clothing-item-image">
                     <span className="clothing-emoji">{item.icon}</span>
                   </div>
-                  <div className="clothing-item-info">
-                    <div className="clothing-item-name">{item.name}</div>
-                    <div className="clothing-item-price">
-                      <span className="coin-icon">🪙</span>
-                      <span className="price-value">{item.cost}</span>
-                    </div>
-                  </div>
+
+                  {/* Nazwa na dole */}
+                  <div className="clothing-item-name">{item.name}</div>
 
                   {/* Overlay dla niedostępnych przedmiotów */}
                   {!canAfford && !isOwned && (
