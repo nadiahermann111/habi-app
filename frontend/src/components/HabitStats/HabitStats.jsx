@@ -161,7 +161,7 @@ const HabitStats = ({ onBack }) => {
             <div className="stat-icon">🔥</div>
             <div className="stat-content">
               <div className="stat-value">
-                {Math.max(...statistics.map(h => h.current_streak), 0)}
+                {statistics.length > 0 ? Math.max(...statistics.map(h => h.current_streak), 0) : 0}
               </div>
               <div className="stat-label">Najdłuższy streak</div>
             </div>

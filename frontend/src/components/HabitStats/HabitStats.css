@@ -13,11 +13,10 @@
   padding: 16px;
 }
 
-/* Header */
 .stats-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   margin-bottom: 24px;
   padding: 16px 20px;
   background: rgba(255, 255, 255, 0.9);
