@@ -131,7 +131,6 @@ const HabitStats = ({ onBack }) => {
             </button>
             <img src={HabiLogo} alt="Habi" className="habi-logo-stats" />
           </div>
-          <h2 className="stats-title">Statystyki Nawyków</h2>
         </div>
 
         {error && (
