@@ -183,6 +183,34 @@
   background: linear-gradient(135deg, #ccc 0%, #999 100%);
 }
 
+/* Style dla przycisku Koła Fortuny */
+.fortune-btn {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3) !important;
+  animation: fortunePulse 2s ease-in-out infinite;
+  color: white !important;
+}
+
+.fortune-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #c0392b 0%, #a93226 100%) !important;
+  box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4) !important;
+  transform: translateY(-3px) scale(1.02);
+}
+
+.fortune-btn:active {
+  transform: translateY(-1px) scale(1);
+  box-shadow: 0 3px 10px rgba(231, 76, 60, 0.3) !important;
+}
+
+@keyframes fortunePulse {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(231, 76, 60, 0.5);
+  }
+}
+
 /* Tablet - 768px and above */
 @media (min-width: 768px) {
   .dashboard-container {
@@ -300,6 +328,15 @@
   .action-btn:hover:not(:disabled) {
     background: linear-gradient(135deg, #f1c40f 0%, #e6a23c 100%);
   }
+
+  .fortune-btn {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
+    color: white !important;
+  }
+
+  .fortune-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%) !important;
+  }
 }
 
 /* High contrast mode */
@@ -316,6 +353,10 @@
   .error-message {
     border-width: 3px;
   }
+
+  .fortune-btn {
+    border: 3px solid #e74c3c;
+  }
 }
 
 /* Reduced motion */
@@ -327,5 +368,9 @@
   .action-btn::before {
     animation: none;
     transition: none;
+  }
+
+  .fortune-btn {
+    animation: none;
   }
 }

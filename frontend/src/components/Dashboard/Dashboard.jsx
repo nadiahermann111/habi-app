@@ -6,6 +6,7 @@ import HabitStats from '../HabitStats/HabitStats.jsx';
 import FeedHabi from '../FeedHabi/FeedHabi.jsx';
 import DressHabi from '../DressHabi/DressHabi.jsx';
 import HabiSection from '../HabiSection/HabiSection';
+import FortuneWheel from '../FortuneWheel/FortuneWheel.jsx';
 import './Dashboard.css';
 
 const Dashboard = ({ user, onLogout }) => {
@@ -121,6 +122,11 @@ const Dashboard = ({ user, onLogout }) => {
     setCurrentView('dress');
   };
 
+  const handleNavigateToFortuneWheel = () => {
+    console.log('🎰 Navigating to fortune wheel');
+    setCurrentView('fortune');
+  };
+
   const handleBackToDashboard = () => {
     console.log('🏠 Navigating back to dashboard');
     setCurrentView('dashboard');
@@ -179,6 +185,18 @@ const Dashboard = ({ user, onLogout }) => {
     );
   }
 
+  // Renderowanie widoku koła fortuny
+  if (currentView === 'fortune') {
+    console.log('✅ Rendering FortuneWheel component');
+    return (
+      <FortuneWheel
+        onBack={handleBackToDashboard}
+        userCoins={profile?.coins || 0}
+        onCoinsUpdate={handleCoinsUpdate}
+      />
+    );
+  }
+
   // Renderowanie głównego widoku Dashboard
   console.log('✅ Rendering main Dashboard');
   return (
@@ -219,6 +237,9 @@ const Dashboard = ({ user, onLogout }) => {
               <button className="action-btn" onClick={handleNavigateToDress}>
                 👗 Personalizuj Habi
               </button>
+              <button className="action-btn fortune-btn" onClick={handleNavigateToFortuneWheel}>
+                🎰 Koło fortuny
+              </button>
             </div>
           </div>
 
@@ -240,3 +261,4 @@ const Dashboard = ({ user, onLogout }) => {
 };
 
 export default Dashboard;
+
