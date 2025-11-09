@@ -7,25 +7,64 @@ import './DressHabi.css';
 const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
   const [currentCoins, setCurrentCoins] = useState(userCoins);
   const [purchaseAnimation, setPurchaseAnimation] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Zmieniono na true
   const [error, setError] = useState(null);
   const [ownedClothes, setOwnedClothes] = useState([]);
   const [clothingItems, setClothingItems] = useState([]);
+  const [fetchingData, setFetchingData] = useState(true);
 
   const API_BASE_URL = 'https://habi-backend.onrender.com';
 
   // Pobieranie dostępnych ubrań z backendu
   const fetchClothingItems = async () => {
     try {
+      console.log('🔄 Rozpoczynam pobieranie ubrań...');
       const response = await fetch(`${API_BASE_URL}/api/clothing`);
-      if (!response.ok) throw new Error('Błąd pobierania ubrań');
+
+      console.log('📡 Response status:', response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const data = await response.json();
-      setClothingItems(data);
       console.log('✅ Pobrano ubrania:', data);
+
+      if (Array.isArray(data) && data.length > 0) {
+        setClothingItems(data);
+      } else {
+        console.warn('⚠️ Brak ubrań w odpowiedzi');
+        // Użyj fallback danych jeśli backend nie zwraca danych
+        setClothingItems([
+          { id: 1, name: 'Kolczyki', cost: 50, icon: "💎", category: 'Biżuteria' },
+          { id: 2, name: 'Kokardka', cost: 50, icon: "🎀", category: 'Dodatki' },
+          { id: 3, name: 'Opaska w Panterke', cost: 70, icon: "🐆", category: 'Dodatki' },
+          { id: 4, name: 'Kwiatek Hibiskus', cost: 70, icon: "🌺", category: 'Dodatki' },
+          { id: 5, name: 'Tatuaże', cost: 100, icon: "🦋", category: 'Dekoracje' },
+          { id: 6, name: 'Koszulka i❤️ Habi', cost: 150, icon: "👕", category: 'Ubrania' },
+          { id: 7, name: 'Koszulka Banan', cost: 150, icon: "🍌", category: 'Ubrania' },
+          { id: 8, name: 'Ogrodniczki', cost: 200, icon: "👗", category: 'Ubrania' },
+          { id: 9, name: 'Tajemnicza opcja', cost: 300, icon: "❓", category: 'Specjalne' },
+          { id: 10, name: 'Strój Playboy', cost: 500, icon: "🐰", category: 'Premium' }
+        ]);
+      }
     } catch (error) {
       console.error('❌ Błąd fetchClothingItems:', error);
-      setError('Nie udało się pobrać listy ubrań');
+      setError(`Nie udało się pobrać listy ubrań: ${error.message}`);
+
+      // Użyj fallback danych w przypadku błędu
+      setClothingItems([
+        { id: 1, name: 'Kolczyki', cost: 50, icon: "💎", category: 'Biżuteria' },
+        { id: 2, name: 'Kokardka', cost: 50, icon: "🎀", category: 'Dodatki' },
+        { id: 3, name: 'Opaska w Panterke', cost: 70, icon: "🐆", category: 'Dodatki' },
+        { id: 4, name: 'Kwiatek Hibiskus', cost: 70, icon: "🌺", category: 'Dodatki' },
+        { id: 5, name: 'Tatuaże', cost: 100, icon: "🦋", category: 'Dekoracje' },
+        { id: 6, name: 'Koszulka i❤️ Habi', cost: 150, icon: "👕", category: 'Ubrania' },
+        { id: 7, name: 'Koszulka Banan', cost: 150, icon: "🍌", category: 'Ubrania' },
+        { id: 8, name: 'Ogrodniczki', cost: 200, icon: "👗", category: 'Ubrania' },
+        { id: 9, name: 'Tajemnicza opcja', cost: 300, icon: "❓", category: 'Specjalne' },
+        { id: 10, name: 'Strój Playboy', cost: 500, icon: "🐰", category: 'Premium' }
+      ]);
     }
   };
 
@@ -35,22 +74,43 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
       const token = localStorage.getItem('token');
       if (!token) {
         console.log('⚠️ Brak tokenu - użytkownik niezalogowany');
+        // Sprawdź localStorage jako fallback
+        const savedOwned = localStorage.getItem('ownedClothes');
+        if (savedOwned) {
+          setOwnedClothes(JSON.parse(savedOwned));
+          console.log('📦 Wczytano posiadane ubrania z localStorage');
+        }
         return;
       }
 
+      console.log('🔄 Rozpoczynam pobieranie posiadanych ubrań...');
       const response = await fetch(`${API_BASE_URL}/api/clothing/owned`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (!response.ok) throw new Error('Błąd pobierania posiadanych ubrań');
+      console.log('📡 Response status (owned):', response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const data = await response.json();
+      console.log('✅ Pobrano posiadane ubrania:', data);
       setOwnedClothes(data.owned_clothing_ids || []);
-      console.log('✅ Pobrano posiadane ubrania:', data.owned_clothing_ids);
+
+      // Zapisz również do localStorage jako backup
+      localStorage.setItem('ownedClothes', JSON.stringify(data.owned_clothing_ids || []));
+
     } catch (error) {
       console.error('❌ Błąd fetchOwnedClothing:', error);
+      // Użyj localStorage jako fallback
+      const savedOwned = localStorage.getItem('ownedClothes');
+      if (savedOwned) {
+        setOwnedClothes(JSON.parse(savedOwned));
+        console.log('📦 Wczytano posiadane ubrania z localStorage (fallback)');
+      }
     }
   };
 
@@ -83,6 +143,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
         throw new Error('Brak tokenu autoryzacji');
       }
 
+      console.log(`🔄 Wysyłam żądanie zakupu do API...`);
       const response = await fetch(`${API_BASE_URL}/api/clothing/purchase/${item.id}`, {
         method: 'POST',
         headers: {
@@ -90,6 +151,8 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
           'Content-Type': 'application/json'
         }
       });
+
+      console.log('📡 Response status (purchase):', response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -107,7 +170,11 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
       }
 
       // Dodanie przedmiotu do posiadanych
-      setOwnedClothes([...ownedClothes, item.id]);
+      const updatedOwned = [...ownedClothes, item.id];
+      setOwnedClothes(updatedOwned);
+
+      // Zapisz do localStorage jako backup
+      localStorage.setItem('ownedClothes', JSON.stringify(updatedOwned));
 
       // Wysłanie globalnego eventu o zmianie liczby monet
       window.dispatchEvent(new CustomEvent('coinsUpdated', {
@@ -149,9 +216,44 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
 
   // Wczytanie danych przy montowaniu komponentu
   useEffect(() => {
-    fetchClothingItems();
-    fetchOwnedClothing();
+    const loadData = async () => {
+      console.log('🚀 Inicjalizacja DressHabi...');
+      setFetchingData(true);
+      setLoading(true);
+
+      await fetchClothingItems();
+      await fetchOwnedClothing();
+
+      setFetchingData(false);
+      setLoading(false);
+      console.log('✅ Inicjalizacja zakończona');
+    };
+
+    loadData();
   }, []);
+
+  // Wyświetlenie wskaźnika ładowania podczas pobierania danych
+  if (fetchingData) {
+    return (
+      <div className="dress-habi">
+        <div className="dress-habi-container">
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '400px',
+            gap: '20px'
+          }}>
+            <div style={{ fontSize: '48px' }}>🔄</div>
+            <div style={{ fontSize: '18px', color: '#666' }}>
+              Ładowanie garderoby...
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dress-habi">
@@ -220,6 +322,20 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
           </div>
         )}
 
+        {/* Komunikat jeśli nie ma ubrań */}
+        {clothingItems.length === 0 && !fetchingData && (
+          <div style={{
+            textAlign: 'center',
+            padding: '20px',
+            background: '#fff3cd',
+            borderRadius: '8px',
+            margin: '10px 0',
+            color: '#856404'
+          }}>
+            ⚠️ Brak dostępnych ubrań. Spróbuj odświeżyć stronę.
+          </div>
+        )}
+
         {/* Slider z dostępnymi ubraniami */}
         <div className="clothing-slider-container">
           <div className="clothing-items-slider">
@@ -232,6 +348,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
                   key={item.id}
                   className={`clothing-item ${!canAfford && !isOwned ? 'disabled' : ''} ${loading ? 'loading' : ''} ${isOwned ? 'owned' : ''}`}
                   onClick={() => !isOwned && canAfford && handlePurchase(item)}
+                  style={{ cursor: (!isOwned && canAfford) ? 'pointer' : 'not-allowed' }}
                 >
                   <div className="clothing-item-image">
                     <span className="clothing-emoji">{item.icon}</span>
