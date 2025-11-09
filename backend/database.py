@@ -9,6 +9,7 @@ import sqlite3
 import asyncio
 import aiosqlite
 from pathlib import Path
+from datetime import datetime, timedelta
 
 DATABASE_PATH = "database.db"
 
@@ -92,6 +93,21 @@ CREATE TABLE IF NOT EXISTS user_clothing (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (clothing_id) REFERENCES clothing_items(id),
     UNIQUE (user_id, clothing_id)
+);
+
+CREATE TABLE IF NOT EXISTS habit_statistics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    habit_id INTEGER NOT NULL,
+    total_completions INTEGER DEFAULT 0,
+    current_streak INTEGER DEFAULT 0,
+    longest_streak INTEGER DEFAULT 0,
+    last_completion_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (habit_id) REFERENCES habits(id) ON DELETE CASCADE,
+    UNIQUE (user_id, habit_id)
 );
 """
 
@@ -406,3 +422,101 @@ async def check_habit_completed_today(habit_id: int, user_id: int, today: str) -
     """
     result = await fetch_one_value(query, (habit_id, user_id, today))
     return result is not None
+
+
+async def update_habit_statistics(user_id: int, habit_id: int, completion_date: str):
+    """
+    Aktualizuje statystyki nawyku po jego wykonaniu.
+
+    Args:
+        user_id (int): ID użytkownika
+        habit_id (int): ID nawyku
+        completion_date (str): Data wykonania w formacie ISO
+    """
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute("PRAGMA foreign_keys = ON")
+        db.row_factory = aiosqlite.Row
+
+        # Sprawdź czy statystyki dla tego nawyku już istnieją
+        cursor = await db.execute(
+            "SELECT * FROM habit_statistics WHERE user_id = ? AND habit_id = ?",
+            (user_id, habit_id)
+        )
+        stats = await cursor.fetchone()
+
+        if not stats:
+            # Utwórz nowe statystyki
+            await db.execute(
+                """INSERT INTO habit_statistics 
+                   (user_id, habit_id, total_completions, current_streak, longest_streak, last_completion_date)
+                   VALUES (?, ?, 1, 1, 1, ?)""",
+                (user_id, habit_id, completion_date)
+            )
+        else:
+            # Aktualizuj istniejące statystyki
+            total_completions = stats['total_completions'] + 1
+            current_streak = stats['current_streak']
+            longest_streak = stats['longest_streak']
+            last_date = stats['last_completion_date']
+
+            # Oblicz streak
+            from datetime import datetime as dt
+            if last_date:
+                last_date_obj = dt.fromisoformat(last_date).date()
+                current_date_obj = dt.fromisoformat(completion_date).date()
+                days_diff = (current_date_obj - last_date_obj).days
+
+                if days_diff == 1:
+                    # Kontynuacja streaka
+                    current_streak += 1
+                elif days_diff > 1:
+                    # Przerwany streak
+                    current_streak = 1
+                # days_diff == 0 oznacza że już było dzisiaj (nie powinno się zdarzyć)
+            else:
+                current_streak = 1
+
+            # Aktualizuj najdłuższy streak
+            if current_streak > longest_streak:
+                longest_streak = current_streak
+
+            await db.execute(
+                """UPDATE habit_statistics 
+                   SET total_completions = ?, 
+                       current_streak = ?, 
+                       longest_streak = ?,
+                       last_completion_date = ?,
+                       updated_at = CURRENT_TIMESTAMP
+                   WHERE user_id = ? AND habit_id = ?""",
+                (total_completions, current_streak, longest_streak, completion_date, user_id, habit_id)
+            )
+
+        await db.commit()
+
+
+async def get_user_habit_statistics(user_id: int):
+    """
+    Pobiera statystyki wszystkich nawyków użytkownika.
+
+    Args:
+        user_id (int): ID użytkownika
+
+    Returns:
+        List[dict]: Lista statystyk nawyków
+    """
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            """SELECT 
+                   hs.*,
+                   h.name as habit_name,
+                   h.icon as habit_icon,
+                   h.reward_coins
+               FROM habit_statistics hs
+               JOIN habits h ON hs.habit_id = h.id
+               WHERE hs.user_id = ? AND h.is_active = 1
+               ORDER BY hs.total_completions DESC""",
+            (user_id,)
+        )
+        stats = await cursor.fetchall()
+        return [dict(row) for row in stats]

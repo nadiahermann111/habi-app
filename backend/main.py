@@ -5,10 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from datetime import datetime, date
 from typing import List
+import calendar
 
-#importowanie modułów aplikacji
+# importowanie modułów aplikacji
 try:
-    from database import init_db
+    from database import init_db, update_habit_statistics
 
     print("✅ database.py imported successfully")
 except Exception as e:
@@ -58,7 +59,7 @@ async def lifespan(app: FastAPI):
     print("👋 Shutting down")
 
 
-#inicjalizacja aplikacji FastAPI
+# inicjalizacja aplikacji FastAPI
 app = FastAPI(
     title="Habi API",
     description="API dla aplikacji do śledzenia nawyków z wirtualną małpką",
@@ -66,7 +67,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-#konfiguracja CORS (mechanizm umożliwiający bezpieczny dostęp do zasobów) dla komunikacji z frontendem
+# konfiguracja CORS (mechanizm umożliwiający bezpieczny dostęp do zasobów) dla komunikacji z frontendem
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -81,7 +82,7 @@ app.add_middleware(
 )
 
 
-#podstawowe endpointy i testy
+# podstawowe endpointy i testy
 
 @app.get("/")
 async def root():
@@ -118,7 +119,7 @@ async def test_db():
         }
 
 
-#endpointy użytkowników
+# endpointy użytkowników
 
 @app.post("/api/register", response_model=LoginResponse)
 async def register(user_data: UserRegister):
@@ -150,7 +151,7 @@ async def register(user_data: UserRegister):
 
         # tworzenie nowego użytkownika z zahashowanym hasłem
         hashed_password = hash_password(user_data.password)
-        cursor = await db.execute( #ORM - poszukać, SQL ALCHEMY
+        cursor = await db.execute(
             "INSERT INTO users (username, email, password_hash, coins) VALUES (?, ?, ?, ?)",
             (user_data.username, user_data.email, hashed_password, 20)
         )
@@ -477,7 +478,7 @@ async def get_users():
         }
 
 
-#endpointy nawyków
+# endpointy nawyków
 
 @app.post("/api/habits")
 async def create_habit(habit_data: HabitCreate, authorization: str = Header(None)):
@@ -702,6 +703,11 @@ async def complete_habit(habit_id: int, authorization: str = Header(None)):
 
         await db.commit()
 
+    # Aktualizacja statystyk (poza główną transakcją)
+    await update_habit_statistics(user_id, habit_id, today)
+
+    async with aiosqlite.connect("database.db") as db:
+        db.row_factory = aiosqlite.Row
         # pobranie nowej liczby monet użytkownika
         cursor = await db.execute(
             "SELECT coins FROM users WHERE id = ?",
@@ -748,7 +754,7 @@ async def delete_habit(habit_id: int, authorization: str = Header(None)):
     async with aiosqlite.connect("database.db") as db:
         await db.execute("PRAGMA foreign_keys = ON")
 
-        #sprawdzenie czy nawyk istnieje i należy do użytkownika
+        # sprawdzenie czy nawyk istnieje i należy do użytkownika
         cursor = await db.execute(
             "SELECT id FROM habits WHERE id = ? AND user_id = ?",
             (habit_id, user_id)
@@ -911,6 +917,150 @@ async def purchase_clothing(clothing_id: int, authorization: str = Header(None))
             "item_icon": clothing["icon"],
             "cost": clothing["cost"],
             "remaining_coins": updated_user["coins"]
+        }
+
+
+# Endpointy dla statystyk nawyków
+
+@app.get("/api/habits/statistics")
+async def get_habit_statistics(authorization: str = Header(None)):
+    """
+    Pobiera statystyki nawyków użytkownika.
+
+    Args:
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        dict: Statystyki wszystkich nawyków użytkownika
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
+
+    token = authorization.replace("Bearer ", "")
+    user_id = verify_token(token)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+
+    async with aiosqlite.connect("database.db") as db:
+        db.row_factory = aiosqlite.Row
+
+        # Pobierz statystyki
+        cursor = await db.execute(
+            """SELECT hs.*,
+                      h.name as habit_name,
+                      h.icon as habit_icon,
+                      h.reward_coins
+               FROM habit_statistics hs
+                        JOIN habits h ON hs.habit_id = h.id
+               WHERE hs.user_id = ?
+                 AND h.is_active = 1
+               ORDER BY hs.total_completions DESC""",
+            (user_id,)
+        )
+        stats = await cursor.fetchall()
+
+        # Pobierz wszystkie completion dates dla każdego nawyku
+        habits_with_completions = []
+        for stat in stats:
+            cursor = await db.execute(
+                """SELECT completed_at
+                   FROM habit_completions
+                   WHERE habit_id = ?
+                     AND user_id = ?
+                   ORDER BY completed_at DESC LIMIT 365""",
+                (stat['habit_id'], user_id)
+            )
+            completions = await cursor.fetchall()
+            completion_dates = [row['completed_at'] for row in completions]
+
+            habits_with_completions.append({
+                'habit_id': stat['habit_id'],
+                'habit_name': stat['habit_name'],
+                'habit_icon': stat['habit_icon'],
+                'reward_coins': stat['reward_coins'],
+                'total_completions': stat['total_completions'],
+                'current_streak': stat['current_streak'],
+                'longest_streak': stat['longest_streak'],
+                'last_completion_date': stat['last_completion_date'],
+                'completion_dates': completion_dates
+            })
+
+        return {
+            'statistics': habits_with_completions,
+            'total_habits': len(habits_with_completions),
+            'total_completions': sum(h['total_completions'] for h in habits_with_completions)
+        }
+
+
+@app.get("/api/habits/{habit_id}/calendar")
+async def get_habit_calendar(habit_id: int, year: int, month: int, authorization: str = Header(None)):
+    """
+    Pobiera dane kalendarza dla konkretnego nawyku w danym miesiącu.
+
+    Args:
+        habit_id (int): ID nawyku
+        year (int): Rok
+        month (int): Miesiąc (1-12)
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        dict: Dane kalendarza z wykonaniami nawyku
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy lub nawyk nie istnieje
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
+
+    token = authorization.replace("Bearer ", "")
+    user_id = verify_token(token)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+
+    async with aiosqlite.connect("database.db") as db:
+        db.row_factory = aiosqlite.Row
+
+        # Sprawdź czy nawyk należy do użytkownika
+        cursor = await db.execute(
+            "SELECT id, name, icon FROM habits WHERE id = ? AND user_id = ?",
+            (habit_id, user_id)
+        )
+        habit = await cursor.fetchone()
+
+        if not habit:
+            raise HTTPException(status_code=404, detail="Nawyk nie znaleziony")
+
+        # Pobierz wykonania dla danego miesiąca
+        # Pierwszy i ostatni dzień miesiąca
+        first_day = date(year, month, 1)
+        last_day = date(year, month, calendar.monthrange(year, month)[1])
+
+        cursor = await db.execute(
+            """SELECT completed_at
+               FROM habit_completions
+               WHERE habit_id = ?
+                 AND user_id = ?
+                 AND completed_at >= ?
+                 AND completed_at <= ?
+               ORDER BY completed_at""",
+            (habit_id, user_id, first_day.isoformat(), last_day.isoformat())
+        )
+        completions = await cursor.fetchall()
+        completion_dates = [row['completed_at'] for row in completions]
+
+        return {
+            'habit_id': habit['id'],
+            'habit_name': habit['name'],
+            'habit_icon': habit['icon'],
+            'year': year,
+            'month': month,
+            'completion_dates': completion_dates,
+            'total_completions_this_month': len(completion_dates)
         }
 
 
