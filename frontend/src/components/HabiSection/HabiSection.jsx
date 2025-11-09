@@ -1,270 +1,131 @@
-import { useState, useEffect } from 'react';
-import { authAPI, tokenUtils } from "../../services/api.jsx";
-import MenuHeader from '../MenuHeader/MenuHeader';
-import HabitTracker from '../HabitTracker/HabitTracker.jsx';
-import HabitStats from '../HabitStats/HabitStats.jsx';
-import FeedHabi from '../FeedHabi/FeedHabi.jsx';
-import DressHabi from '../DressHabi/DressHabi.jsx';
-import HabiSection from '../HabiSection/HabiSection';
-import FortuneWheel from '../FortuneWheel/FortuneWheel.jsx';
-import './Dashboard.css';
+import React, { useState, useCallback, useRef } from 'react';
+import './HabiSection.css';
+import HabiHappyAdult from './HabiAdultHappy.png';
+import FoodControl from '../FoodControl/FoodControl';
 
-const Dashboard = ({ user, onLogout }) => {
-  const [profile, setProfile] = useState(user || null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [currentView, setCurrentView] = useState('dashboard');
+const HabiSection = () => {
+  const [showMessage, setShowMessage] = useState(false);
+  const [currentMessage, setCurrentMessage] = useState('');
+  const timeoutRef = useRef(null);
+  const lastClickTime = useRef(0);
 
-  // Debug - monitoruj zmiany currentView
-  useEffect(() => {
-    console.log('📍 Current view changed to:', currentView);
-  }, [currentView]);
+  // Rozszerzona lista motywacyjnych wiadomości
+  const motivationalMessages = [
+    "Świetnie Ci idzie! 💪",
+    "Jesteś niesamowity! ⭐",
+    "Dumny jestem z Ciebie! 🎉",
+    "Każdy dzień to nowy początek! 🌅",
+    "Wierzę w Ciebie! 💙",
+    "Małymi krokami osiągniesz wielkie rzeczy! 👣",
+    "Twoja determinacja mnie inspiruje! ✨",
+    "Jesteś silniejszy niż myślisz! 💪",
+    "Dziś robimy postępy! 🚀",
+    "Wspaniale sobie radzisz! 🌟",
+    "Jestem z Ciebie bardzo dumny! 🏆",
+    "Nie poddawaj się - jesteś blisko celu! 🎯",
+    "Każdy sukces zaczyna się od pierwszego kroku! 👟",
+    "Twoja wytrwałość przynosi owoce! 🍎",
+    "Robisz niesamowite postępy! 📈",
+    "Pamiętaj - jesteś championem! 🥇",
+    "Twoje nawyki budują lepsze jutro! 🌈",
+    "Jestem tu, żeby Cię wspierać! 🤗",
+    "Wow, jakie osiągnięcia! 🎊",
+    "Razem osiągniemy wszystko! 🤝",
+    "Jestem z Ciebie mega dumny! 🌟",
+    "Kontynuuj świetną robotę! 👏",
+    "Twoja siła woli jest niesamowita! 🔥",
+    "Każdy mały krok się liczy! 🦶",
+    "Jesteś na właściwej drodze! 🛤️",
+    "Twój wysiłek się opłaca! 💎",
+    "Nigdy się nie poddawaj! 💯",
+    "Jesteś prawdziwym wojownikiem! ⚔️",
+    "Twoja konsekwencja mnie zachwyca! 🌺",
+    "Trzymaj tak dalej! 🎯",
+    "Każdy dzień jesteś lepszy! 📊",
+    "Twoje zaangażowanie jest inspirujące! 🎨",
+    "Wierzę w Twój sukces! 🌠",
+    "Jesteś na dobrej drodze! 🛣️",
+    "Twój progres jest widoczny! 👀",
+    "Gratulacje postępów! 🥳",
+    "Jestem Twoim największym fanem! 🎭",
+    "Twoja energia mnie motywuje! ⚡",
+    "Wspólnie zbudujemy lepsze jutro! 🏗️",
+    "Jesteś moim bohaterem! 🦸",
+    "Twoja determinacja jest zaraźliwa! 😊",
+    "Każdy krok przybliża Cię do celu! 🎪",
+    "Twoja siła charakteru zachwyca! 💫",
+    "Jestem dumną małpką! 🐵",
+    "Razem jesteśmy niezwyciężeni! 🛡️",
+    "Twój entuzjazm jest zaraźliwy! 😄",
+    "Jesteś mistrzem nawykow! 🏅",
+    "Każdy dzień to nowa szansa! 🌄",
+    "Twój postęp mnie cieszy! 😊",
+    "Jesteś cudowny! 🌸"
+  ];
 
-  // Pobranie profilu użytkownika przy pierwszym załadowaniu komponentu
-  useEffect(() => {
-    fetchProfile();
+  // Funkcja obsługująca kliknięcie z debouncing
+  const handleHabiClick = useCallback(() => {
+    const now = Date.now();
+
+    // Debouncing - zapobiega zbyt częstym kliknięciom (500ms)
+    if (now - lastClickTime.current < 500) {
+      return;
+    }
+
+    lastClickTime.current = now;
+
+    // Wyczyść poprzedni timeout jeśli istnieje
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    // Ukryj poprzednią wiadomość natychmiast
+    setShowMessage(false);
+
+    // Po krótkiej przerwie pokaż nową wiadomość
+    setTimeout(() => {
+      const randomIndex = Math.floor(Math.random() * motivationalMessages.length);
+      setCurrentMessage(motivationalMessages[randomIndex]);
+      setShowMessage(true);
+
+      // Ustaw timeout do ukrycia wiadomości
+      timeoutRef.current = setTimeout(() => {
+        setShowMessage(false);
+      }, 2500);
+    }, 50);
+  }, [motivationalMessages]);
+
+  // Cleanup timeout przy unmount
+  React.useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, []);
 
-  // Funkcja pobierająca dane profilu użytkownika z serwera
-  const fetchProfile = async () => {
-    setLoading(true);
-    try {
-      const profileData = await authAPI.getProfile();
-      setProfile(profileData);
-    } catch (err) {
-      setError('Błąd pobierania profilu');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Obsługa wylogowania użytkownika
-  const handleLogout = () => {
-    tokenUtils.removeToken();
-    onLogout();
-  };
-
-  // Funkcja testowa do dodawania monet (tylko w trybie deweloperskim)
-  const handleAddTestCoins = async () => {
-    try {
-      const result = await authAPI.addCoins(10);
-
-      // Aktualizacja lokalnego stanu profilu z nową liczbą monet
-      setProfile(prev => ({
-        ...prev,
-        coins: result.coins
-      }));
-
-      // Wysłanie globalnego eventu o zmianie liczby monet
-      window.dispatchEvent(new CustomEvent('coinsUpdated'));
-
-      alert(`${result.message}! Masz teraz ${result.coins} monet.`);
-    } catch (error) {
-      alert('Błąd dodawania monet');
-    }
-  };
-
-  // Funkcja testowa do zmniejszania szczęścia Habi (tylko w trybie deweloperskim)
-  const handleReduceHabiHappiness = () => {
-    try {
-      // Pobranie aktualnego poziomu sytości z pamięci lokalnej
-      const currentFoodLevel = localStorage.getItem('habiFoodLevel');
-      const currentLevel = currentFoodLevel ? parseInt(currentFoodLevel) : 75;
-
-      // Obliczenie redukcji (10% poziomu, minimum 5, maksimum 25 punktów)
-      const reductionAmount = Math.max(5, Math.min(25, Math.floor(currentLevel * 0.1)));
-      const newLevel = Math.max(0, currentLevel - reductionAmount);
-
-      // Zapisanie nowego poziomu i czasu aktualizacji
-      const currentTime = Date.now();
-      localStorage.setItem('habiFoodLevel', newLevel.toString());
-      localStorage.setItem('habiLastUpdate', currentTime.toString());
-
-      // Wysłanie eventu o zmianie poziomu sytości Habi
-      window.dispatchEvent(new CustomEvent('habiFoodLevelChanged', {
-        detail: { newLevel, reductionAmount }
-      }));
-
-      alert(`Habi stracił ${reductionAmount}% szczęścia! 😢 Poziom sytości: ${newLevel}%`);
-    } catch (error) {
-      alert('Błąd zmiany poziomu szczęścia Habi');
-      console.error('Error reducing Habi happiness:', error);
-    }
-  };
-
-  // Callback wywoływany przy aktualizacji liczby monet
-  const handleCoinsUpdate = (newCoinsAmount) => {
-    setProfile(prev => ({
-      ...prev,
-      coins: newCoinsAmount
-    }));
-  };
-
-  // Funkcje nawigacji między różnymi widokami aplikacji
-  const handleNavigateToHabits = () => {
-    console.log('🎯 Navigating to habits');
-    setCurrentView('habits');
-  };
-
-  const handleNavigateToStats = () => {
-    console.log('📊 Navigating to stats');
-    setCurrentView('stats');
-  };
-
-  const handleNavigateToFeed = () => {
-    console.log('🍌 Navigating to feed');
-    setCurrentView('feed');
-  };
-
-  const handleNavigateToDress = () => {
-    console.log('👗 Navigating to dress');
-    setCurrentView('dress');
-  };
-
-  const handleNavigateToFortuneWheel = () => {
-    console.log('🎰 Navigating to fortune wheel');
-    setCurrentView('fortune');
-  };
-
-  const handleBackToDashboard = () => {
-    console.log('🏠 Navigating back to dashboard');
-    setCurrentView('dashboard');
-  };
-
-  // Wyświetlenie ekranu ładowania podczas pobierania danych
-  if (loading) {
-    return <div className="loading">Ładowanie profilu...</div>;
-  }
-
-  // WAŻNE: Sprawdzanie widoków w odpowiedniej kolejności
-
-  // Renderowanie widoku statystyk nawyków
-  if (currentView === 'stats') {
-    console.log('✅ Rendering HabitStats component');
-    return (
-      <HabitStats
-        onBack={handleBackToDashboard}
-      />
-    );
-  }
-
-  // Renderowanie widoku trackera nawyków (dodawanie nawyków)
-  if (currentView === 'habits') {
-    console.log('✅ Rendering HabitTracker component');
-    return (
-      <HabitTracker
-        onBack={handleBackToDashboard}
-        initialCoins={profile?.coins || 0}
-        onCoinsUpdate={handleCoinsUpdate}
-      />
-    );
-  }
-
-  // Renderowanie widoku karmienia Habi
-  if (currentView === 'feed') {
-    console.log('✅ Rendering FeedHabi component');
-    return (
-      <FeedHabi
-        onBack={handleBackToDashboard}
-        userCoins={profile?.coins || 0}
-        onCoinsUpdate={handleCoinsUpdate}
-      />
-    );
-  }
-
-  // Renderowanie widoku ubierania Habi
-  if (currentView === 'dress') {
-    console.log('✅ Rendering DressHabi component');
-    return (
-      <DressHabi
-        onBack={handleBackToDashboard}
-        userCoins={profile?.coins || 0}
-        onCoinsUpdate={handleCoinsUpdate}
-      />
-    );
-  }
-
-  // Renderowanie widoku koła fortuny
-  if (currentView === 'fortune') {
-    console.log('✅ Rendering FortuneWheel component');
-    return (
-      <FortuneWheel
-        onBack={handleBackToDashboard}
-        userCoins={profile?.coins || 0}
-        onCoinsUpdate={handleCoinsUpdate}
-      />
-    );
-  }
-
-  // Renderowanie głównego widoku Dashboard
-  console.log('✅ Rendering main Dashboard');
   return (
-    <div className="dashboard">
-      {/* Nagłówek z menu i informacjami o monetach */}
-      <MenuHeader
-        onLogout={handleLogout}
-        initialCoins={profile?.coins || 0}
-        onCoinsUpdate={handleCoinsUpdate}
-      />
+    <div className="habi-section">
+      <div className="habi-card">
+        <h3>Twoja małpka Habi</h3>
+        <div className="habi-content">
+          <div className="habi-status">
+            <div className="habi-avatar" onClick={handleHabiClick}>
+              <img src={HabiHappyAdult} alt="Habi Happy Adult" />
 
-      {/* Wyświetlenie komunikatu błędu jeśli wystąpił */}
-      {error && <div className="error-message">{error}</div>}
-
-      {profile && (
-        <div className="profile-section">
-          {/* Sekcja powitalna z imieniem użytkownika */}
-          <div className="welcome-section">
-            <h1 className="welcome-message">Cześć {profile.username}! 👋</h1>
-          </div>
-
-          {/* Komponent wyświetlający wirtualnego zwierzaka Habi */}
-          <HabiSection />
-
-          {/* Sekcja z przyciskami szybkich akcji */}
-          <div className="quick-actions">
-            <h3>Szybkie akcje</h3>
-            <div className="action-buttons">
-              <button className="action-btn" onClick={handleNavigateToHabits}>
-                ➕ Dodaj nawyk
-              </button>
-              <button className="action-btn" onClick={handleNavigateToFeed}>
-                🍌 Nakarm Habi
-              </button>
-              <button className="action-btn" onClick={handleNavigateToStats}>
-                📊 Zobacz statystyki
-              </button>
-              <button className="action-btn" onClick={handleNavigateToDress}>
-                👗 Personalizuj Habi
-              </button>
-              <button
-                className="action-btn fortune-btn"
-                onClick={handleNavigateToFortuneWheel}
-                style={{
-                  background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
-                  color: 'white'
-                }}
-              >
-                🎰 Koło fortuny
-              </button>
+              {showMessage && (
+                <div className="habi-message-container">
+                  <div className="habi-heart">❤️</div>
+                  <div className="habi-message">{currentMessage}</div>
+                </div>
+              )}
             </div>
           </div>
-
-          {/* Przyciski deweloperskie widoczne tylko w trybie development */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="dev-actions">
-              <button className="dev-btn" onClick={handleAddTestCoins}>
-                🪙 Dodaj 10 monet (DEV)
-              </button>
-              <button className="dev-btn" onClick={handleReduceHabiHappiness}>
-                😢 Usuń % najedzenia Habi (DEV)
-              </button>
-            </div>
-          )}
+          <FoodControl />
         </div>
-      )}
+      </div>
     </div>
   );
 };
 
-export default Dashboard;
+export default HabiSection;
