@@ -64,7 +64,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins }) => {
     if (isSpinning || !canPlay) return;
 
     setIsSpinning(true);
-    setShowResult(false);
+    setShowResult(false); // Ukryj stary wynik
 
     // Animacja - zmieniaj symbole w bębnach
     let count = 0;
@@ -74,7 +74,10 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins }) => {
 
       if (count >= 15) {
         clearInterval(interval);
-        setTimeout(determineResult, 300);
+        // Poczekaj chwilę przed pokazaniem wyniku
+        setTimeout(() => {
+          determineResult();
+        }, 300);
       }
     }, 100);
   };
@@ -112,14 +115,15 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins }) => {
     }
 
     setReels(finalReels);
+    setIsSpinning(false); // Zatrzymaj kręcenie
 
+    // Poczekaj 1 sekundę przed pokazaniem wyniku
     setTimeout(() => {
       const centerRow = [finalReels[0][1], finalReels[1][1], finalReels[2][1]];
       const coins = calculateWinnings(centerRow);
 
       setWonCoins(coins);
-      setIsSpinning(false);
-      setShowResult(true);
+      setShowResult(true); // TERAZ pokaż wynik
 
       localStorage.setItem('slotMachineLastPlay', new Date().toDateString());
       setCanPlay(false);
@@ -129,7 +133,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins }) => {
       }
 
       calculateTimeUntilReset();
-    }, 500);
+    }, 1000);
   };
 
   const calculateWinnings = (centerRow) => {
@@ -145,10 +149,22 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins }) => {
   };
 
   const handleClose = () => {
-    if (!isSpinning) {
+    if (!isSpinning && !showResult) {
+      // Zamknij tylko jeśli nie kręci się I nie ma wyniku
       setShowResult(false);
       onClose();
     }
+  };
+
+  const handleResultClose = () => {
+    // Zamknij wynik i wróć do widoku automatu
+    setShowResult(false);
+  };
+
+  const handleFinalClose = () => {
+    // Zamknij cały automat
+    setShowResult(false);
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -231,7 +247,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins }) => {
 
         {/* Pop-up wyniku */}
         {showResult && (
-          <div className="slot-result-popup">
+          <div className="slot-result-popup" onClick={(e) => e.stopPropagation()}>
             <div className="slot-result-content">
               <div className="result-icon">
                 {wonCoins === 30 ? '🎉' : wonCoins === 15 ? '🎊' : '👍'}
@@ -244,9 +260,14 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins }) => {
                 <span className="result-coins-value">{wonCoins}</span>
                 <span className="result-coins-text">🪙 monet!</span>
               </div>
-              <button className="result-close-btn" onClick={handleClose}>
-                {wonCoins === 30 ? 'WOW! 🎉' : wonCoins === 15 ? 'SUPER! 🎊' : 'OK! 👌'}
-              </button>
+              <div className="result-buttons">
+                <button className="result-view-btn" onClick={handleResultClose}>
+                  👀 Zobacz automat
+                </button>
+                <button className="result-close-btn" onClick={handleFinalClose}>
+                  ✅ Zamknij
+                </button>
+              </div>
             </div>
           </div>
         )}
