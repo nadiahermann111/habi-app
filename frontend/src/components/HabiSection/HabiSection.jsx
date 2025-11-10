@@ -1,15 +1,15 @@
 import React, { useState, useCallback, useRef } from 'react';
 import './HabiSection.css';
-import HabiHappyAdult from './HabiAdultHappy.png';
+import { useHabiClothing } from '../../HabiClothingContext';
 import FoodControl from '../FoodControl/FoodControl';
 
 const HabiSection = () => {
+  const { habiImage } = useHabiClothing();
   const [showMessage, setShowMessage] = useState(false);
   const [currentMessage, setCurrentMessage] = useState('');
   const timeoutRef = useRef(null);
   const lastClickTime = useRef(0);
 
-  // Rozszerzona lista motywacyjnych wiadomości
   const motivationalMessages = [
     "Świetnie Ci idzie! 💪",
     "Jesteś niesamowity! ⭐",
@@ -63,39 +63,32 @@ const HabiSection = () => {
     "Jesteś cudowny! 🌸"
   ];
 
-  // Funkcja obsługująca kliknięcie z debouncing
   const handleHabiClick = useCallback(() => {
     const now = Date.now();
 
-    // Debouncing - zapobiega zbyt częstym kliknięciom (500ms)
     if (now - lastClickTime.current < 500) {
       return;
     }
 
     lastClickTime.current = now;
 
-    // Wyczyść poprzedni timeout jeśli istnieje
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
-    // Ukryj poprzednią wiadomość natychmiast
     setShowMessage(false);
 
-    // Po krótkiej przerwie pokaż nową wiadomość
     setTimeout(() => {
       const randomIndex = Math.floor(Math.random() * motivationalMessages.length);
       setCurrentMessage(motivationalMessages[randomIndex]);
       setShowMessage(true);
 
-      // Ustaw timeout do ukrycia wiadomości
       timeoutRef.current = setTimeout(() => {
         setShowMessage(false);
       }, 2500);
     }, 50);
   }, [motivationalMessages]);
 
-  // Cleanup timeout przy unmount
   React.useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -111,7 +104,7 @@ const HabiSection = () => {
         <div className="habi-content">
           <div className="habi-status">
             <div className="habi-avatar" onClick={handleHabiClick}>
-              <img src={HabiHappyAdult} alt="Habi Happy Adult" />
+              <img src={habiImage} alt="Habi Happy Adult" />
 
               {showMessage && (
                 <div className="habi-message-container">

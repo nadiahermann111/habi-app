@@ -486,6 +486,48 @@
   font-weight: 600;
 }
 
+.clothing-item.wearing {
+  border: 3px solid #4CAF50 !important;
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
+  transform: scale(1.05);
+}
+
+/* Overlay dla obecnie założonych ubrań */
+.wearing-overlay {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.9), rgba(56, 142, 60, 0.9)) !important;
+  color: white !important;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+/* Dodatkowa animacja dla założonych ubrań */
+@keyframes wearing-pulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(76, 175, 80, 0.7);
+  }
+}
+
+.clothing-item.wearing {
+  animation: wearing-pulse 2s infinite;
+}
+
+/* Styl dla overlay posiadanych ale nie założonych ubrań */
+.owned-overlay {
+  cursor: pointer !important;
+  transition: all 0.3s ease;
+}
+
+.owned-overlay:hover {
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.95), rgba(21, 101, 192, 0.95)) !important;
+  transform: scale(1.02);
+}
+
 /* Tablet - 768px */
 @media (max-width: 768px) {
   .dress-header {
