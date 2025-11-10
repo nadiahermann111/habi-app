@@ -1,17 +1,46 @@
 import React, { useState, useEffect, useRef } from 'react';
 import FoodControl from '../FoodControl/FoodControl';
 import CoinSlot from '../CoinSlot/CoinSlot';
-import { useHabiClothing } from '../../HabiClothingContext';
 import HabiLogo from './habi-logo.png';
+import HabiHappyAdult from '../HabiClothes/HabiAdultHappy.png'; // ← DODAJ DOMYŚLNY OBRAZEK
 import './FeedHabi.css';
 
-const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
-  const { habiImage } = useHabiClothing();
+const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => { // ← DODAJ PROP
   const [currentCoins, setCurrentCoins] = useState(userCoins);
   const [purchaseAnimation, setPurchaseAnimation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const foodControlRef = useRef(null);
+
+  // ← DYNAMICZNY OBRAZEK HABI
+  const getHabiImage = () => {
+    if (!currentClothing) return HabiHappyAdult;
+
+    try {
+      // Mapowanie ID na nazwy plików
+      const clothingMap = {
+        1: 'HabiPiercingHappy.png',
+        2: 'HabiBowHappy.png',
+        3: 'HabiLeopardHappy.png',
+        4: 'HabiFlowerHappy.png',
+        5: 'HabiTattooHappy.png',
+        6: 'HabiLoveHappy.png',
+        7: 'HabiBananaHappy.png',
+        8: 'HabiJeansHappy.png',
+        9: 'HabiShrekHappy.png',
+        10: 'HabiPlayboyHappy.png'
+      };
+
+      const fileName = clothingMap[currentClothing];
+      if (fileName) {
+        return require(`../HabiClothes/${fileName}`);
+      }
+    } catch (error) {
+      console.error('Błąd wczytywania obrazka:', error);
+    }
+
+    return HabiHappyAdult;
+  };
 
   const foodItems = [
     { id: 1, cost: 1, icon: "💧", nutrition: 5 },
@@ -225,7 +254,7 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate }) => {
 
         <div className="habi-character-section">
           <div className="habi-avatar-large">
-            <img src={habiImage} alt="Habi" className="habi-image" />
+            <img src={getHabiImage()} alt="Habi" className="habi-image" />
           </div>
 
           <div className="food-control-side">

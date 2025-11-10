@@ -4,7 +4,6 @@ import Register from '../Register/Register';
 import Dashboard from '../Dashboard/Dashboard';
 import PWAInstallPrompt from '../PWAInstallPrompt/PWAInstallPrompt';
 import { authAPI, tokenUtils } from "../../services/api.jsx";
-import { HabiClothingProvider } from '../../HabiClothingContext'; // ← DODAJ TEN IMPORT
 import './App.css';
 
 function App() {
@@ -65,32 +64,30 @@ function App() {
   }
 
   return (
-    <HabiClothingProvider> {/* ← OWINĄĆ W PROVIDER */}
-      <div className="App">
-        <PWAInstallPrompt />
+    <div className="App">
+      <PWAInstallPrompt />
 
-        {currentView === 'login' && (
-          <Login
-            onLoginSuccess={handleLoginSuccess}
-            switchToRegister={switchToRegister}
-          />
-        )}
+      {currentView === 'login' && (
+        <Login
+          onLoginSuccess={handleLoginSuccess}
+          switchToRegister={switchToRegister}
+        />
+      )}
 
-        {currentView === 'register' && (
-          <Register
-            onRegisterSuccess={handleRegisterSuccess}
-            switchToLogin={switchToLogin}
-          />
-        )}
+      {currentView === 'register' && (
+        <Register
+          onRegisterSuccess={handleRegisterSuccess}
+          switchToLogin={switchToLogin}
+        />
+      )}
 
-        {currentView === 'dashboard' && (
-          <Dashboard
-            user={user}
-            onLogout={handleLogout}
-          />
-        )}
-      </div>
-    </HabiClothingProvider>
+      {currentView === 'dashboard' && (
+        <Dashboard
+          user={user}
+          onLogout={handleLogout}
+        />
+      )}
+    </div>
   );
 }
 

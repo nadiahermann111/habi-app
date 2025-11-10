@@ -7,6 +7,7 @@ import FeedHabi from '../FeedHabi/FeedHabi.jsx';
 import DressHabi from '../DressHabi/DressHabi.jsx';
 import HabiSection from '../HabiSection/HabiSection';
 import SlotMachine from '../SlotMachine/SlotMachine.jsx';
+import { clothingStorage } from '../../utils/clothingHelper'; // ← NOWY IMPORT
 import './Dashboard.css';
 
 const Dashboard = ({ user, onLogout }) => {
@@ -15,6 +16,16 @@ const Dashboard = ({ user, onLogout }) => {
   const [error, setError] = useState('');
   const [currentView, setCurrentView] = useState('dashboard');
   const [isSlotMachineOpen, setIsSlotMachineOpen] = useState(false);
+  const [currentClothing, setCurrentClothing] = useState(null); // ← NOWY STAN
+
+  // Wczytaj obecnie założone ubranie przy montowaniu
+  useEffect(() => {
+    const savedClothing = clothingStorage.load();
+    if (savedClothing) {
+      console.log('👗 Wczytano ubranie z localStorage:', savedClothing);
+      setCurrentClothing(savedClothing);
+    }
+  }, []);
 
   // Debug - monitoruj zmiany currentView
   useEffect(() => {
@@ -99,6 +110,18 @@ const Dashboard = ({ user, onLogout }) => {
     setProfile(prev => ({
       ...prev,
       coins: newCoinsAmount
+    }));
+  };
+
+  // ← NOWA FUNKCJA: Callback do zmiany ubrania
+  const handleClothingChange = (clothingId) => {
+    console.log('👗 Zmiana ubrania na ID:', clothingId);
+    setCurrentClothing(clothingId);
+    clothingStorage.save(clothingId);
+
+    // Opcjonalnie: wyślij globalny event
+    window.dispatchEvent(new CustomEvent('clothingChanged', {
+      detail: { clothingId }
     }));
   };
 
@@ -196,6 +219,7 @@ const Dashboard = ({ user, onLogout }) => {
         onBack={handleBackToDashboard}
         userCoins={profile?.coins || 0}
         onCoinsUpdate={handleCoinsUpdate}
+        currentClothing={currentClothing} // ← PRZEKAŻ PROP
       />
     );
   }
@@ -208,6 +232,8 @@ const Dashboard = ({ user, onLogout }) => {
         onBack={handleBackToDashboard}
         userCoins={profile?.coins || 0}
         onCoinsUpdate={handleCoinsUpdate}
+        currentClothing={currentClothing}           // ← PRZEKAŻ PROP
+        onClothingChange={handleClothingChange}     // ← PRZEKAŻ CALLBACK
       />
     );
   }
@@ -233,8 +259,8 @@ const Dashboard = ({ user, onLogout }) => {
             <h1 className="welcome-message">Cześć {profile.username}! 👋</h1>
           </div>
 
-          {/* Komponent wyświetlający wirtualnego zwierzaka Habi */}
-          <HabiSection />
+          {/* Komponent wyświetlający wirtualnego zwierzaka Habi - PRZEKAŻ PROP */}
+          <HabiSection currentClothing={currentClothing} />
 
           {/* Sekcja z przyciskami szybkich akcji */}
           <div className="quick-actions">

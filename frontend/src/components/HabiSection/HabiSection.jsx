@@ -1,14 +1,42 @@
 import React, { useState, useCallback, useRef } from 'react';
 import './HabiSection.css';
-import { useHabiClothing } from '../../HabiClothingContext';
+import HabiHappyAdult from '../HabiClothes/HabiAdultHappy.png'; // ← DODAJ DOMYŚLNY OBRAZEK
 import FoodControl from '../FoodControl/FoodControl';
 
-const HabiSection = () => {
-  const { habiImage } = useHabiClothing();
+const HabiSection = ({ currentClothing }) => { // ← DODAJ PROP
   const [showMessage, setShowMessage] = useState(false);
   const [currentMessage, setCurrentMessage] = useState('');
   const timeoutRef = useRef(null);
   const lastClickTime = useRef(0);
+
+  // ← DYNAMICZNY OBRAZEK HABI
+  const getHabiImage = () => {
+    if (!currentClothing) return HabiHappyAdult;
+
+    try {
+      const clothingMap = {
+        1: 'HabiPiercingHappy.png',
+        2: 'HabiBowHappy.png',
+        3: 'HabiLeopardHappy.png',
+        4: 'HabiFlowerHappy.png',
+        5: 'HabiTattooHappy.png',
+        6: 'HabiLoveHappy.png',
+        7: 'HabiBananaHappy.png',
+        8: 'HabiJeansHappy.png',
+        9: 'HabiShrekHappy.png',
+        10: 'HabiPlayboyHappy.png'
+      };
+
+      const fileName = clothingMap[currentClothing];
+      if (fileName) {
+        return require(`../HabiClothes/${fileName}`);
+      }
+    } catch (error) {
+      console.error('Błąd wczytywania obrazka:', error);
+    }
+
+    return HabiHappyAdult;
+  };
 
   const motivationalMessages = [
     "Świetnie Ci idzie! 💪",
@@ -104,7 +132,7 @@ const HabiSection = () => {
         <div className="habi-content">
           <div className="habi-status">
             <div className="habi-avatar" onClick={handleHabiClick}>
-              <img src={habiImage} alt="Habi Happy Adult" />
+              <img src={getHabiImage()} alt="Habi Happy Adult" />
 
               {showMessage && (
                 <div className="habi-message-container">
