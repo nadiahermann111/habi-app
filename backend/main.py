@@ -52,6 +52,24 @@ async def lifespan(app: FastAPI):
     try:
         await init_db()
         print("✅ Database initialized")
+
+        # ✅ SPRAWDŹ I DODAJ KOLUMNĘ current_clothing_id JEŚLI NIE ISTNIEJE
+        async with aiosqlite.connect("database.db") as db:
+            try:
+                cursor = await db.execute("PRAGMA table_info(users)")
+                columns = await cursor.fetchall()
+                column_names = [column[1] for column in columns]
+
+                if 'current_clothing_id' not in column_names:
+                    print("➕ Dodawanie kolumny current_clothing_id...")
+                    await db.execute("ALTER TABLE users ADD COLUMN current_clothing_id INTEGER DEFAULT NULL")
+                    await db.commit()
+                    print("✅ Kolumna current_clothing_id dodana pomyślnie")
+                else:
+                    print("✅ Kolumna current_clothing_id już istnieje")
+            except Exception as e:
+                print(f"⚠️ Błąd przy sprawdzaniu/dodawaniu kolumny: {e}")
+
     except Exception as e:
         print(f"❌ Database initialization failed: {e}")
     yield
@@ -772,7 +790,9 @@ async def delete_habit(habit_id: int, authorization: str = Header(None)):
         return {"message": "Nawyk usunięty pomyślnie"}
 
 
-# Endpointy dla ubrań
+# ========================================
+# Endpointy dla ubrań - ZAKTUALIZOWANE
+# ========================================
 
 @app.get("/api/clothing")
 async def get_clothing_items():
@@ -794,13 +814,13 @@ async def get_clothing_items():
 @app.get("/api/clothing/owned")
 async def get_owned_clothing(authorization: str = Header(None)):
     """
-    Pobiera ubrania posiadane przez użytkownika.
+    Pobiera ubrania posiadane przez użytkownika + aktualnie noszone ubranie.
 
     Args:
         authorization (str): Token autoryzacyjny w headerze
 
     Returns:
-        dict: Lista ID posiadanych ubrań
+        dict: Lista ID posiadanych ubrań + ID aktualnie noszonego ubrania
 
     Raises:
         HTTPException: Gdy token jest nieprawidłowy
@@ -816,12 +836,25 @@ async def get_owned_clothing(authorization: str = Header(None)):
 
     async with aiosqlite.connect("database.db") as db:
         db.row_factory = aiosqlite.Row
+
+        # Pobierz posiadane ubrania
         cursor = await db.execute(
             "SELECT clothing_id FROM user_clothing WHERE user_id = ?",
             (user_id,)
         )
         owned = await cursor.fetchall()
-        return {"owned_clothing_ids": [item["clothing_id"] for item in owned]}
+
+        # ✅ Pobierz aktualnie noszone ubranie
+        cursor = await db.execute(
+            "SELECT current_clothing_id FROM users WHERE id = ?",
+            (user_id,)
+        )
+        user = await cursor.fetchone()
+
+        return {
+            "owned_clothing_ids": [item["clothing_id"] for item in owned],
+            "current_clothing_id": user["current_clothing_id"] if user else None
+        }
 
 
 @app.post("/api/clothing/purchase/{clothing_id}")
@@ -917,6 +950,109 @@ async def purchase_clothing(clothing_id: int, authorization: str = Header(None))
             "item_icon": clothing["icon"],
             "cost": clothing["cost"],
             "remaining_coins": updated_user["coins"]
+        }
+
+
+@app.post("/api/clothing/wear/{clothing_id}")
+async def wear_clothing(clothing_id: int, authorization: str = Header(None)):
+    """
+    Zmienia aktualnie noszone ubranie dla użytkownika.
+    ✅ NOWY ENDPOINT - rozwiązuje problem współdzielenia ubrań między użytkownikami
+
+    Args:
+        clothing_id (int): ID ubrania do założenia
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        dict: Potwierdzenie zmiany ubrania
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy lub użytkownik nie posiada ubrania
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
+
+    token = authorization.replace("Bearer ", "")
+    user_id = verify_token(token)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+
+    async with aiosqlite.connect("database.db") as db:
+        await db.execute("PRAGMA foreign_keys = ON")
+        db.row_factory = aiosqlite.Row
+
+        # Sprawdź czy użytkownik posiada to ubranie
+        cursor = await db.execute(
+            "SELECT id FROM user_clothing WHERE user_id = ? AND clothing_id = ?",
+            (user_id, clothing_id)
+        )
+        owned = await cursor.fetchone()
+
+        if not owned:
+            raise HTTPException(
+                status_code=403,
+                detail="Nie możesz założyć ubrania, którego nie posiadasz"
+            )
+
+        # ✅ Zaktualizuj aktualnie noszone ubranie w bazie danych
+        await db.execute(
+            "UPDATE users SET current_clothing_id = ? WHERE id = ?",
+            (clothing_id, user_id)
+        )
+        await db.commit()
+
+        # Pobierz nazwę ubrania dla potwierdzenia
+        cursor = await db.execute(
+            "SELECT name FROM clothing_items WHERE id = ?",
+            (clothing_id,)
+        )
+        clothing = await cursor.fetchone()
+
+        return {
+            "message": f"Założono {clothing['name'] if clothing else 'ubranie'}",
+            "current_clothing_id": clothing_id,
+            "user_id": user_id
+        }
+
+
+@app.delete("/api/clothing/wear")
+async def remove_clothing(authorization: str = Header(None)):
+    """
+    Usuwa aktualnie noszone ubranie (wraca do domyślnego wyglądu).
+    ✅ OPCJONALNY ENDPOINT - pozwala zdjąć ubranie
+
+    Args:
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        dict: Potwierdzenie zdjęcia ubrania
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
+
+    token = authorization.replace("Bearer ", "")
+    user_id = verify_token(token)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+
+    async with aiosqlite.connect("database.db") as db:
+        await db.execute("PRAGMA foreign_keys = ON")
+
+        # Usuń aktualnie noszone ubranie
+        await db.execute(
+            "UPDATE users SET current_clothing_id = NULL WHERE id = ?",
+            (user_id,)
+        )
+        await db.commit()
+
+        return {
+            "message": "Ubranie zdjęte - powrót do domyślnego wyglądu",
+            "current_clothing_id": None
         }
 
 
