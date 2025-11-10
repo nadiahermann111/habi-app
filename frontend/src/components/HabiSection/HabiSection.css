@@ -62,10 +62,8 @@
 }
 
 .habi-avatar img {
-  min-width: 300px;
-  min-height: 300px;
-  width: auto;
-  height: auto;
+  width: 300px;
+  height: 300px;
   object-fit: contain;
   animation: bounce 2s infinite;
   pointer-events: none;
