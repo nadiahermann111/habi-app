@@ -539,10 +539,12 @@
     font-size: 24px;
   }
 
-  .habi-logo-m {
-    height: 28px;
-    margin-left: 15px;
-  }
+.habi-logo-m {
+  height: 28px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
 
   .clothing-items-slider {
     gap: 12px;
@@ -572,8 +574,8 @@
   }
 
   .habi-image {
-    width: 160px;
-    height: 160px;
+    width: 250px;
+    height: 250px;
   }
 
   .wardrobe-info {

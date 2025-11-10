@@ -81,11 +81,10 @@
 }
 
 .habi-logo-m {
-  height: 32px;
-  margin-left: 150px;
-  width: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  height: 28px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 /* Food Grid */
@@ -252,8 +251,8 @@
 }
 
 .habi-image {
-  width: 200px;
-  height: 200px;
+  width: 250px;
+  height: 250px;
   object-fit: contain;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
   animation: float-habi 3s ease-in-out infinite;

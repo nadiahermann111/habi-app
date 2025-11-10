@@ -122,32 +122,127 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
   const fetchOwnedClothing = async () => {
     try {
       const token = localStorage.getItem('token');
+
+      // 🧹 JEŚLI NIE MA TOKENU - WYCZYŚĆ WSZYSTKO
       if (!token) {
-        const savedOwned = localStorage.getItem('ownedClothes');
-        if (savedOwned) setOwnedClothes(JSON.parse(savedOwned));
+        console.log('⚠️ Brak tokenu - czyszczenie lokalnych danych');
+        localStorage.removeItem('currentClothing');
+        localStorage.removeItem('ownedClothes');
+        setOwnedClothes([]);
+        clothingStorage.save(null);
+        if (onClothingChange) onClothingChange(null);
         return;
       }
 
+      console.log('🔄 Pobieranie danych z backendu...');
       const response = await fetch(`${API_BASE_URL}/api/clothing/owned`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const data = await response.json();
-      setOwnedClothes(data.owned_clothing_ids || []);
-      localStorage.setItem('ownedClothes', JSON.stringify(data.owned_clothing_ids || []));
 
-      // ✅ Pobierz aktualnie noszone ubranie z backendu dla tego użytkownika
-      if (data.current_clothing_id !== undefined && data.current_clothing_id !== null) {
-        console.log('👔 Aktualnie noszone ubranie z backendu:', data.current_clothing_id);
-        clothingStorage.save(data.current_clothing_id);
-        if (onClothingChange) onClothingChange(data.current_clothing_id);
+      // 🔍 DEBUGOWANIE - pokaż co zwrócił backend
+      console.log('📦 Response z backendu:', data);
+      console.log('  - owned_clothing_ids:', data.owned_clothing_ids);
+      console.log('  - current_clothing_id:', data.current_clothing_id);
+
+      // ✅ Zapisz posiadane ubrania
+      const owned = data.owned_clothing_ids || [];
+      setOwnedClothes(owned);
+      localStorage.setItem('ownedClothes', JSON.stringify(owned));
+
+      // ✅ KRYTYCZNA CZĘŚĆ - synchronizacja aktualnie noszonego ubrania
+      const backendClothingId = data.current_clothing_id;
+
+      // Jeśli backend zwraca null lub undefined - wyczyść lokalne dane
+      if (backendClothingId === null || backendClothingId === undefined) {
+        console.log('👔 Backend zwraca NULL - czyszczę ubranie');
+        localStorage.removeItem('currentClothing');
+        clothingStorage.save(null);
+        if (onClothingChange) {
+          onClothingChange(null);
+        }
       }
+      // Jeśli backend zwraca konkretne ID - ustaw je
+      else {
+        console.log('👔 Backend zwraca ID:', backendClothingId);
+
+        // Sprawdź czy użytkownik faktycznie posiada to ubranie
+        if (owned.includes(backendClothingId)) {
+          clothingStorage.save(backendClothingId);
+          if (onClothingChange) {
+            onClothingChange(backendClothingId);
+          }
+          console.log('✅ Ustawiono ubranie z backendu:', backendClothingId);
+        } else {
+          console.warn('⚠️ Backend zwraca ubranie którego użytkownik nie posiada! Czyszczę...');
+          clothingStorage.save(null);
+          if (onClothingChange) {
+            onClothingChange(null);
+          }
+        }
+      }
+
     } catch (error) {
       console.error('❌ Błąd fetchOwnedClothing:', error);
-      const savedOwned = localStorage.getItem('ownedClothes');
-      if (savedOwned) setOwnedClothes(JSON.parse(savedOwned));
+
+      // W przypadku błędu - wyczyść wszystko dla bezpieczeństwa
+      localStorage.removeItem('currentClothing');
+      setOwnedClothes([]);
+      clothingStorage.save(null);
+      if (onClothingChange) {
+        onClothingChange(null);
+      }
+    }
+  };
+
+  // ✅ FUNKCJA: Aktualizacja aktualnie noszonego ubrania na backendzie
+  const updateCurrentClothing = async (clothingId) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.warn('⚠️ Brak tokenu - nie można zapisać ubrania na backendzie');
+        clothingStorage.save(clothingId);
+        if (onClothingChange) onClothingChange(clothingId);
+        return;
+      }
+
+      console.log('📤 Wysyłam żądanie zmiany ubrania na:', clothingId);
+
+      const response = await fetch(`${API_BASE_URL}/api/clothing/wear/${clothingId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `Błąd przy zmianie ubrania: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Ubranie zaktualizowane na backendzie:', data);
+
+      // Aktualizuj lokalnie tylko po potwierdzeniu z backendu
+      clothingStorage.save(clothingId);
+      if (onClothingChange) {
+        console.log('✅ Wywołuję onClothingChange z ID:', clothingId);
+        onClothingChange(clothingId);
+      }
+
+    } catch (error) {
+      console.error('❌ Błąd updateCurrentClothing:', error);
+      alert(`Nie udało się zmienić ubrania: ${error.message}`);
+
+      // NIE zapisuj lokalnie jeśli backend odmówił
+      // Odśwież dane z backendu
+      await fetchOwnedClothing();
     }
   };
 
@@ -224,47 +319,6 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       alert(errorMsg);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // ✅ NOWA FUNKCJA: Aktualizacja aktualnie noszonego ubrania na backendzie
-  const updateCurrentClothing = async (clothingId) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.warn('⚠️ Brak tokenu - nie można zapisać ubrania na backendzie');
-        clothingStorage.save(clothingId);
-        if (onClothingChange) onClothingChange(clothingId);
-        return;
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/clothing/wear/${clothingId}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Błąd przy zmianie ubrania: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('✅ Ubranie zaktualizowane na backendzie:', data);
-
-      // Aktualizuj lokalnie tylko po potwierdzeniu z backendu
-      clothingStorage.save(clothingId);
-      if (onClothingChange) {
-        console.log('✅ Wywołuję onClothingChange z ID:', clothingId);
-        onClothingChange(clothingId);
-      }
-
-    } catch (error) {
-      console.error('❌ Błąd updateCurrentClothing:', error);
-      // Fallback - zapisz lokalnie nawet jeśli backend się nie powiódł
-      clothingStorage.save(clothingId);
-      if (onClothingChange) onClothingChange(clothingId);
     }
   };
 

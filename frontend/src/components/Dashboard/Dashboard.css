@@ -194,7 +194,6 @@
 }
 
 .fortune-btn::after {
-  content: '🎰';
   position: absolute;
   right: 20px;
   font-size: 32px;
