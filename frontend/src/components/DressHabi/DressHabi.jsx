@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import CoinSlot from '../CoinSlot/CoinSlot';
 import HabiLogo from './habi-logo.png';
-import { getClothingImage, clothingStorage } from '../../utils/clothingHelper';
+import HabiAdultHappy from '../HabiClothes/HabiAdultHappy.png';
+import { clothingStorage } from '../../utils/clothingHelper';
 import './DressHabi.css';
 
 const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothingChange }) => {
@@ -15,8 +16,31 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
 
   const API_BASE_URL = 'https://habi-backend.onrender.com';
 
-  // Wczytaj obrazek Habi
-  const habiImagePath = require(`../HabiClothes/${getClothingImage(currentClothing)}`);
+  // ✅ FUNKCJA ZWRACAJĄCA OBRAZEK (BEZ require)
+  const getHabiImage = () => {
+    if (!currentClothing) return HabiAdultHappy;
+
+    try {
+      // Import dynamiczny wszystkich obrazków
+      const images = {
+        1: require('../HabiClothes/HabiPiercingHappy.png'),
+        2: require('../HabiClothes/HabiBowHappy.png'),
+        3: require('../HabiClothes/HabiLeopardHappy.png'),
+        4: require('../HabiClothes/HabiFlowerHappy.png'),
+        5: require('../HabiClothes/HabiTattooHappy.png'),
+        6: require('../HabiClothes/HabiLoveHappy.png'),
+        7: require('../HabiClothes/HabiBananaHappy.png'),
+        8: require('../HabiClothes/HabiJeansHappy.png'),
+        9: require('../HabiClothes/HabiShrekHappy.png'),
+        10: require('../HabiClothes/HabiPlayboyHappy.png')
+      };
+
+      return images[currentClothing] || HabiAdultHappy;
+    } catch (error) {
+      console.error('❌ Błąd wczytywania obrazka:', error);
+      return HabiAdultHappy;
+    }
+  };
 
   const fetchClothingItems = async () => {
     try {
@@ -72,6 +96,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
   };
 
   const handlePurchase = async (item) => {
+    console.log(`🛒 Próba zakupu ${item.name} za ${item.cost} monet`);
     setError(null);
 
     if (ownedClothes.includes(item.id)) {
@@ -90,6 +115,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       const token = localStorage.getItem('token');
       if (!token) throw new Error('Brak tokenu autoryzacji');
 
+      console.log(`🔄 Wysyłam żądanie zakupu do API...`);
       const response = await fetch(`${API_BASE_URL}/api/clothing/purchase/${item.id}`, {
         method: 'POST',
         headers: {
@@ -98,14 +124,17 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
         }
       });
 
+      console.log('📡 Response status (purchase):', response.status);
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Błąd podczas zakupu');
       }
 
       const data = await response.json();
-      const newCoins = data.remaining_coins;
+      console.log(`✅ Zakup udany!`, data);
 
+      const newCoins = data.remaining_coins;
       setCurrentCoins(newCoins);
       if (onCoinsUpdate) onCoinsUpdate(newCoins);
 
@@ -114,8 +143,15 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       localStorage.setItem('ownedClothes', JSON.stringify(updatedOwned));
 
       // 🎉 ZMIANA UBRANIA PO ZAKUPIE
+      console.log('👗 Automatyczne założenie', item.name, 'ID:', item.id);
       clothingStorage.save(item.id);
-      if (onClothingChange) onClothingChange(item.id);
+
+      if (onClothingChange) {
+        console.log('✅ Wywołuję onClothingChange...');
+        onClothingChange(item.id);
+      } else {
+        console.error('❌ onClothingChange nie istnieje!');
+      }
 
       window.dispatchEvent(new CustomEvent('coinsUpdated', {
         detail: { coins: newCoins }
@@ -139,9 +175,9 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
     }
   };
 
-  // Funkcja ręcznej zmiany ubrania
   const handleClothingSelect = (item) => {
     if (ownedClothes.includes(item.id)) {
+      console.log(`👗 Ręczna zmiana na ${item.name} (ID: ${item.id})`);
       clothingStorage.save(item.id);
       if (onClothingChange) onClothingChange(item.id);
     }
@@ -305,7 +341,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
 
         <div className="habi-character-section">
           <div className="habi-avatar-large">
-            <img src={habiImagePath} alt="Habi" className="habi-image" />
+            <img src={getHabiImage()} alt="Habi" className="habi-image" />
           </div>
 
           <div className="wardrobe-info">
@@ -330,6 +366,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
             <span className="tip-icon">👗</span>
             <div className="tip-content">
               <strong>Wskazówka:</strong> Kliknij na ubranka aby kupić! Po zakupie automatycznie założą się na Habi.
+              Możesz też kliknąć posiadane ubranka aby je założyć.
             </div>
           </div>
         </div>

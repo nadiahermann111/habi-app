@@ -1,4 +1,4 @@
-// src/utils/clothingHelper.js
+// src/utils/clothingHelper.jsx
 
 // Mapowanie ID ubrań na nazwy plików PNG
 export const clothingImageMap = {
@@ -9,12 +9,12 @@ export const clothingImageMap = {
   5: 'HabiTattooHappy.png',
   6: 'HabiLoveHappy.png',
   7: 'HabiBananaHappy.png',
-  8: 'HabiJeansHappy.png',      // Ogrodniczki
-  9: 'HabiShrekHappy.png',       // Tajemnicza opcja
+  8: 'HabiJeansHappy.png',
+  9: 'HabiShrekHappy.png',
   10: 'HabiPlayboyHappy.png'
 };
 
-// Funkcja zwracająca ścieżkę do obrazka na podstawie ID
+// Funkcja zwracająca nazwę pliku obrazka na podstawie ID
 export const getClothingImage = (clothingId) => {
   if (!clothingId) {
     return 'HabiAdultHappy.png'; // Domyślny obrazek
@@ -24,22 +24,20 @@ export const getClothingImage = (clothingId) => {
 
 // Funkcje do zarządzania localStorage
 export const clothingStorage = {
-  // Zapisz obecnie założone ubranie
   save: (clothingId) => {
     if (clothingId) {
       localStorage.setItem('currentHabiClothing', clothingId.toString());
+      console.log('💾 Zapisano ubranie do localStorage:', clothingId);
     } else {
       localStorage.removeItem('currentHabiClothing');
     }
   },
 
-  // Wczytaj obecnie założone ubranie
   load: () => {
     const saved = localStorage.getItem('currentHabiClothing');
     return saved ? parseInt(saved) : null;
   },
 
-  // Usuń zapisane ubranie
   clear: () => {
     localStorage.removeItem('currentHabiClothing');
   }
