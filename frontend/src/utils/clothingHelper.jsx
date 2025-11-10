@@ -22,23 +22,81 @@ export const getClothingImage = (clothingId) => {
   return clothingImageMap[clothingId] || 'HabiAdultHappy.png';
 };
 
-// Funkcje do zarządzania localStorage
+// ✅ POMOCNICZA FUNKCJA - pobiera user_id z tokenu
+const getUserIdFromToken = () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.user_id || payload.sub || payload.id;
+  } catch (error) {
+    console.error('❌ Błąd odczytu user_id z tokenu:', error);
+    return null;
+  }
+};
+
+// ✅ POPRAWIONE - Funkcje z izolacją użytkowników
 export const clothingStorage = {
   save: (clothingId) => {
+    const userId = getUserIdFromToken();
+
+    if (!userId) {
+      console.warn('⚠️ Brak user_id - nie można zapisać ubrania');
+      return;
+    }
+
+    const key = `currentHabiClothing_${userId}`;
+
     if (clothingId) {
-      localStorage.setItem('currentHabiClothing', clothingId.toString());
-      console.log('💾 Zapisano ubranie do localStorage:', clothingId);
+      localStorage.setItem(key, clothingId.toString());
+      console.log(`💾 Zapisano ubranie dla użytkownika ${userId}:`, clothingId);
     } else {
-      localStorage.removeItem('currentHabiClothing');
+      localStorage.removeItem(key);
+      console.log(`🗑️ Usunięto ubranie dla użytkownika ${userId}`);
     }
   },
 
   load: () => {
-    const saved = localStorage.getItem('currentHabiClothing');
+    const userId = getUserIdFromToken();
+
+    if (!userId) {
+      console.warn('⚠️ Brak user_id - nie można załadować ubrania');
+      return null;
+    }
+
+    const key = `currentHabiClothing_${userId}`;
+    const saved = localStorage.getItem(key);
+
+    if (saved) {
+      console.log(`📂 Załadowano ubranie dla użytkownika ${userId}:`, saved);
+    }
+
     return saved ? parseInt(saved) : null;
   },
 
   clear: () => {
-    localStorage.removeItem('currentHabiClothing');
+    const userId = getUserIdFromToken();
+
+    if (!userId) {
+      console.warn('⚠️ Brak user_id - czyszczenie wszystkich kluczy');
+      // Wyczyść wszystkie możliwe klucze
+      Object.keys(localStorage)
+        .filter(key => key.startsWith('currentHabiClothing'))
+        .forEach(key => localStorage.removeItem(key));
+      return;
+    }
+
+    const key = `currentHabiClothing_${userId}`;
+    localStorage.removeItem(key);
+    console.log(`🗑️ Wyczyszczono ubranie dla użytkownika ${userId}`);
+  },
+
+  // ✅ NOWA FUNKCJA - wyczyść ubranie dla wszystkich użytkowników (np. przy wylogowaniu)
+  clearAll: () => {
+    Object.keys(localStorage)
+      .filter(key => key.startsWith('currentHabiClothing'))
+      .forEach(key => localStorage.removeItem(key));
+    console.log('🗑️ Wyczyszczono wszystkie ubrania');
   }
 };
