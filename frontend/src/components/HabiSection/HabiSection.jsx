@@ -14,6 +14,28 @@ import HabiJeansHappy from '../HabiClothes/HabiJeansHappy.png';
 import HabiShrekHappy from '../HabiClothes/HabiShrekHappy.png';
 import HabiPlayboyHappy from '../HabiClothes/HabiPlayboyHappy.png';
 
+// 🔊 IMPORTY DŹWIĘKÓW MOTYWACYJNYCH
+import DzialaszLepiejSound from '../Sounds/DzialaszLepiej.mp3';
+import DzisRobimySound from '../Sounds/DzisRobimy.mp3';
+import JestemTuSound from '../Sounds/JestemTu.mp3';
+import JestesNaSound from '../Sounds/JestesNa.mp3';
+import KazdyDzienSound from '../Sounds/KazdyDzien.mp3';
+import KazdyKrokSound from '../Sounds/KazdyKrok.mp3';
+import KazdyMalySound from '../Sounds/KazdyMaly.mp3';
+import KazdySukcesSound from '../Sounds/KazdySukces.mp3';
+import MalymiKrokamiSound from '../Sounds/MalymiKrokami.mp3';
+import RazemJestesmySound from '../Sounds/RazemJestesmy.mp3';
+import TwojaDeteminacjaSound from '../Sounds/TwojaDeterminacja.mp3';
+import TwojaEnergiaSound from '../Sounds/TwojaEnergia.mp3';
+import TwojeNawykiSound from '../Sounds/TwojeNawyki.mp3';
+import TwojEntuzjazmSound from '../Sounds/TwojEntuzjazm.mp3';
+import TwojProgresSound from '../Sounds/TwojProgres.mp3';
+import TwojWysilekSound from '../Sounds/TwojWysilek.mp3';
+import WspanialeSobieSound from '../Sounds/WspanialeSobie.mp3';
+import WspolnieZbudujemySound from '../Sounds/WspolnieZbudujemy.mp3';
+import KazdegoSound from '../Sounds/KazdegoDnia.mp3';
+import JestesMistrzem from '../Sounds/JestesMistrzem.mp3';
+
 import FoodControl from '../FoodControl/FoodControl';
 
 const HabiSection = ({ currentClothing }) => {
@@ -42,58 +64,42 @@ const HabiSection = ({ currentClothing }) => {
     return clothingImages[currentClothing] || HabiAdultHappy;
   };
 
+  // 🔊 TABLICA WIADOMOŚCI Z PRZYPISANYMI DŹWIĘKAMI
   const motivationalMessages = [
-    "Świetnie Ci idzie! 💪",
-    "Jesteś niesamowity! ⭐",
-    "Dumny jestem z Ciebie! 🎉",
-    "Każdy dzień to nowy początek! 🌅",
-    "Wierzę w Ciebie! 💙",
-    "Małymi krokami osiągniesz wielkie rzeczy! 👣",
-    "Twoja determinacja mnie inspiruje! ✨",
-    "Jesteś silniejszy niż myślisz! 💪",
-    "Dziś robimy postępy! 🚀",
-    "Wspaniale sobie radzisz! 🌟",
-    "Jestem z Ciebie bardzo dumny! 🏆",
-    "Nie poddawaj się - jesteś blisko celu! 🎯",
-    "Każdy sukces zaczyna się od pierwszego kroku! 👟",
-    "Twoja wytrwałość przynosi owoce! 🍎",
-    "Robisz niesamowite postępy! 📈",
-    "Pamiętaj - jesteś championem! 🥇",
-    "Twoje nawyki budują lepsze jutro! 🌈",
-    "Jestem tu, żeby Cię wspierać! 🤗",
-    "Wow, jakie osiągnięcia! 🎊",
-    "Razem osiągniemy wszystko! 🤝",
-    "Jestem z Ciebie mega dumny! 🌟",
-    "Kontynuuj świetną robotę! 👏",
-    "Twoja siła woli jest niesamowita! 🔥",
-    "Każdy mały krok się liczy! 🦶",
-    "Jesteś na właściwej drodze! 🛤️",
-    "Twój wysiłek się opłaca! 💎",
-    "Nigdy się nie poddawaj! 💯",
-    "Jesteś prawdziwym wojownikiem! ⚔️",
-    "Twoja konsekwencja mnie zachwyca! 🌺",
-    "Trzymaj tak dalej! 🎯",
-    "Każdy dzień jesteś lepszy! 📊",
-    "Twoje zaangażowanie jest inspirujące! 🎨",
-    "Wierzę w Twój sukces! 🌠",
-    "Jesteś na dobrej drodze! 🛣️",
-    "Twój progres jest widoczny! 👀",
-    "Gratulacje postępów! 🥳",
-    "Jestem Twoim największym fanem! 🎭",
-    "Twoja energia mnie motywuje! ⚡",
-    "Wspólnie zbudujemy lepsze jutro! 🏗️",
-    "Jesteś moim bohaterem! 🦸",
-    "Twoja determinacja jest zaraźliwa! 😊",
-    "Każdy krok przybliża Cię do celu! 🎪",
-    "Twoja siła charakteru zachwyca! 💫",
-    "Jestem dumną małpką! 🐵",
-    "Razem jesteśmy niezwyciężeni! 🛡️",
-    "Twój entuzjazm jest zaraźliwy! 😄",
-    "Jesteś mistrzem nawykow! 🏅",
-    "Każdy dzień to nowa szansa! 🌄",
-    "Twój postęp mnie cieszy! 😊",
-    "Jesteś cudowny! 🌸"
+    { text: "Każdy dzień to nowy początek! 🌅", sound: KazdyDzienSound },
+    { text: "Małymi krokami osiągniesz wielkie rzeczy! 👣", sound: MalymiKrokamiSound },
+    { text: "Twoja determinacja mnie inspiruje! ✨", sound: TwojaDeteminacjaSound },
+    { text: "Dziś robimy postępy! 🚀", sound: DzisRobimySound },
+    { text: "Wspaniale sobie radzisz! 🌟", sound: WspanialeSobieSound },
+    { text: "Każdy sukces zaczyna się od pierwszego kroku! 👟", sound: KazdySukcesSound },
+    { text: "Twoje nawyki budują lepsze jutro! 🌈", sound: TwojeNawykiSound },
+    { text: "Jestem tu, żeby Cię wspierać! 🤗", sound: JestemTuSound },
+    { text: "Każdy mały krok się liczy! 🦶", sound: KazdyMalySound },
+    { text: "Jesteś na właściwej drodze! 🛤️", sound: JestesNaSound },
+    { text: "Twój wysiłek się opłaca! 💎", sound: TwojWysilekSound },
+    { text: "Każdego dnia jesteś lepszy! 📊", sound: KazdegoSound },
+    { text: "Twój progres jest widoczny! 👀", sound: TwojProgresSound },
+    { text: "Twoja energia mnie motywuje! ⚡", sound: TwojaEnergiaSound },
+    { text: "Wspólnie zbudujemy lepsze jutro! 🏗️", sound: WspolnieZbudujemySound },
+    { text: "Każdy krok przybliża Cię do celu! 🎪", sound: KazdyKrokSound },
+    { text: "Razem jesteśmy niezwyciężeni! 🛡️", sound: RazemJestesmySound },
+    { text: "Twój entuzjazm jest zaraźliwy! 😄", sound: TwojEntuzjazmSound },
+    { text: "Jesteś mistrzem nawyków! 🏅", sound: JestesMistrzem },
+    { text: "Działasz lepiej niż poranna kawa ☕💪", sound: DzialaszLepiejSound }
   ];
+
+  // 🔊 FUNKCJA DO ODTWARZANIA DŹWIĘKÓW
+  const playSound = (soundFile) => {
+    try {
+      if (soundFile) {
+        const audio = new Audio(soundFile);
+        audio.volume = 0.6; // głośność 60%
+        audio.play().catch(err => console.log('🔇 Nie udało się odtworzyć dźwięku:', err));
+      }
+    } catch (error) {
+      console.log('🔇 Błąd odtwarzania:', error);
+    }
+  };
 
   const handleHabiClick = useCallback(() => {
     const now = Date.now();
@@ -112,7 +118,14 @@ const HabiSection = ({ currentClothing }) => {
 
     setTimeout(() => {
       const randomIndex = Math.floor(Math.random() * motivationalMessages.length);
-      setCurrentMessage(motivationalMessages[randomIndex]);
+      const selectedMessage = motivationalMessages[randomIndex];
+
+      // ✅ USTAW TEKST WIADOMOŚCI
+      setCurrentMessage(selectedMessage.text);
+
+      // 🔊 ODTWÓRZ DŹWIĘK
+      playSound(selectedMessage.sound);
+
       setShowMessage(true);
 
       timeoutRef.current = setTimeout(() => {

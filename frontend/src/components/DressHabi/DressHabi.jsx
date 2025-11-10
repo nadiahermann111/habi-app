@@ -15,6 +15,18 @@ import HabiJeansHappy from '../HabiClothes/HabiJeansHappy.png';
 import HabiShrekHappy from '../HabiClothes/HabiShrekHappy.png';
 import HabiPlayboyHappy from '../HabiClothes/HabiPlayboyHappy.png';
 
+// 🔊 IMPORTY DŹWIĘKÓW
+import BananySound from '../Sounds/Banany.mp3';
+import HabiSound from '../Sounds/Habi.mp3';
+import KokardaSound from '../Sounds/Kokarda.mp3';
+import KolczykiSound from '../Sounds/Kolczyki.mp3';
+import KwiatekSound from '../Sounds/Kwiatek.mp3';
+import OgrodnickiSound from '../Sounds/Ogrodniczki.mp3';
+import OpaskaSound from '../Sounds/Opaska.mp3';
+import PlayboySound from '../Sounds/Playboy.mp3';
+import ShrekSound from '../Sounds/Shrek.mp3';
+import TatuazeSound from '../Sounds/Tatuaze.mp3';
+
 import { clothingStorage } from '../../utils/clothingHelper';
 import './DressHabi.css';
 
@@ -41,6 +53,36 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
     8: HabiJeansHappy,
     9: HabiShrekHappy,
     10: HabiPlayboyHappy
+  };
+
+  // 🔊 MAPA DŹWIĘKÓW - dopasowana do ID ubranek
+  const clothingSounds = {
+    1: KolczykiSound,     // Kolczyki
+    2: KokardaSound,      // Kokardka
+    3: OpaskaSound,       // Opaska w Panterke
+    4: KwiatekSound,      // Kwiatek Hibiskus
+    5: TatuazeSound,      // Tatuaże
+    6: HabiSound,         // Koszulka i❤️ Habi
+    7: BananySound,       // Koszulka Banan
+    8: OgrodnickiSound,   // Ogrodniczki
+    9: ShrekSound,        // Tajemnicza opcja (Shrek)
+    10: PlayboySound      // Strój Playboy
+  };
+
+  // 🔊 FUNKCJA DO ODTWARZANIA DŹWIĘKÓW
+  const playSound = (itemId) => {
+    try {
+      const soundFile = clothingSounds[itemId];
+      if (soundFile) {
+        const audio = new Audio(soundFile);
+        audio.volume = 0.6; // głośność 60%
+        audio.play().catch(err => console.log('🔇 Nie udało się odtworzyć dźwięku:', err));
+      } else {
+        console.log('🔇 Brak dźwięku dla przedmiotu ID:', itemId);
+      }
+    } catch (error) {
+      console.log('🔇 Błąd odtwarzania:', error);
+    }
   };
 
   // ✅ FUNKCJA ZWRACAJĄCA OBRAZEK
@@ -141,6 +183,9 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       const data = await response.json();
       console.log(`✅ Zakup udany!`, data);
 
+      // 🔊 ODTWÓRZ DŹWIĘK DLA ZAKUPIONEGO PRZEDMIOTU
+      playSound(item.id);
+
       const newCoins = data.remaining_coins;
       setCurrentCoins(newCoins);
       if (onCoinsUpdate) onCoinsUpdate(newCoins);
@@ -185,6 +230,10 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
   const handleClothingSelect = (item) => {
     if (ownedClothes.includes(item.id)) {
       console.log(`👗 Ręczna zmiana na ${item.name} (ID: ${item.id})`);
+
+      // 🔊 ODTWÓRZ DŹWIĘK PRZY ZMIANIE UBRANIA
+      playSound(item.id);
+
       clothingStorage.save(item.id);
       if (onClothingChange) onClothingChange(item.id);
     }

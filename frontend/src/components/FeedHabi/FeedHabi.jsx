@@ -16,6 +16,30 @@ import HabiJeansHappy from '../HabiClothes/HabiJeansHappy.png';
 import HabiShrekHappy from '../HabiClothes/HabiShrekHappy.png';
 import HabiPlayboyHappy from '../HabiClothes/HabiPlayboyHappy.png';
 
+// 🔊 IMPORTY DŹWIĘKÓW JEDZENIA
+import Food1Sound from '../Sounds/Food1.mp3';
+import Food2Sound from '../Sounds/Food2.mp3';
+import Food3Sound from '../Sounds/Food3.mp3';
+import Food4Sound from '../Sounds/Food4.mp3';
+import Food5Sound from '../Sounds/Food5.mp3';
+import Food6Sound from '../Sounds/Food6.mp3';
+import Food7Sound from '../Sounds/Food7.mp3';
+import Food8Sound from '../Sounds/Food8.mp3';
+import Food9Sound from '../Sounds/Food9.mp3';
+import Food10Sound from '../Sounds/Food10.mp3';
+import Food11Sound from '../Sounds/Food11.mp3';
+import Food12Sound from '../Sounds/Food12.mp3';
+import Food13Sound from '../Sounds/Food13.mp3';
+import Food14Sound from '../Sounds/Food14.mp3';
+import Food15Sound from '../Sounds/Food15.mp3';
+import Food16Sound from '../Sounds/Food16.mp3';
+import Food17Sound from '../Sounds/Food17.mp3';
+import Food18Sound from '../Sounds/Food18.mp3';
+import Food19Sound from '../Sounds/Food19.mp3';
+import Food20Sound from '../Sounds/Food20.mp3';
+import Food21Sound from '../Sounds/Food21.mp3';
+import Food22Sound from '../Sounds/Food22.mp3';
+
 import './FeedHabi.css';
 
 const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
@@ -39,6 +63,32 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
     10: HabiPlayboyHappy
   };
 
+  // 🔊 TABLICA WSZYSTKICH DŹWIĘKÓW JEDZENIA
+  const foodSounds = [
+    Food1Sound, Food2Sound, Food3Sound, Food4Sound, Food5Sound,
+    Food6Sound, Food7Sound, Food8Sound, Food9Sound, Food10Sound,
+    Food11Sound, Food12Sound, Food13Sound, Food14Sound, Food15Sound,
+    Food16Sound, Food17Sound, Food18Sound, Food19Sound, Food20Sound,
+    Food21Sound, Food22Sound
+  ];
+
+  // 🔊 FUNKCJA DO ODTWARZANIA LOSOWEGO DŹWIĘKU JEDZENIA
+  const playRandomFoodSound = () => {
+    try {
+      const randomIndex = Math.floor(Math.random() * foodSounds.length);
+      const soundFile = foodSounds[randomIndex];
+
+      if (soundFile) {
+        const audio = new Audio(soundFile);
+        audio.volume = 0.6; // głośność 60%
+        audio.play().catch(err => console.log('🔇 Nie udało się odtworzyć dźwięku:', err));
+        console.log(`🔊 Odtwarzam Food${randomIndex + 1}.mp3`);
+      }
+    } catch (error) {
+      console.log('🔇 Błąd odtwarzania:', error);
+    }
+  };
+
   // ✅ FUNKCJA ZWRACAJĄCA OBRAZEK
   const getHabiImage = () => {
     if (!currentClothing) return HabiAdultHappy;
@@ -46,12 +96,12 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
   };
 
   const foodItems = [
-    { id: 1, cost: 1, icon: "💧", nutrition: 5 },
-    { id: 2, cost: 3, icon: "🍌", nutrition: 15 },
-    { id: 3, cost: 3, icon: "🍎", nutrition: 15 },
-    { id: 4, cost: 8, icon: "🥩", nutrition: 25 },
-    { id: 5, cost: 8, icon: "🥗", nutrition: 25 },
-    { id: 6, cost: 20, icon: "☕", nutrition: 40 }
+    { id: 1, cost: 1, icon: "💧", nutrition: 5, name: "Woda" },
+    { id: 2, cost: 3, icon: "🍌", nutrition: 15, name: "Banan" },
+    { id: 3, cost: 3, icon: "🍎", nutrition: 15, name: "Jabłko" },
+    { id: 4, cost: 8, icon: "🥩", nutrition: 25, name: "Mięso" },
+    { id: 5, cost: 8, icon: "🥗", nutrition: 25, name: "Sałatka" },
+    { id: 6, cost: 20, icon: "☕", nutrition: 40, name: "Kawa" }
   ];
 
   const API_BASE_URL = 'https://habi-backend.onrender.com';
@@ -117,6 +167,9 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
 
       if (result.success) {
         console.log(`✅ Zakup udany! Pozostało monet: ${result.remainingCoins}`);
+
+        // 🔊 ODTWÓRZ LOSOWY DŹWIĘK JEDZENIA
+        playRandomFoodSound();
 
         setCurrentCoins(result.remainingCoins);
         if (onCoinsUpdate) {
