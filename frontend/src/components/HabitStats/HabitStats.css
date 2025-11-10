@@ -18,7 +18,7 @@
 .stats-header {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   margin-bottom: 24px;
   padding: 16px 20px;
   background: rgba(255, 255, 255, 0.9);
@@ -27,12 +27,14 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   width: 100%;
   box-sizing: border-box;
+  position: relative;
 }
 
 .stats-header-left {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: 1;
 }
 
 .stats-back-btn {
@@ -49,7 +51,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: auto;
 }
 
 .stats-back-btn:hover {
@@ -57,10 +58,22 @@
   transform: scale(1.05);
 }
 
+.stats-header-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+}
+
 .habi-logo-stats {
   height: 32px;
   width: auto;
   object-fit: contain;
+}
+
+.stats-header-right {
+  flex: 1;
 }
 
 .stats-title {
@@ -533,6 +546,14 @@
     padding: 12px;
   }
 
+  .stats-header {
+    padding: 12px 16px;
+  }
+
+  .habi-logo-stats {
+    height: 28px;
+  }
+
   .overall-stats {
     grid-template-columns: 1fr;
     gap: 12px;
@@ -574,6 +595,12 @@
   .stats-header {
     padding: 12px 16px;
     margin-bottom: 16px;
+  }
+
+  .stats-back-btn {
+    min-width: 40px;
+    min-height: 40px;
+    font-size: 20px;
   }
 
   .habi-logo-stats {
