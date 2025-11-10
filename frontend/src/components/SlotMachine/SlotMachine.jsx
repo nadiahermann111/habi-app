@@ -263,7 +263,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId }) => {
                 {wonCoins === 30 ? '🎉' : wonCoins === 15 ? '🎊' : '👍'}
               </div>
               <h3 className="result-title">
-                {wonCoins === 30 ? 'JACKPOT!' : wonCoins === 15 ? 'Świetnie!' : 'Nie złe!'}
+                {wonCoins === 30 ? 'JACKPOT! MEGA BIG WIN!' : wonCoins === 15 ? 'Świetnie!' : 'Nieźle!'}
               </h3>
               <p className="result-text">Wygrałeś</p>
               <div className="result-coins">

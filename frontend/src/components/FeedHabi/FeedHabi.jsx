@@ -2,44 +2,47 @@ import React, { useState, useEffect, useRef } from 'react';
 import FoodControl from '../FoodControl/FoodControl';
 import CoinSlot from '../CoinSlot/CoinSlot';
 import HabiLogo from './habi-logo.png';
-import HabiHappyAdult from '../HabiClothes/HabiAdultHappy.png'; // ← DODAJ DOMYŚLNY OBRAZEK
+
+// ✅ STATYCZNE IMPORTY WSZYSTKICH OBRAZKÓW
+import HabiAdultHappy from '../HabiClothes/HabiAdultHappy.png';
+import HabiPiercingHappy from '../HabiClothes/HabiPiercingHappy.png';
+import HabiBowHappy from '../HabiClothes/HabiBowHappy.png';
+import HabiLeopardHappy from '../HabiClothes/HabiLeopardHappy.png';
+import HabiFlowerHappy from '../HabiClothes/HabiFlowerHappy.png';
+import HabiTattooHappy from '../HabiClothes/HabiTattooHappy.png';
+import HabiLoveHappy from '../HabiClothes/HabiLoveHappy.png';
+import HabiBananaHappy from '../HabiClothes/HabiBananaHappy.png';
+import HabiJeansHappy from '../HabiClothes/HabiJeansHappy.png';
+import HabiShrekHappy from '../HabiClothes/HabiShrekHappy.png';
+import HabiPlayboyHappy from '../HabiClothes/HabiPlayboyHappy.png';
+
 import './FeedHabi.css';
 
-const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => { // ← DODAJ PROP
+const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
   const [currentCoins, setCurrentCoins] = useState(userCoins);
   const [purchaseAnimation, setPurchaseAnimation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const foodControlRef = useRef(null);
 
-  // ← DYNAMICZNY OBRAZEK HABI
+  // ✅ MAPA OBRAZKÓW
+  const clothingImages = {
+    1: HabiPiercingHappy,
+    2: HabiBowHappy,
+    3: HabiLeopardHappy,
+    4: HabiFlowerHappy,
+    5: HabiTattooHappy,
+    6: HabiLoveHappy,
+    7: HabiBananaHappy,
+    8: HabiJeansHappy,
+    9: HabiShrekHappy,
+    10: HabiPlayboyHappy
+  };
+
+  // ✅ FUNKCJA ZWRACAJĄCA OBRAZEK
   const getHabiImage = () => {
-    if (!currentClothing) return HabiHappyAdult;
-
-    try {
-      // Mapowanie ID na nazwy plików
-      const clothingMap = {
-        1: 'HabiPiercingHappy.png',
-        2: 'HabiBowHappy.png',
-        3: 'HabiLeopardHappy.png',
-        4: 'HabiFlowerHappy.png',
-        5: 'HabiTattooHappy.png',
-        6: 'HabiLoveHappy.png',
-        7: 'HabiBananaHappy.png',
-        8: 'HabiJeansHappy.png',
-        9: 'HabiShrekHappy.png',
-        10: 'HabiPlayboyHappy.png'
-      };
-
-      const fileName = clothingMap[currentClothing];
-      if (fileName) {
-        return require(`../HabiClothes/${fileName}`);
-      }
-    } catch (error) {
-      console.error('Błąd wczytywania obrazka:', error);
-    }
-
-    return HabiHappyAdult;
+    if (!currentClothing) return HabiAdultHappy;
+    return clothingImages[currentClothing] || HabiAdultHappy;
   };
 
   const foodItems = [

@@ -1,41 +1,45 @@
 import React, { useState, useCallback, useRef } from 'react';
 import './HabiSection.css';
-import HabiHappyAdult from '../HabiClothes/HabiAdultHappy.png'; // ← DODAJ DOMYŚLNY OBRAZEK
+
+// ✅ STATYCZNE IMPORTY WSZYSTKICH OBRAZKÓW
+import HabiAdultHappy from '../HabiClothes/HabiAdultHappy.png';
+import HabiPiercingHappy from '../HabiClothes/HabiPiercingHappy.png';
+import HabiBowHappy from '../HabiClothes/HabiBowHappy.png';
+import HabiLeopardHappy from '../HabiClothes/HabiLeopardHappy.png';
+import HabiFlowerHappy from '../HabiClothes/HabiFlowerHappy.png';
+import HabiTattooHappy from '../HabiClothes/HabiTattooHappy.png';
+import HabiLoveHappy from '../HabiClothes/HabiLoveHappy.png';
+import HabiBananaHappy from '../HabiClothes/HabiBananaHappy.png';
+import HabiJeansHappy from '../HabiClothes/HabiJeansHappy.png';
+import HabiShrekHappy from '../HabiClothes/HabiShrekHappy.png';
+import HabiPlayboyHappy from '../HabiClothes/HabiPlayboyHappy.png';
+
 import FoodControl from '../FoodControl/FoodControl';
 
-const HabiSection = ({ currentClothing }) => { // ← DODAJ PROP
+const HabiSection = ({ currentClothing }) => {
   const [showMessage, setShowMessage] = useState(false);
   const [currentMessage, setCurrentMessage] = useState('');
   const timeoutRef = useRef(null);
   const lastClickTime = useRef(0);
 
-  // ← DYNAMICZNY OBRAZEK HABI
+  // ✅ MAPA OBRAZKÓW
+  const clothingImages = {
+    1: HabiPiercingHappy,
+    2: HabiBowHappy,
+    3: HabiLeopardHappy,
+    4: HabiFlowerHappy,
+    5: HabiTattooHappy,
+    6: HabiLoveHappy,
+    7: HabiBananaHappy,
+    8: HabiJeansHappy,
+    9: HabiShrekHappy,
+    10: HabiPlayboyHappy
+  };
+
+  // ✅ FUNKCJA ZWRACAJĄCA OBRAZEK
   const getHabiImage = () => {
-    if (!currentClothing) return HabiHappyAdult;
-
-    try {
-      const clothingMap = {
-        1: 'HabiPiercingHappy.png',
-        2: 'HabiBowHappy.png',
-        3: 'HabiLeopardHappy.png',
-        4: 'HabiFlowerHappy.png',
-        5: 'HabiTattooHappy.png',
-        6: 'HabiLoveHappy.png',
-        7: 'HabiBananaHappy.png',
-        8: 'HabiJeansHappy.png',
-        9: 'HabiShrekHappy.png',
-        10: 'HabiPlayboyHappy.png'
-      };
-
-      const fileName = clothingMap[currentClothing];
-      if (fileName) {
-        return require(`../HabiClothes/${fileName}`);
-      }
-    } catch (error) {
-      console.error('Błąd wczytywania obrazka:', error);
-    }
-
-    return HabiHappyAdult;
+    if (!currentClothing) return HabiAdultHappy;
+    return clothingImages[currentClothing] || HabiAdultHappy;
   };
 
   const motivationalMessages = [

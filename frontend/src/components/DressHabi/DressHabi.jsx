@@ -1,7 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import CoinSlot from '../CoinSlot/CoinSlot';
 import HabiLogo from './habi-logo.png';
+
+// ✅ STATYCZNE IMPORTY WSZYSTKICH OBRAZKÓW
 import HabiAdultHappy from '../HabiClothes/HabiAdultHappy.png';
+import HabiPiercingHappy from '../HabiClothes/HabiPiercingHappy.png';
+import HabiBowHappy from '../HabiClothes/HabiBowHappy.png';
+import HabiLeopardHappy from '../HabiClothes/HabiLeopardHappy.png';
+import HabiFlowerHappy from '../HabiClothes/HabiFlowerHappy.png';
+import HabiTattooHappy from '../HabiClothes/HabiTattooHappy.png';
+import HabiLoveHappy from '../HabiClothes/HabiLoveHappy.png';
+import HabiBananaHappy from '../HabiClothes/HabiBananaHappy.png';
+import HabiJeansHappy from '../HabiClothes/HabiJeansHappy.png';
+import HabiShrekHappy from '../HabiClothes/HabiShrekHappy.png';
+import HabiPlayboyHappy from '../HabiClothes/HabiPlayboyHappy.png';
+
 import { clothingStorage } from '../../utils/clothingHelper';
 import './DressHabi.css';
 
@@ -16,30 +29,24 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
 
   const API_BASE_URL = 'https://habi-backend.onrender.com';
 
-  // ✅ FUNKCJA ZWRACAJĄCA OBRAZEK (BEZ require)
+  // ✅ MAPA OBRAZKÓW - BEZ require()
+  const clothingImages = {
+    1: HabiPiercingHappy,
+    2: HabiBowHappy,
+    3: HabiLeopardHappy,
+    4: HabiFlowerHappy,
+    5: HabiTattooHappy,
+    6: HabiLoveHappy,
+    7: HabiBananaHappy,
+    8: HabiJeansHappy,
+    9: HabiShrekHappy,
+    10: HabiPlayboyHappy
+  };
+
+  // ✅ FUNKCJA ZWRACAJĄCA OBRAZEK
   const getHabiImage = () => {
     if (!currentClothing) return HabiAdultHappy;
-
-    try {
-      // Import dynamiczny wszystkich obrazków
-      const images = {
-        1: require('../HabiClothes/HabiPiercingHappy.png'),
-        2: require('../HabiClothes/HabiBowHappy.png'),
-        3: require('../HabiClothes/HabiLeopardHappy.png'),
-        4: require('../HabiClothes/HabiFlowerHappy.png'),
-        5: require('../HabiClothes/HabiTattooHappy.png'),
-        6: require('../HabiClothes/HabiLoveHappy.png'),
-        7: require('../HabiClothes/HabiBananaHappy.png'),
-        8: require('../HabiClothes/HabiJeansHappy.png'),
-        9: require('../HabiClothes/HabiShrekHappy.png'),
-        10: require('../HabiClothes/HabiPlayboyHappy.png')
-      };
-
-      return images[currentClothing] || HabiAdultHappy;
-    } catch (error) {
-      console.error('❌ Błąd wczytywania obrazka:', error);
-      return HabiAdultHappy;
-    }
+    return clothingImages[currentClothing] || HabiAdultHappy;
   };
 
   const fetchClothingItems = async () => {
@@ -147,7 +154,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       clothingStorage.save(item.id);
 
       if (onClothingChange) {
-        console.log('✅ Wywołuję onClothingChange...');
+        console.log('✅ Wywołuję onClothingChange z ID:', item.id);
         onClothingChange(item.id);
       } else {
         console.error('❌ onClothingChange nie istnieje!');
