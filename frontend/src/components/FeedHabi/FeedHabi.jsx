@@ -47,6 +47,7 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
   const [purchaseAnimation, setPurchaseAnimation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [processingItemId, setProcessingItemId] = useState(null); // ✅ Dodane: śledzimy które jedzenie jest przetwarzane
   const foodControlRef = useRef(null);
 
   // ✅ MAPA OBRAZKÓW
@@ -150,17 +151,24 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
   };
 
   const handlePurchase = async (item) => {
+    // ✅ Sprawdź czy już coś nie jest przetwarzane
+    if (loading || processingItemId) {
+      console.log('⏳ Transakcja w toku, czekaj...');
+      return;
+    }
+
     console.log(`🛒 Próba zakupu ${item.name} za ${item.cost} monet`);
     setError(null);
 
     if (currentCoins < item.cost) {
       const errorMsg = `Potrzebujesz ${item.cost} monet, ale masz tylko ${currentCoins}!`;
       setError(errorMsg);
-      alert(errorMsg);
       return;
     }
 
+    // ✅ Ustawiamy loading globalny i dla konkretnego itemu
     setLoading(true);
+    setProcessingItemId(item.id);
 
     try {
       const result = await spendCoins(item.cost);
@@ -196,15 +204,15 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
       } else {
         console.error('❌ Zakup nieudany:', result.error);
         setError(result.error);
-        alert(result.error || 'Błąd podczas zakupu');
       }
     } catch (error) {
       console.error('❌ Błąd handlePurchase:', error);
       const errorMsg = 'Błąd podczas zakupu - sprawdź połączenie internetowe';
       setError(errorMsg);
-      alert(errorMsg);
     } finally {
+      // ✅ Zawsze resetuj loading i processingItemId
       setLoading(false);
+      setProcessingItemId(null);
     }
   };
 
@@ -283,13 +291,17 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
 
         <div className="food-items-grid-redesigned">
           {foodItems.map(item => {
-            const canAfford = currentCoins >= item.cost && !loading;
+            // ✅ Item jest disabled jeśli: brak monet, globalny loading, lub ten konkretny item jest przetwarzany
+            const isProcessing = processingItemId === item.id;
+            const canAfford = currentCoins >= item.cost;
+            const isDisabled = !canAfford || loading || isProcessing;
 
             return (
               <div
                 key={item.id}
-                className={`food-item-redesigned ${!canAfford ? 'disabled' : ''} ${loading ? 'loading' : ''}`}
-                onClick={() => canAfford && handlePurchase(item)}
+                className={`food-item-redesigned ${isDisabled ? 'disabled' : ''} ${isProcessing ? 'loading' : ''}`}
+                onClick={() => !isDisabled && handlePurchase(item)}
+                style={{ pointerEvents: isDisabled ? 'none' : 'auto' }} // ✅ Dodatkowa blokada
               >
                 <div className="food-item-image">
                   <span className="food-emoji">{item.icon}</span>
@@ -298,9 +310,11 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
                   <span className="coin-icon">🪙</span>
                   <span className="price-value">{item.cost}</span>
                 </div>
-                {!canAfford && (
+                {isDisabled && (
                   <div className="food-item-overlay">
-                    <span>{loading ? 'Kupowanie...' : 'Brak monet'}</span>
+                    <span>
+                      {isProcessing ? 'Kupowanie...' : !canAfford ? 'Brak monet' : 'Czekaj...'}
+                    </span>
                   </div>
                 )}
               </div>

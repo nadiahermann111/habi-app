@@ -4,6 +4,55 @@ import CoinSlot from '../CoinSlot/CoinSlot';
 import HabiLogo from './habi-logo.png';
 import './HabitTracker.css';
 
+// Komponent powiadomień wewnątrz aplikacji
+const NotificationContainer = ({ notifications, onRemove }) => {
+  return (
+    <div className="notification-container">
+      {notifications.map(notification => (
+        <Notification
+          key={notification.id}
+          {...notification}
+          onRemove={() => onRemove(notification.id)}
+        />
+      ))}
+    </div>
+  );
+};
+
+const Notification = ({ id, type, title, message, onRemove }) => {
+  const [isExiting, setIsExiting] = useState(false);
+
+  useEffect(() => {
+    // Automatyczne usunięcie powiadomienia po 4 sekundach
+    const timer = setTimeout(() => {
+      setIsExiting(true);
+      setTimeout(onRemove, 300); // Czas na animację wyjścia
+    }, 4000);
+
+    return () => clearTimeout(timer);
+  }, [onRemove]);
+
+  const getIcon = () => {
+    switch (type) {
+      case 'success': return '✅';
+      case 'error': return '❌';
+      case 'warning': return '⚠️';
+      case 'info': return 'ℹ️';
+      default: return '📢';
+    }
+  };
+
+  return (
+    <div className={`notification ${type} ${isExiting ? 'exit' : ''}`}>
+      <div className="notification-icon">{getIcon()}</div>
+      <div className="notification-content">
+        {title && <div className="notification-title">{title}</div>}
+        <div className="notification-message">{message}</div>
+      </div>
+    </div>
+  );
+};
+
 const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
   // Stan określający aktualny widok ('list' - lista nawyków, 'add' - formularz dodawania)
   const [currentView, setCurrentView] = useState('list');
@@ -19,6 +68,8 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
   const [error, setError] = useState('');
   // Stan informujący o statusie połączenia internetowego
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  // Stan przechowujący aktywne powiadomienia
+  const [notifications, setNotifications] = useState([]);
 
   // Obiekt przechowujący dane nowego nawyku podczas dodawania
   const [newHabit, setNewHabit] = useState({
@@ -38,6 +89,19 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     3: 3,   // maksymalnie 3 nawyki za 3 monety
     2: 4,   // maksymalnie 4 nawyki za 2 monety
     1: -1   // bez limitu dla nawyków za 1 monetę (-1 = bez limitu)
+  };
+
+  // Funkcja do wyświetlania powiadomień
+  const showNotification = (type, message, title = '') => {
+    const id = Date.now() + Math.random();
+    const notification = { id, type, title, message };
+
+    setNotifications(prev => [...prev, notification]);
+  };
+
+  // Funkcja do usuwania powiadomienia
+  const removeNotification = (id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
   // Funkcja sprawdzająca czy można dodać nawyk o określonej wartości
@@ -192,14 +256,18 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
   // Funkcja obsługująca dodawanie nowego nawyku
   const handleAddHabit = async () => {
     if (!newHabit.name.trim()) {
-      alert('Nazwa nawyku jest wymagana');
+      showNotification('error', 'Nazwa nawyku jest wymagana', 'Błąd');
       return;
     }
 
     // Sprawdzenie limitów przed dodaniem nawyku
     const limitCheck = canAddHabit(newHabit.coinValue);
     if (!limitCheck.canAdd) {
-      alert(`Osiągnięto limit nawyków o wartości ${newHabit.coinValue} monet! Możesz mieć maksymalnie ${limitCheck.limit} takich nawyków.`);
+      showNotification(
+        'warning',
+        `Możesz mieć maksymalnie ${limitCheck.limit} nawyków o wartości ${newHabit.coinValue} monet.`,
+        'Osiągnięto limit'
+      );
       return;
     }
 
@@ -222,6 +290,8 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           return updated;
         });
 
+        showNotification('success', `Nawyk "${newHabit.name}" został dodany!`, 'Sukces');
+
       } else {
         // Dodanie nawyku lokalnie w trybie offline
         const localHabit = {
@@ -242,7 +312,11 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           return updated;
         });
 
-        setError('Nawyk dodany offline - zostanie zsynchronizowany gdy połączenie wróci');
+        showNotification(
+          'info',
+          'Nawyk zostanie zsynchronizowany gdy połączenie wróci',
+          'Dodano offline'
+        );
       }
 
       // Reset formularza i powrót do listy
@@ -251,7 +325,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
 
     } catch (error) {
       console.error('Błąd tworzenia nawyku:', error);
-      setError('Błąd tworzenia nawyku: ' + error.message);
+      showNotification('error', error.message, 'Błąd tworzenia nawyku');
     } finally {
       setLoading(false);
     }
@@ -306,7 +380,11 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           return updated;
         });
 
-        alert(`${result.message}! Otrzymałeś ${result.coins_earned} monet! 🎉`);
+        showNotification(
+          'success',
+          `Otrzymałeś ${result.coins_earned} monet! 🎉`,
+          result.message
+        );
 
       } else {
         // Wykonanie nawyku w trybie offline
@@ -352,15 +430,17 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
 
         localStorage.setItem('offline_coins', newCoinsAmount.toString());
 
-        const message = isOnline ?
-          `Brawo! Otrzymałeś ${coinsToEarn} monet! 🎉` :
-          `Offline: Otrzymałeś ${coinsToEarn} monet! Zostanie zsynchronizowane 🎉`;
-        alert(message);
+        const notificationType = isOnline ? 'success' : 'info';
+        const notificationTitle = isOnline ? 'Brawo!' : 'Offline';
+        const notificationMessage = isOnline
+          ? `Otrzymałeś ${coinsToEarn} monet! 🎉`
+          : `Otrzymałeś ${coinsToEarn} monet! Zostanie zsynchronizowane 🎉`;
+
+        showNotification(notificationType, notificationMessage, notificationTitle);
       }
 
     } catch (error) {
       console.error('Błąd wykonywania nawyku:', error);
-      setError('Błąd: ' + error.message);
 
       // Fallback - dodanie monet lokalnie nawet przy błędzie API
       const newCoinsAmount = userCoins + coinsToEarn;
@@ -401,7 +481,8 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       });
 
       localStorage.setItem('offline_coins', newCoinsAmount.toString());
-      alert(`Offline: Otrzymałeś ${coinsToEarn} monet! 🎉`);
+
+      showNotification('info', `Otrzymałeś ${coinsToEarn} monet! 🎉`, 'Offline');
     } finally {
       setLoading(false);
     }
@@ -409,13 +490,16 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
 
   // Funkcja obsługująca usuwanie nawyku
   const handleDeleteHabit = async (habitId) => {
-    if (!confirm('Czy na pewno chcesz usunąć ten nawyk?')) return;
+    const habit = habits.find(h => h.id === habitId);
+    if (!habit) return;
+
+    // Potwierdzenie poprzez powiadomienie zamiast confirm()
+    const confirmDelete = window.confirm('Czy na pewno chcesz usunąć ten nawyk?');
+    if (!confirmDelete) return;
 
     try {
       setLoading(true);
       setError('');
-
-      const habit = habits.find(h => h.id === habitId);
 
       // Usunięcie przez API jeśli online i nawyk nie jest lokalny
       if (isOnline && !habit?.isLocal) {
@@ -438,9 +522,10 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
         return newSet;
       });
 
+      showNotification('success', `Nawyk "${habit.name}" został usunięty`, 'Usunięto');
+
     } catch (error) {
       console.error('Błąd usuwania nawyku:', error);
-      setError('Błąd usuwania nawyku: ' + error.message);
 
       // Usunięcie lokalne nawet przy błędzie API
       setHabits(prev => {
@@ -456,6 +541,8 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
         localStorage.setItem(`completed_${today}`, JSON.stringify([...newSet]));
         return newSet;
       });
+
+      showNotification('warning', 'Nawyk usunięty lokalnie', 'Offline');
 
     } finally {
       setLoading(false);
@@ -473,6 +560,11 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
 
     return (
       <div className="habit-tracker">
+        <NotificationContainer
+          notifications={notifications}
+          onRemove={removeNotification}
+        />
+
         <div className="habit-tracker-container">
           {/* Nagłówek z przyciskiem powrotu i wycentrowanym logo */}
           <div className="habit-header">
@@ -602,6 +694,11 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
   // Renderowanie głównego widoku listy nawyków
   return (
     <div className="habit-tracker">
+      <NotificationContainer
+        notifications={notifications}
+        onRemove={removeNotification}
+      />
+
       <div className="habit-tracker-container">
         {/* Nagłówek z wycentrowanym logo i monetami */}
         <div className="habit-header">

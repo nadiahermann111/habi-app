@@ -722,3 +722,171 @@
     transition: none;
   }
 }
+
+
+.notification-container {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 80px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  width: 90%;
+  max-width: 400px;
+  pointer-events: none;
+}
+
+.notification {
+  background: white;
+  padding: 20px 24px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  animation: slideDown 0.3s ease-out;
+  pointer-events: auto;
+  border: 2px solid #f4d03f;
+}
+
+.notification.success {
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  border-color: #28a745;
+}
+
+.notification.error {
+  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+  border-color: #dc3545;
+}
+
+.notification.warning {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border-color: #ffc107;
+}
+
+.notification.info {
+  background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+  border-color: #17a2b8;
+}
+
+.notification-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: #2c3e50;
+  margin: 0 0 4px 0;
+}
+
+.notification-message {
+  font-size: 14px;
+  color: #6c757d;
+  margin: 0;
+  line-height: 1.4;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notification.exit {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+/* Responsywność dla mniejszych ekranów */
+@media (max-width: 480px) {
+  .notification-container {
+    width: 95%;
+    top: calc(env(safe-area-inset-top, 0px) + 70px);
+  }
+
+  .notification {
+    padding: 16px 20px;
+  }
+
+  .notification-icon {
+    font-size: 28px;
+  }
+
+  .notification-title {
+    font-size: 15px;
+  }
+
+  .notification-message {
+    font-size: 13px;
+  }
+}
+
+/* Wsparcie dla trybu ciemnego */
+@media (prefers-color-scheme: dark) {
+  .notification {
+    background: #2d3748;
+    border-color: #f4d03f;
+  }
+
+  .notification.success {
+    background: linear-gradient(135deg, #1e4620 0%, #2d5a2e 100%);
+    border-color: #48bb78;
+  }
+
+  .notification.error {
+    background: linear-gradient(135deg, #742a2a 0%, #9b2c2c 100%);
+    border-color: #fc8181;
+  }
+
+  .notification.warning {
+    background: linear-gradient(135deg, #744210 0%, #975a16 100%);
+    border-color: #d69e2e;
+  }
+
+  .notification.info {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+    border-color: #4299e1;
+  }
+
+  .notification-title {
+    color: #e2e8f0;
+  }
+
+  .notification-message {
+    color: #a0aec0;
+  }
+}
+
+/* Redukcja ruchu dla użytkowników z preferencją */
+@media (prefers-reduced-motion: reduce) {
+  .notification {
+    animation: none;
+  }
+
+  .notification.exit {
+    animation: none;
+    opacity: 0;
+  }
+}

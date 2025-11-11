@@ -38,6 +38,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
   const [ownedClothes, setOwnedClothes] = useState([]);
   const [clothingItems, setClothingItems] = useState([]);
   const [fetchingData, setFetchingData] = useState(true);
+  const [processingItemId, setProcessingItemId] = useState(null); // ✅ Dodane: śledzimy które ubranie jest przetwarzane
 
   const API_BASE_URL = 'https://habi-backend.onrender.com';
 
@@ -238,7 +239,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
 
     } catch (error) {
       console.error('❌ Błąd updateCurrentClothing:', error);
-      alert(`Nie udało się zmienić ubrania: ${error.message}`);
+      setError(`Nie udało się zmienić ubrania: ${error.message}`);
 
       // NIE zapisuj lokalnie jeśli backend odmówił
       // Odśwież dane z backendu
@@ -247,20 +248,28 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
   };
 
   const handlePurchase = async (item) => {
+    // ✅ Sprawdź czy już coś nie jest przetwarzane
+    if (loading || processingItemId) {
+      console.log('⏳ Transakcja w toku, czekaj...');
+      return;
+    }
+
     console.log(`🛒 Próba zakupu ${item.name} za ${item.cost} monet`);
     setError(null);
 
     if (ownedClothes.includes(item.id)) {
-      alert(`Już posiadasz ${item.name}!`);
+      setError(`Już posiadasz ${item.name}!`);
       return;
     }
 
     if (currentCoins < item.cost) {
-      alert(`Potrzebujesz ${item.cost} monet, ale masz tylko ${currentCoins}!`);
+      setError(`Potrzebujesz ${item.cost} monet, ale masz tylko ${currentCoins}!`);
       return;
     }
 
+    // ✅ Ustawiamy loading globalny i dla konkretnego itemu
     setLoading(true);
+    setProcessingItemId(item.id);
 
     try {
       const token = localStorage.getItem('token');
@@ -316,14 +325,15 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       console.error('❌ Błąd handlePurchase:', error);
       const errorMsg = error.message || 'Błąd podczas zakupu';
       setError(errorMsg);
-      alert(errorMsg);
     } finally {
+      // ✅ Zawsze resetuj loading i processingItemId
       setLoading(false);
+      setProcessingItemId(null);
     }
   };
 
   const handleClothingSelect = async (item) => {
-    if (ownedClothes.includes(item.id)) {
+    if (ownedClothes.includes(item.id) && currentClothing !== item.id) {
       console.log(`👗 Ręczna zmiana na ${item.name} (ID: ${item.id})`);
 
       // 🔊 ODTWÓRZ DŹWIĘK PRZY ZMIANIE UBRANIA
@@ -439,18 +449,30 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
         <div className="clothing-slider-container">
           <div className="clothing-items-slider">
             {clothingItems.map(item => {
-              const canAfford = currentCoins >= item.cost && !loading;
+              // ✅ Item jest disabled jeśli: brak monet, globalny loading, lub ten konkretny item jest przetwarzany
+              const isProcessing = processingItemId === item.id;
+              const canAfford = currentCoins >= item.cost;
               const isOwned = ownedClothes.includes(item.id);
               const isWearing = currentClothing === item.id;
+              const isDisabled = !canAfford && !isOwned;
 
               return (
                 <div
                   key={item.id}
-                  className={`clothing-item ${!canAfford && !isOwned ? 'disabled' : ''} ${loading ? 'loading' : ''} ${isOwned ? 'owned' : ''} ${isWearing ? 'wearing' : ''}`}
-                  onClick={() => !isOwned && canAfford && handlePurchase(item)}
+                  className={`clothing-item ${isDisabled ? 'disabled' : ''} ${isProcessing ? 'loading' : ''} ${isOwned ? 'owned' : ''} ${isWearing ? 'wearing' : ''}`}
+                  onClick={() => {
+                    if (isProcessing || loading) return;
+                    if (!isOwned && canAfford) {
+                      handlePurchase(item);
+                    }
+                  }}
                   style={{
-                    cursor: (!isOwned && canAfford) ? 'pointer' : (isOwned ? 'pointer' : 'not-allowed'),
-                    border: isWearing ? '3px solid #4CAF50' : undefined
+                    cursor: (isProcessing || loading) ? 'not-allowed' :
+                            (!isOwned && canAfford) ? 'pointer' :
+                            (isOwned && !isWearing) ? 'pointer' :
+                            'default',
+                    border: isWearing ? '3px solid #4CAF50' : undefined,
+                    pointerEvents: (isProcessing || loading || isWearing) ? 'none' : 'auto' // ✅ Dodatkowa blokada
                   }}
                 >
                   <div className="clothing-item-price">
@@ -464,16 +486,18 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
 
                   <div className="clothing-item-name">{item.name}</div>
 
-                  {!canAfford && !isOwned && (
+                  {isDisabled && !isProcessing && (
                     <div className="clothing-item-overlay">
-                      <span>{loading ? 'Kupowanie...' : 'Brak monet'}</span>
+                      <span>Brak monet</span>
                     </div>
                   )}
 
                   {isOwned && !isWearing && (
                     <div className="clothing-item-overlay owned-overlay" onClick={(e) => {
                       e.stopPropagation();
-                      handleClothingSelect(item);
+                      if (!loading && !processingItemId) {
+                        handleClothingSelect(item);
+                      }
                     }}>
                       <span>✅ Posiadane<br/>Kliknij aby założyć</span>
                     </div>
