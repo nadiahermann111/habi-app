@@ -318,8 +318,8 @@
 }
 
 .habi-image {
-  width: 280px;
-  height: 280px;
+  width: 400px;
+  height: 400px;
   object-fit: contain;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
   animation: float-habi 3s ease-in-out infinite;
@@ -599,8 +599,8 @@
   }
 
   .habi-image {
-    width: 300px;
-    height: 300px;
+    width: 350px;
+    height: 350px;
   }
 
   .wardrobe-info {
@@ -703,8 +703,8 @@
   }
 
   .habi-image {
-    width: 120px;
-    height: 120px;
+    width: 200px;
+    height: 200px;
   }
 
   .wardrobe-info {
