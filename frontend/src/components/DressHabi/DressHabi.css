@@ -147,7 +147,6 @@
   box-sizing: border-box;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  overflow: hidden; /* ✅ NAPRAWKA - zapobiega powiększaniu przez ::after */
 }
 
 /* ✅ KLUCZOWA ZMIANA: Hover tylko gdy NIE disabled, NIE loading i NIE owned */
@@ -168,8 +167,8 @@
   cursor: not-allowed;
   background: #f3f4f6;
   border-color: #d1d5db;
-  pointer-events: none;
-  transform: none !important;
+  pointer-events: none; /* Blokuje wszystkie interakcje */
+  transform: none !important; /* Wymusza brak transformacji */
 }
 
 /* ✅ KLUCZOWA ZMIANA: Owned ma delikatny hover */
@@ -189,8 +188,8 @@
   opacity: 0.6;
   cursor: not-allowed;
   position: relative;
-  pointer-events: none;
-  transform: none !important;
+  pointer-events: none; /* Blokuje wszystkie interakcje */
+  transform: none !important; /* Wymusza brak transformacji */
 }
 
 .clothing-item.loading::after {
@@ -208,7 +207,6 @@
   align-items: center;
   justify-content: center;
   animation: spin 1s linear infinite;
-  z-index: 10; /* ✅ NAPRAWKA - zapewnia że ikona jest na wierzchu */
 }
 
 .clothing-item-overlay {
@@ -228,13 +226,13 @@
   text-align: center;
   padding: 8px;
   box-sizing: border-box;
-  pointer-events: none;
+  pointer-events: none; /* Domyślnie overlay nie blokuje kliknięć */
 }
 
 .clothing-item-overlay.owned-overlay {
   background: rgba(76, 175, 80, 0.85);
   color: white;
-  pointer-events: auto;
+  pointer-events: auto; /* Owned overlay reaguje na kliknięcia */
   cursor: pointer;
 }
 
@@ -244,7 +242,7 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  pointer-events: none;
+  pointer-events: none; /* Zapobiega interakcjom z obrazkiem */
 }
 
 .clothing-item-price {
@@ -259,7 +257,7 @@
   width: 100%;
   box-sizing: border-box;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  pointer-events: none;
+  pointer-events: none; /* Zapobiega interakcjom z ceną */
 }
 
 .coin-icon {
@@ -276,7 +274,7 @@
   font-size: 64px;
   transition: transform 0.3s ease;
   line-height: 1;
-  pointer-events: none;
+  pointer-events: none; /* Zapobiega interakcjom z emoji */
 }
 
 /* ✅ POPRAWKA: Emoji skaluje się tylko gdy parent NIE jest disabled/loading/owned */
@@ -296,7 +294,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none;
+  pointer-events: none; /* Zapobiega interakcjom z nazwą */
 }
 
 /* Habi Character Section */
@@ -515,7 +513,7 @@
   border: 3px solid #4CAF50 !important;
   box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
   transform: scale(1.05);
-  pointer-events: none;
+  pointer-events: none; /* Obecnie noszone nie reagują na kliknięcia */
 }
 
 /* Overlay dla obecnie założonych ubrań */

@@ -7,7 +7,7 @@ import FeedHabi from '../FeedHabi/FeedHabi.jsx';
 import DressHabi from '../DressHabi/DressHabi.jsx';
 import HabiSection from '../HabiSection/HabiSection';
 import SlotMachine from '../SlotMachine/SlotMachine.jsx';
-import { clothingStorage } from '../../utils/clothingHelper';
+import { clothingStorage } from '../../utils/clothingHelper'; // ← NOWY IMPORT
 import './Dashboard.css';
 
 const Dashboard = ({ user, onLogout }) => {
@@ -16,7 +16,7 @@ const Dashboard = ({ user, onLogout }) => {
   const [error, setError] = useState('');
   const [currentView, setCurrentView] = useState('dashboard');
   const [isSlotMachineOpen, setIsSlotMachineOpen] = useState(false);
-  const [currentClothing, setCurrentClothing] = useState(null);
+  const [currentClothing, setCurrentClothing] = useState(null); // ← NOWY STAN
 
   // Wczytaj obecnie założone ubranie przy montowaniu
   useEffect(() => {
@@ -113,7 +113,7 @@ const Dashboard = ({ user, onLogout }) => {
     }));
   };
 
-  // Callback do zmiany ubrania
+  // ← NOWA FUNKCJA: Callback do zmiany ubrania
   const handleClothingChange = (clothingId) => {
     console.log('👗 Zmiana ubrania na ID:', clothingId);
     setCurrentClothing(clothingId);
@@ -125,7 +125,7 @@ const Dashboard = ({ user, onLogout }) => {
     }));
   };
 
-  // Funkcja obsługująca wygrane monety z automatu
+  // Funkcja obsługująca wygrane monety z koła fortuny
   const handleWinCoins = async (amount) => {
     try {
       const result = await authAPI.addCoins(amount);
@@ -219,7 +219,7 @@ const Dashboard = ({ user, onLogout }) => {
         onBack={handleBackToDashboard}
         userCoins={profile?.coins || 0}
         onCoinsUpdate={handleCoinsUpdate}
-        currentClothing={currentClothing}
+        currentClothing={currentClothing} // ← PRZEKAŻ PROP
       />
     );
   }
@@ -232,8 +232,8 @@ const Dashboard = ({ user, onLogout }) => {
         onBack={handleBackToDashboard}
         userCoins={profile?.coins || 0}
         onCoinsUpdate={handleCoinsUpdate}
-        currentClothing={currentClothing}
-        onClothingChange={handleClothingChange}
+        currentClothing={currentClothing}           // ← PRZEKAŻ PROP
+        onClothingChange={handleClothingChange}     // ← PRZEKAŻ CALLBACK
       />
     );
   }
@@ -259,7 +259,7 @@ const Dashboard = ({ user, onLogout }) => {
             <h1 className="welcome-message">Cześć {profile.username}! 👋</h1>
           </div>
 
-          {/* Komponent wyświetlający wirtualnego zwierzaka Habi */}
+          {/* Komponent wyświetlający wirtualnego zwierzaka Habi - PRZEKAŻ PROP */}
           <HabiSection currentClothing={currentClothing} />
 
           {/* Sekcja z przyciskami szybkich akcji */}
@@ -298,14 +298,14 @@ const Dashboard = ({ user, onLogout }) => {
         </div>
       )}
 
-      {/* Automat jako popup modal - ✅ POPRAWIONE */}
+      {/* Automat jako popup modal */}
       <SlotMachine
-        isOpen={isSlotMachineOpen}
-        onClose={handleCloseFortuneWheel}
-        onWinCoins={handleWinCoins}
-        userCoins={profile?.coins || 0}
-        userId={profile?.id}
-        username={profile?.username}
+        isOpen={isSlotOpen}
+        onClose={() => setIsSlotOpen(false)}
+        onWinCoins={(coins) => handleWin(coins)}
+        userCoins={user.coins}
+        userId={user.id}
+        username={user.username}  // ← DODAJ TO!
       />
     </div>
   );
