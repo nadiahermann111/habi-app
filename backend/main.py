@@ -1,13 +1,11 @@
 import os
 import sys
-from fastapi import FastAPI, HTTPException, Header, Cookie, Response
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from datetime import datetime, date, timedelta
-from typing import List, Optional
+from datetime import datetime, date
+from typing import List
 import calendar
-import secrets
-from jose import jwt, JWTError
 
 # importowanie modułów aplikacji
 try:
@@ -41,122 +39,22 @@ try:
 except Exception as e:
     print(f"❌ Failed to import auth.py: {e}")
 
-# ========================================
-# KONFIGURACJA SESJI
-# ========================================
-
-SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "your-super-secret-key-change-this-in-production")
-
-
-def create_session_tokens(user_id: int):
-    """
-    Tworzy parę tokenów: access token (krótkotrwały) i refresh token (długotrwały)
-    """
-    # Access token - ważny 1 godzinę
-    access_payload = {
-        "user_id": user_id,
-        "type": "access",
-        "exp": datetime.utcnow() + timedelta(hours=1)
-    }
-    access_token = jwt.encode(access_payload, SECRET_KEY, algorithm="HS256")
-
-    # Refresh token - ważny 30 dni
-    refresh_payload = {
-        "user_id": user_id,
-        "type": "refresh",
-        "exp": datetime.utcnow() + timedelta(days=30)
-    }
-    refresh_token = jwt.encode(refresh_payload, SECRET_KEY, algorithm="HS256")
-
-    # Session token - unikalny identyfikator sesji
-    session_token = secrets.token_urlsafe(32)
-
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "session_token": session_token
-    }
-
-
-async def save_session(user_id: int, session_token: str, refresh_token: str, device_info: str = None):
-    """
-    Zapisuje sesję w bazie danych
-    """
-    async with aiosqlite.connect("database.db") as db:
-        await db.execute("PRAGMA foreign_keys = ON")
-
-        now = datetime.utcnow()
-        expires_at = now + timedelta(days=30)
-
-        await db.execute("""
-                         INSERT INTO user_sessions
-                         (user_id, session_token, refresh_token, created_at, expires_at, last_used_at, device_info,
-                          is_active)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, 1)
-                         """, (
-                             user_id,
-                             session_token,
-                             refresh_token,
-                             now.isoformat(),
-                             expires_at.isoformat(),
-                             now.isoformat(),
-                             device_info
-                         ))
-        await db.commit()
-
-
-async def verify_session(session_token: str):
-    """
-    Weryfikuje czy sesja jest aktywna
-    """
-    async with aiosqlite.connect("database.db") as db:
-        db.row_factory = aiosqlite.Row
-
-        cursor = await db.execute("""
-                                  SELECT user_id, expires_at, is_active
-                                  FROM user_sessions
-                                  WHERE session_token = ?
-                                  """, (session_token,))
-
-        session = await cursor.fetchone()
-
-        if not session:
-            return None
-
-        if not session["is_active"]:
-            return None
-
-        expires_at = datetime.fromisoformat(session["expires_at"])
-        if datetime.utcnow() > expires_at:
-            return None
-
-        # Aktualizuj last_used_at
-        await db.execute("""
-                         UPDATE user_sessions
-                         SET last_used_at = ?
-                         WHERE session_token = ?
-                         """, (datetime.utcnow().isoformat(), session_token))
-        await db.commit()
-
-        return session["user_id"]
-
-
-# ========================================
-# LIFECYCLE APLIKACJI
-# ========================================
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
     Zarządza cyklem życia aplikacji FastAPI.
+
+    Wykonuje inicjalizację bazy danych podczas uruchamiania
+    i czyści zasoby podczas zamykania aplikacji.
     """
     # uruchamianie aplikacji
     try:
         await init_db()
         print("✅ Database initialized")
 
+        # ✅ SPRAWDŹ I DODAJ KOLUMNĘ current_clothing_id JEŚLI NIE ISTNIEJE
         async with aiosqlite.connect("database.db") as db:
-            # Sprawdź i dodaj kolumnę current_clothing_id
             try:
                 cursor = await db.execute("PRAGMA table_info(users)")
                 columns = await cursor.fetchall()
@@ -172,63 +70,6 @@ async def lifespan(app: FastAPI):
             except Exception as e:
                 print(f"⚠️ Błąd przy sprawdzaniu/dodawaniu kolumny: {e}")
 
-            # Utwórz tabelę dla trwałych sesji
-            try:
-                await db.execute("""
-                                 CREATE TABLE IF NOT EXISTS user_sessions
-                                 (
-                                     id
-                                     INTEGER
-                                     PRIMARY
-                                     KEY
-                                     AUTOINCREMENT,
-                                     user_id
-                                     INTEGER
-                                     NOT
-                                     NULL,
-                                     session_token
-                                     TEXT
-                                     UNIQUE
-                                     NOT
-                                     NULL,
-                                     refresh_token
-                                     TEXT
-                                     UNIQUE
-                                     NOT
-                                     NULL,
-                                     created_at
-                                     TEXT
-                                     NOT
-                                     NULL,
-                                     expires_at
-                                     TEXT
-                                     NOT
-                                     NULL,
-                                     last_used_at
-                                     TEXT
-                                     NOT
-                                     NULL,
-                                     device_info
-                                     TEXT,
-                                     is_active
-                                     INTEGER
-                                     DEFAULT
-                                     1,
-                                     FOREIGN
-                                     KEY
-                                 (
-                                     user_id
-                                 ) REFERENCES users
-                                 (
-                                     id
-                                 ) ON DELETE CASCADE
-                                     )
-                                 """)
-                await db.commit()
-                print("✅ Tabela user_sessions utworzona/sprawdzona")
-            except Exception as e:
-                print(f"⚠️ Błąd przy tworzeniu tabeli sesji: {e}")
-
     except Exception as e:
         print(f"❌ Database initialization failed: {e}")
     yield
@@ -236,10 +77,7 @@ async def lifespan(app: FastAPI):
     print("👋 Shutting down")
 
 
-# ========================================
-# INICJALIZACJA APLIKACJI
-# ========================================
-
+# inicjalizacja aplikacji FastAPI
 app = FastAPI(
     title="Habi API",
     description="API dla aplikacji do śledzenia nawyków z wirtualną małpką",
@@ -247,13 +85,14 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# konfiguracja CORS
+# konfiguracja CORS (mechanizm umożliwiający bezpieczny dostęp do zasobów) dla komunikacji z frontendem
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://nadiahermann111.github.io",
         "http://localhost:3000",
         "http://localhost:5173",
+        "*"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -261,9 +100,7 @@ app.add_middleware(
 )
 
 
-# ========================================
-# PODSTAWOWE ENDPOINTY
-# ========================================
+# podstawowe endpointy i testy
 
 @app.get("/")
 async def root():
@@ -279,7 +116,12 @@ async def health():
 
 @app.get("/api/test-db")
 async def test_db():
-    """Testuje połączenie z bazą danych."""
+    """
+    Testuje połączenie z bazą danych.
+
+    Returns:
+        dict: Status połączenia i lista tabel w bazie danych
+    """
     try:
         async with aiosqlite.connect("database.db") as db:
             cursor = await db.execute("SELECT name FROM sqlite_master WHERE type='table'")
@@ -295,30 +137,37 @@ async def test_db():
         }
 
 
-# ========================================
-# ENDPOINTY UŻYTKOWNIKÓW
-# ========================================
+# endpointy użytkowników
 
 @app.post("/api/register", response_model=LoginResponse)
-async def register(user_data: UserRegister, response: Response):
+async def register(user_data: UserRegister):
     """
-    Rejestruje nowego użytkownika z trwałą sesją.
+    Rejestruje nowego użytkownika w systemie.
+
+    Args:
+        user_data (UserRegister): Dane rejestracyjne użytkownika
+
+    Returns:
+        LoginResponse: Token autoryzacyjny i dane użytkownika
+
+    Raises:
+        HTTPException: Gdy email lub username już istnieje
     """
     async with aiosqlite.connect("database.db") as db:
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
-        # Sprawdź email
+        # sprawdzenie unikalności emaila
         cursor = await db.execute("SELECT id FROM users WHERE email = ?", (user_data.email,))
         if await cursor.fetchone():
             raise HTTPException(status_code=400, detail="Email już jest zajęty")
 
-        # Sprawdź username
+        # sprawdzenie czy nazwa użytkownika już istnieje w bazie
         cursor = await db.execute("SELECT id FROM users WHERE username = ?", (user_data.username,))
         if await cursor.fetchone():
             raise HTTPException(status_code=400, detail="Username już jest zajęty")
 
-        # Utwórz użytkownika
+        # tworzenie nowego użytkownika z zahashowanym hasłem
         hashed_password = hash_password(user_data.password)
         cursor = await db.execute(
             "INSERT INTO users (username, email, password_hash, coins) VALUES (?, ?, ?, ?)",
@@ -328,60 +177,47 @@ async def register(user_data: UserRegister, response: Response):
 
         user_id = cursor.lastrowid
 
-        # Pobierz dane użytkownika
+        # pobranie danych utworzonego użytkownika
         cursor = await db.execute(
             "SELECT id, username, email, coins FROM users WHERE id = ?",
             (user_id,)
         )
         user = await cursor.fetchone()
 
-    # Utwórz tokeny sesji
-    tokens = create_session_tokens(user_id)
+        # generowanie tokenu autoryzacyjnego i przypisanie id userowi
+        token = create_token(user_id)
 
-    # Zapisz sesję w bazie
-    await save_session(user_id, tokens["session_token"], tokens["refresh_token"])
-
-    # Ustaw cookies
-    response.set_cookie(
-        key="refresh_token",
-        value=tokens["refresh_token"],
-        httponly=True,
-        secure=True,
-        samesite="none",
-        max_age=30 * 24 * 60 * 60  # 30 dni
-    )
-
-    response.set_cookie(
-        key="session_token",
-        value=tokens["session_token"],
-        httponly=True,
-        secure=True,
-        samesite="none",
-        max_age=30 * 24 * 60 * 60
-    )
-
-    return LoginResponse(
-        message="Rejestracja udana",
-        token=tokens["access_token"],
-        user=UserResponse(
-            id=user["id"],
-            username=user["username"],
-            email=user["email"],
-            coins=user["coins"]
+        return LoginResponse(
+            message="Rejestracja udana",
+            token=token,
+            user=UserResponse(
+                id=user["id"],
+                username=user["username"],
+                email=user["email"],
+                coins=user["coins"]
+            )
         )
-    )
 
 
 @app.post("/api/login", response_model=LoginResponse)
-async def login(login_data: UserLogin, response: Response):
+async def login(login_data: UserLogin):
     """
-    Loguje użytkownika z trwałą sesją.
+    Loguje użytkownika do systemu.
+
+    Args:
+        login_data (UserLogin): Dane logowania (email i hasło)
+
+    Returns:
+        LoginResponse: Token autoryzacyjny i dane użytkownika
+
+    Raises:
+        HTTPException: Gdy dane logowania są nieprawidłowe
     """
     async with aiosqlite.connect("database.db") as db:
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
-        # Znajdź użytkownika
+        # wyszukanie użytkownika po emailu
         cursor = await db.execute(
             "SELECT id, username, email, password_hash, coins FROM users WHERE email = ?",
             (login_data.email,)
@@ -391,224 +227,39 @@ async def login(login_data: UserLogin, response: Response):
         if not user:
             raise HTTPException(status_code=401, detail="Nieprawidłowy email lub hasło")
 
-        # Weryfikuj hasło
+        # weryfikacja hasła
         if not verify_password(login_data.password, user["password_hash"]):
             raise HTTPException(status_code=401, detail="Nieprawidłowy email lub hasło")
 
-        user_id = user["id"]
+        # generowanie tokenu autoryzacyjnego
+        token = create_token(user["id"])
 
-    # Utwórz tokeny sesji
-    tokens = create_session_tokens(user_id)
-
-    # Zapisz sesję w bazie
-    await save_session(user_id, tokens["session_token"], tokens["refresh_token"])
-
-    # Ustaw cookies
-    response.set_cookie(
-        key="refresh_token",
-        value=tokens["refresh_token"],
-        httponly=True,
-        secure=True,
-        samesite="none",
-        max_age=30 * 24 * 60 * 60
-    )
-
-    response.set_cookie(
-        key="session_token",
-        value=tokens["session_token"],
-        httponly=True,
-        secure=True,
-        samesite="none",
-        max_age=30 * 24 * 60 * 60
-    )
-
-    return LoginResponse(
-        message="Logowanie udane",
-        token=tokens["access_token"],
-        user=UserResponse(
-            id=user["id"],
-            username=user["username"],
-            email=user["email"],
-            coins=user["coins"]
+        return LoginResponse(
+            message="Logowanie udane",
+            token=token,
+            user=UserResponse(
+                id=user["id"],
+                username=user["username"],
+                email=user["email"],
+                coins=user["coins"]
+            )
         )
-    )
-
-
-@app.post("/api/refresh")
-async def refresh_token(
-        refresh_token: Optional[str] = Cookie(None),
-        session_token: Optional[str] = Cookie(None)
-):
-    """
-    Odświeża wygasły access token używając refresh tokenu.
-    """
-    if not refresh_token or not session_token:
-        raise HTTPException(status_code=401, detail="Brak tokenów sesji")
-
-    try:
-        # Weryfikuj refresh token
-        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=["HS256"])
-
-        if payload.get("type") != "refresh":
-            raise HTTPException(status_code=401, detail="Nieprawidłowy typ tokenu")
-
-        user_id = payload.get("user_id")
-
-        # Sprawdź czy sesja istnieje i jest aktywna
-        async with aiosqlite.connect("database.db") as db:
-            db.row_factory = aiosqlite.Row
-
-            cursor = await db.execute("""
-                                      SELECT user_id, is_active, expires_at
-                                      FROM user_sessions
-                                      WHERE session_token = ?
-                                        AND refresh_token = ?
-                                      """, (session_token, refresh_token))
-
-            session = await cursor.fetchone()
-
-            if not session or not session["is_active"]:
-                raise HTTPException(status_code=401, detail="Sesja nieaktywna lub nie istnieje")
-
-            expires_at = datetime.fromisoformat(session["expires_at"])
-            if datetime.utcnow() > expires_at:
-                raise HTTPException(status_code=401, detail="Sesja wygasła")
-
-        # Utwórz nowy access token
-        new_access_token = jwt.encode({
-            "user_id": user_id,
-            "type": "access",
-            "exp": datetime.utcnow() + timedelta(hours=1)
-        }, SECRET_KEY, algorithm="HS256")
-
-        # Aktualizuj last_used_at
-        async with aiosqlite.connect("database.db") as db:
-            await db.execute("""
-                             UPDATE user_sessions
-                             SET last_used_at = ?
-                             WHERE session_token = ?
-                             """, (datetime.utcnow().isoformat(), session_token))
-            await db.commit()
-
-        return {
-            "access_token": new_access_token,
-            "message": "Token odświeżony pomyślnie"
-        }
-
-    except JWTError as e:
-        # Obsługa wszystkich błędów JWT (wygasły token, nieprawidłowy token, itp.)
-        error_msg = str(e)
-        if "expired" in error_msg.lower():
-            raise HTTPException(status_code=401, detail="Refresh token wygasł")
-        else:
-            raise HTTPException(status_code=401, detail="Nieprawidłowy refresh token")
-
-
-@app.post("/api/logout")
-async def logout(
-        session_token: Optional[str] = Cookie(None),
-        response: Response = None
-):
-    """
-    Wylogowuje użytkownika i usuwa sesję.
-    """
-    if session_token:
-        async with aiosqlite.connect("database.db") as db:
-            await db.execute("""
-                             UPDATE user_sessions
-                             SET is_active = 0
-                             WHERE session_token = ?
-                             """, (session_token,))
-            await db.commit()
-
-    # Usuń cookies
-    response.delete_cookie("refresh_token")
-    response.delete_cookie("session_token")
-
-    return {"message": "Wylogowano pomyślnie"}
-
-
-@app.get("/api/sessions")
-async def get_user_sessions(authorization: str = Header(None)):
-    """
-    Pobiera listę aktywnych sesji użytkownika.
-    """
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
-
-    token = authorization.replace("Bearer ", "")
-    user_id = verify_token(token)
-
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
-
-    async with aiosqlite.connect("database.db") as db:
-        db.row_factory = aiosqlite.Row
-
-        cursor = await db.execute("""
-                                  SELECT id, device_info, created_at, last_used_at, expires_at
-                                  FROM user_sessions
-                                  WHERE user_id = ?
-                                    AND is_active = 1
-                                  ORDER BY last_used_at DESC
-                                  """, (user_id,))
-
-        sessions = await cursor.fetchall()
-
-        return {
-            "sessions": [
-                {
-                    "id": s["id"],
-                    "device": s["device_info"] or "Nieznane urządzenie",
-                    "created_at": s["created_at"],
-                    "last_used": s["last_used_at"],
-                    "expires_at": s["expires_at"]
-                }
-                for s in sessions
-            ]
-        }
-
-
-@app.delete("/api/sessions/{session_id}")
-async def revoke_session(session_id: int, authorization: str = Header(None)):
-    """
-    Usuwa konkretną sesję (wylogowanie z urządzenia).
-    """
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
-
-    token = authorization.replace("Bearer ", "")
-    user_id = verify_token(token)
-
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
-
-    async with aiosqlite.connect("database.db") as db:
-        # Sprawdź czy sesja należy do użytkownika
-        cursor = await db.execute("""
-                                  SELECT id
-                                  FROM user_sessions
-                                  WHERE id = ?
-                                    AND user_id = ?
-                                  """, (session_id, user_id))
-
-        if not await cursor.fetchone():
-            raise HTTPException(status_code=404, detail="Sesja nie znaleziona")
-
-        # Dezaktywuj sesję
-        await db.execute("""
-                         UPDATE user_sessions
-                         SET is_active = 0
-                         WHERE id = ?
-                         """, (session_id,))
-        await db.commit()
-
-        return {"message": "Sesja usunięta pomyślnie"}
 
 
 @app.get("/api/profile", response_model=UserResponse)
 async def get_profile(authorization: str = Header(None)):
-    """Pobiera profil zalogowanego użytkownika."""
+    """
+    Pobiera profil zalogowanego użytkownika.
+
+    Args:
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        UserResponse: Dane profilu użytkownika
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy lub użytkownik nie istnieje
+    """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -639,7 +290,18 @@ async def get_profile(authorization: str = Header(None)):
 
 @app.get("/api/coins")
 async def get_user_coins(authorization: str = Header(None)):
-    """Pobiera aktualną liczbę monet użytkownika."""
+    """
+    Pobiera aktualną liczbę monet użytkownika.
+
+    Args:
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        dict: Liczba monet i ID użytkownika
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy lub użytkownik nie istnieje
+    """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -665,7 +327,22 @@ async def get_user_coins(authorization: str = Header(None)):
 
 @app.post("/api/coins/add")
 async def add_coins(data: dict, authorization: str = Header(None)):
-    """Dodaje lub odejmuje monety użytkownika."""
+    """
+    Dodaje lub odejmuje monety użytkownika.
+
+    Obsługuje zarówno dodatnie wartości jak i ujemne, gdy użytkownik kupuje nagrody.
+
+    Args:
+        data (dict): Słownik zawierający pole 'amount' z liczbą monet
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        dict: Informacja o zmianie, nowa liczba monet i kwota zmiany
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy, kwota to 0,
+                      lub użytkownik ma niewystarczająco monet
+    """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -684,6 +361,7 @@ async def add_coins(data: dict, authorization: str = Header(None)):
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
+        # sprawdzenie obecnej liczby monet
         cursor = await db.execute(
             "SELECT coins FROM users WHERE id = ?",
             (user_id,)
@@ -696,21 +374,25 @@ async def add_coins(data: dict, authorization: str = Header(None)):
         current_coins = user["coins"]
         new_coins = current_coins + amount
 
+        # walidacja przy wydawaniu monet
         if amount < 0 and current_coins < abs(amount):
             raise HTTPException(
                 status_code=400,
                 detail=f"Niewystarczająco monet. Potrzebujesz {abs(amount)}, masz {current_coins}"
             )
 
+        # zabezpieczenie przed ujemną liczbą monet
         if new_coins < 0:
             raise HTTPException(status_code=400, detail="Liczba monet nie może być ujemna")
 
+        # aktualizacja liczby monet
         await db.execute(
             "UPDATE users SET coins = coins + ? WHERE id = ?",
             (amount, user_id)
         )
         await db.commit()
 
+        # pobranie zaktualizowanej liczby monet
         cursor = await db.execute(
             "SELECT coins FROM users WHERE id = ?",
             (user_id,)
@@ -729,7 +411,20 @@ async def add_coins(data: dict, authorization: str = Header(None)):
 
 @app.post("/api/coins/spend")
 async def spend_coins(data: dict, authorization: str = Header(None)):
-    """Wydaje monety użytkownika (dla funkcji FeedHabi)."""
+    """
+    Wydaje monety użytkownika (dla funkcji FeedHabi).
+
+    Args:
+        data (dict): Słownik zawierający pole 'amount' z liczbą monet do wydania
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        dict: Informacja o wydatku, pozostała liczba monet
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy, kwota <= 0,
+                      lub użytkownik ma niewystarczająco monet
+    """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -747,6 +442,7 @@ async def spend_coins(data: dict, authorization: str = Header(None)):
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
+        # sprawdzenie czy użytkownik ma wystarczająco monet
         cursor = await db.execute(
             "SELECT coins FROM users WHERE id = ?",
             (user_id,)
@@ -762,12 +458,14 @@ async def spend_coins(data: dict, authorization: str = Header(None)):
                 detail=f"Niewystarczająco monet. Potrzebujesz {amount}, masz {user['coins']}"
             )
 
+        # odjęcie monet
         await db.execute(
             "UPDATE users SET coins = coins - ? WHERE id = ?",
             (amount, user_id)
         )
         await db.commit()
 
+        # pobranie nowej liczby monet
         cursor = await db.execute(
             "SELECT coins FROM users WHERE id = ?",
             (user_id,)
@@ -783,7 +481,12 @@ async def spend_coins(data: dict, authorization: str = Header(None)):
 
 @app.get("/api/users")
 async def get_users():
-    """Pobiera listę wszystkich użytkowników w systemie."""
+    """
+    Pobiera listę wszystkich użytkowników w systemie.
+
+    Returns:
+        dict: Lista użytkowników z ich podstawowymi danymi
+    """
     async with aiosqlite.connect("database.db") as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute("SELECT id, username, email, coins, created_at FROM users")
@@ -793,13 +496,24 @@ async def get_users():
         }
 
 
-# ========================================
-# ENDPOINTY NAWYKÓW
-# ========================================
+# endpointy nawyków
 
 @app.post("/api/habits")
 async def create_habit(habit_data: HabitCreate, authorization: str = Header(None)):
-    """Tworzy nowy nawyk dla zalogowanego użytkownika."""
+    """
+    Tworzy nowy nawyk dla zalogowanego użytkownika.
+
+    Args:
+        habit_data (HabitCreate): Dane nowego nawyku
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        dict: Dane utworzonego nawyku
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy, nazwa nawyku jest pusta,
+                      lub wartość monet jest poza zakresem 1-5
+    """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -809,6 +523,7 @@ async def create_habit(habit_data: HabitCreate, authorization: str = Header(None
     if not user_id:
         raise HTTPException(status_code=401, detail="Nieprawidłowy token")
 
+    # walidacja danych nawyku
     if not habit_data.name.strip():
         raise HTTPException(status_code=400, detail="Nazwa nawyku jest wymagana")
 
@@ -819,6 +534,7 @@ async def create_habit(habit_data: HabitCreate, authorization: str = Header(None
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
+        # sprawdzenie i dodanie kolumny icon jeśli nie istnieje
         try:
             cursor = await db.execute("PRAGMA table_info(habits)")
             columns = await cursor.fetchall()
@@ -830,6 +546,7 @@ async def create_habit(habit_data: HabitCreate, authorization: str = Header(None
         except Exception as e:
             print(f"Error checking/adding icon column: {e}")
 
+        # dodanie nowego nawyku do bazy danych
         cursor = await db.execute(
             """INSERT INTO habits (user_id, name, description, reward_coins, icon, is_active, created_at)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
@@ -840,6 +557,7 @@ async def create_habit(habit_data: HabitCreate, authorization: str = Header(None
 
         habit_id = cursor.lastrowid
 
+        # pobranie utworzonego nawyku
         cursor = await db.execute(
             "SELECT id, user_id, name, description, reward_coins, is_active, created_at, icon FROM habits WHERE id = ?",
             (habit_id,)
@@ -860,7 +578,18 @@ async def create_habit(habit_data: HabitCreate, authorization: str = Header(None
 
 @app.get("/api/habits")
 async def get_user_habits(authorization: str = Header(None)):
-    """Pobiera wszystkie aktywne nawyki zalogowanego użytkownika."""
+    """
+    Pobiera wszystkie aktywne nawyki zalogowanego użytkownika wraz z datami ukończenia.
+
+    Args:
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        list: Lista nawyków użytkownika z datami ukończenia
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy
+    """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -873,6 +602,7 @@ async def get_user_habits(authorization: str = Header(None)):
     async with aiosqlite.connect("database.db") as db:
         db.row_factory = aiosqlite.Row
 
+        # sprawdzenie i dodanie kolumny jeśli nie istnieje
         try:
             cursor = await db.execute("PRAGMA table_info(habits)")
             columns = await cursor.fetchall()
@@ -884,6 +614,7 @@ async def get_user_habits(authorization: str = Header(None)):
         except Exception as e:
             print(f"Error checking/adding icon column: {e}")
 
+        # pobranie nawyków użytkownika z datami ukończenia
         cursor = await db.execute(
             """SELECT h.id,
                       h.name,
@@ -925,7 +656,20 @@ async def get_user_habits(authorization: str = Header(None)):
 
 @app.post("/api/habits/{habit_id}/complete")
 async def complete_habit(habit_id: int, authorization: str = Header(None)):
-    """Oznacza nawyk jako wykonany w dzisiejszym dniu."""
+    """
+    Oznacza nawyk jako wykonany w dzisiejszym dniu i przyznaje monety.
+
+    Args:
+        habit_id (int): ID nawyku do wykonania
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        dict: Informacja o wykonaniu nawyku, zarobione monety i nowa suma monet
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy, nawyk nie istnieje,
+                      lub nawyk już został wykonany dzisiaj
+    """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -941,6 +685,7 @@ async def complete_habit(habit_id: int, authorization: str = Header(None)):
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
+        # sprawdzenie czy nawyk istnieje i należy do użytkownika
         cursor = await db.execute(
             "SELECT id, name, reward_coins FROM habits WHERE id = ? AND user_id = ? AND is_active = 1",
             (habit_id, user_id)
@@ -950,6 +695,7 @@ async def complete_habit(habit_id: int, authorization: str = Header(None)):
         if not habit:
             raise HTTPException(status_code=404, detail="Nawyk nie znaleziony")
 
+        # sprawdzenie czy nawyk nie został już wykonany
         cursor = await db.execute(
             "SELECT id FROM habit_completions WHERE habit_id = ? AND user_id = ? AND completed_at = ?",
             (habit_id, user_id, today)
@@ -961,11 +707,13 @@ async def complete_habit(habit_id: int, authorization: str = Header(None)):
 
         coins_earned = habit["reward_coins"]
 
+        # dodanie wpisu o wykonaniu nawyku
         await db.execute(
             "INSERT INTO habit_completions (habit_id, user_id, completed_at, coins_earned) VALUES (?, ?, ?, ?)",
             (habit_id, user_id, today, coins_earned)
         )
 
+        # dodanie monet do konta użytkownika
         await db.execute(
             "UPDATE users SET coins = coins + ? WHERE id = ?",
             (coins_earned, user_id)
@@ -973,10 +721,12 @@ async def complete_habit(habit_id: int, authorization: str = Header(None)):
 
         await db.commit()
 
+    # Aktualizacja statystyk (poza główną transakcją)
     await update_habit_statistics(user_id, habit_id, today)
 
     async with aiosqlite.connect("database.db") as db:
         db.row_factory = aiosqlite.Row
+        # pobranie nowej liczby monet użytkownika
         cursor = await db.execute(
             "SELECT coins FROM users WHERE id = ?",
             (user_id,)
@@ -994,7 +744,22 @@ async def complete_habit(habit_id: int, authorization: str = Header(None)):
 
 @app.delete("/api/habits/{habit_id}")
 async def delete_habit(habit_id: int, authorization: str = Header(None)):
-    """Usuwa nawyk użytkownika (oznacza jako nieaktywny)."""
+    """
+    Usuwa nawyk użytkownika (oznacza jako nieaktywny).
+
+    Nawyk nie jest fizycznie usuwany z bazy danych, tylko oznaczany jako nieaktywny
+    w celu zachowania integralności danych historycznych.
+
+    Args:
+        habit_id (int): ID nawyku do usunięcia
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        dict: Potwierdzenie usunięcia nawyku
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy lub nawyk nie istnieje
+    """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -1007,6 +772,7 @@ async def delete_habit(habit_id: int, authorization: str = Header(None)):
     async with aiosqlite.connect("database.db") as db:
         await db.execute("PRAGMA foreign_keys = ON")
 
+        # sprawdzenie czy nawyk istnieje i należy do użytkownika
         cursor = await db.execute(
             "SELECT id FROM habits WHERE id = ? AND user_id = ?",
             (habit_id, user_id)
@@ -1014,6 +780,7 @@ async def delete_habit(habit_id: int, authorization: str = Header(None)):
         if not await cursor.fetchone():
             raise HTTPException(status_code=404, detail="Nawyk nie znaleziony")
 
+        # oznaczenie nawyku jako nieaktywny
         await db.execute(
             "UPDATE habits SET is_active = 0 WHERE id = ?",
             (habit_id,)
@@ -1024,12 +791,17 @@ async def delete_habit(habit_id: int, authorization: str = Header(None)):
 
 
 # ========================================
-# ENDPOINTY UBRAŃ
+# Endpointy dla ubrań - ZAKTUALIZOWANE
 # ========================================
 
 @app.get("/api/clothing")
 async def get_clothing_items():
-    """Pobiera wszystkie dostępne ubrania."""
+    """
+    Pobiera wszystkie dostępne ubrania.
+
+    Returns:
+        list: Lista wszystkich ubrań w systemie
+    """
     async with aiosqlite.connect("database.db") as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(
@@ -1041,7 +813,18 @@ async def get_clothing_items():
 
 @app.get("/api/clothing/owned")
 async def get_owned_clothing(authorization: str = Header(None)):
-    """Pobiera ubrania posiadane przez użytkownika."""
+    """
+    Pobiera ubrania posiadane przez użytkownika + aktualnie noszone ubranie.
+
+    Args:
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        dict: Lista ID posiadanych ubrań + ID aktualnie noszonego ubrania
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy
+    """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -1054,12 +837,14 @@ async def get_owned_clothing(authorization: str = Header(None)):
     async with aiosqlite.connect("database.db") as db:
         db.row_factory = aiosqlite.Row
 
+        # Pobierz posiadane ubrania
         cursor = await db.execute(
             "SELECT clothing_id FROM user_clothing WHERE user_id = ?",
             (user_id,)
         )
         owned = await cursor.fetchall()
 
+        # ✅ Pobierz aktualnie noszone ubranie
         cursor = await db.execute(
             "SELECT current_clothing_id FROM users WHERE id = ?",
             (user_id,)
@@ -1074,7 +859,20 @@ async def get_owned_clothing(authorization: str = Header(None)):
 
 @app.post("/api/clothing/purchase/{clothing_id}")
 async def purchase_clothing(clothing_id: int, authorization: str = Header(None)):
-    """Kupuje ubranie dla użytkownika."""
+    """
+    Kupuje ubranie dla użytkownika.
+
+    Args:
+        clothing_id (int): ID ubrania do zakupu
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        dict: Potwierdzenie zakupu, pozostałe monety i nazwa przedmiotu
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy, przedmiot nie istnieje,
+                      użytkownik już posiada przedmiot, lub ma za mało monet
+    """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -1088,6 +886,7 @@ async def purchase_clothing(clothing_id: int, authorization: str = Header(None))
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
+        # Sprawdzenie czy przedmiot istnieje
         cursor = await db.execute(
             "SELECT id, name, cost, icon FROM clothing_items WHERE id = ?",
             (clothing_id,)
@@ -1097,6 +896,7 @@ async def purchase_clothing(clothing_id: int, authorization: str = Header(None))
         if not clothing:
             raise HTTPException(status_code=404, detail="Przedmiot nie znaleziony")
 
+        # Sprawdzenie czy użytkownik już posiada ten przedmiot
         cursor = await db.execute(
             "SELECT id FROM user_clothing WHERE user_id = ? AND clothing_id = ?",
             (user_id, clothing_id)
@@ -1107,6 +907,7 @@ async def purchase_clothing(clothing_id: int, authorization: str = Header(None))
                 detail=f"Już posiadasz {clothing['name']}!"
             )
 
+        # Sprawdzenie czy użytkownik ma wystarczająco monet
         cursor = await db.execute(
             "SELECT coins FROM users WHERE id = ?",
             (user_id,)
@@ -1122,11 +923,13 @@ async def purchase_clothing(clothing_id: int, authorization: str = Header(None))
                 detail=f"Potrzebujesz {clothing['cost']} monet, ale masz tylko {user['coins']}!"
             )
 
+        # Odjęcie monet
         await db.execute(
             "UPDATE users SET coins = coins - ? WHERE id = ?",
             (clothing["cost"], user_id)
         )
 
+        # Dodanie przedmiotu do garderoby użytkownika
         await db.execute(
             "INSERT INTO user_clothing (user_id, clothing_id) VALUES (?, ?)",
             (user_id, clothing_id)
@@ -1134,6 +937,7 @@ async def purchase_clothing(clothing_id: int, authorization: str = Header(None))
 
         await db.commit()
 
+        # Pobranie nowej liczby monet
         cursor = await db.execute(
             "SELECT coins FROM users WHERE id = ?",
             (user_id,)
@@ -1151,7 +955,20 @@ async def purchase_clothing(clothing_id: int, authorization: str = Header(None))
 
 @app.post("/api/clothing/wear/{clothing_id}")
 async def wear_clothing(clothing_id: int, authorization: str = Header(None)):
-    """Zmienia aktualnie noszone ubranie."""
+    """
+    Zmienia aktualnie noszone ubranie dla użytkownika.
+    ✅ NOWY ENDPOINT - rozwiązuje problem współdzielenia ubrań między użytkownikami
+
+    Args:
+        clothing_id (int): ID ubrania do założenia
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        dict: Potwierdzenie zmiany ubrania
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy lub użytkownik nie posiada ubrania
+    """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -1165,6 +982,7 @@ async def wear_clothing(clothing_id: int, authorization: str = Header(None)):
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
+        # Sprawdź czy użytkownik posiada to ubranie
         cursor = await db.execute(
             "SELECT id FROM user_clothing WHERE user_id = ? AND clothing_id = ?",
             (user_id, clothing_id)
@@ -1177,12 +995,14 @@ async def wear_clothing(clothing_id: int, authorization: str = Header(None)):
                 detail="Nie możesz założyć ubrania, którego nie posiadasz"
             )
 
+        # ✅ Zaktualizuj aktualnie noszone ubranie w bazie danych
         await db.execute(
             "UPDATE users SET current_clothing_id = ? WHERE id = ?",
             (clothing_id, user_id)
         )
         await db.commit()
 
+        # Pobierz nazwę ubrania dla potwierdzenia
         cursor = await db.execute(
             "SELECT name FROM clothing_items WHERE id = ?",
             (clothing_id,)
@@ -1198,7 +1018,19 @@ async def wear_clothing(clothing_id: int, authorization: str = Header(None)):
 
 @app.delete("/api/clothing/wear")
 async def remove_clothing(authorization: str = Header(None)):
-    """Usuwa aktualnie noszone ubranie."""
+    """
+    Usuwa aktualnie noszone ubranie (wraca do domyślnego wyglądu).
+    ✅ OPCJONALNY ENDPOINT - pozwala zdjąć ubranie
+
+    Args:
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        dict: Potwierdzenie zdjęcia ubrania
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy
+    """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -1211,6 +1043,7 @@ async def remove_clothing(authorization: str = Header(None)):
     async with aiosqlite.connect("database.db") as db:
         await db.execute("PRAGMA foreign_keys = ON")
 
+        # Usuń aktualnie noszone ubranie
         await db.execute(
             "UPDATE users SET current_clothing_id = NULL WHERE id = ?",
             (user_id,)
@@ -1223,13 +1056,22 @@ async def remove_clothing(authorization: str = Header(None)):
         }
 
 
-# ========================================
-# ENDPOINTY STATYSTYK
-# ========================================
+# Endpointy dla statystyk nawyków
 
 @app.get("/api/habits/statistics")
 async def get_habit_statistics(authorization: str = Header(None)):
-    """Pobiera statystyki nawyków użytkownika."""
+    """
+    Pobiera statystyki nawyków użytkownika.
+
+    Args:
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        dict: Statystyki wszystkich nawyków użytkownika
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy
+    """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -1242,6 +1084,7 @@ async def get_habit_statistics(authorization: str = Header(None)):
     async with aiosqlite.connect("database.db") as db:
         db.row_factory = aiosqlite.Row
 
+        # Pobierz statystyki
         cursor = await db.execute(
             """SELECT hs.*,
                       h.name as habit_name,
@@ -1256,6 +1099,7 @@ async def get_habit_statistics(authorization: str = Header(None)):
         )
         stats = await cursor.fetchall()
 
+        # Pobierz wszystkie completion dates dla każdego nawyku
         habits_with_completions = []
         for stat in stats:
             cursor = await db.execute(
@@ -1290,7 +1134,21 @@ async def get_habit_statistics(authorization: str = Header(None)):
 
 @app.get("/api/habits/{habit_id}/calendar")
 async def get_habit_calendar(habit_id: int, year: int, month: int, authorization: str = Header(None)):
-    """Pobiera dane kalendarza dla konkretnego nawyku."""
+    """
+    Pobiera dane kalendarza dla konkretnego nawyku w danym miesiącu.
+
+    Args:
+        habit_id (int): ID nawyku
+        year (int): Rok
+        month (int): Miesiąc (1-12)
+        authorization (str): Token autoryzacyjny w headerze
+
+    Returns:
+        dict: Dane kalendarza z wykonaniami nawyku
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy lub nawyk nie istnieje
+    """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -1303,6 +1161,7 @@ async def get_habit_calendar(habit_id: int, year: int, month: int, authorization
     async with aiosqlite.connect("database.db") as db:
         db.row_factory = aiosqlite.Row
 
+        # Sprawdź czy nawyk należy do użytkownika
         cursor = await db.execute(
             "SELECT id, name, icon FROM habits WHERE id = ? AND user_id = ?",
             (habit_id, user_id)
@@ -1312,6 +1171,8 @@ async def get_habit_calendar(habit_id: int, year: int, month: int, authorization
         if not habit:
             raise HTTPException(status_code=404, detail="Nawyk nie znaleziony")
 
+        # Pobierz wykonania dla danego miesiąca
+        # Pierwszy i ostatni dzień miesiąca
         first_day = date(year, month, 1)
         last_day = date(year, month, calendar.monthrange(year, month)[1])
 
@@ -1339,12 +1200,14 @@ async def get_habit_calendar(habit_id: int, year: int, month: int, authorization
         }
 
 
-# ========================================
-# URUCHOMIENIE APLIKACJI
-# ========================================
-
 if __name__ == "__main__":
-    """Uruchamia serwer aplikacji używając uvicorn."""
+    """
+    Uruchamia serwer aplikacji używając uvicorn.
+
+    Port jest pobierany ze zmiennej środowiskowej PORT lub domyślnie ustawiony na 10000.
+    Konfiguracja jest dostosowana do środowiska produkcyjnego (reload=False).
+    """
     import uvicorn
+
     port = int(os.environ.get("PORT", 10000))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
