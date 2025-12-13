@@ -21,6 +21,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId }) => {
 
   useEffect(() => {
     if (isOpen && userId) {
+      setShowResult(false); // Reset wyniku przy otwarciu
       checkDailyLimit();
     }
   }, [isOpen, userId]);
@@ -33,17 +34,28 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId }) => {
   }, [userId]);
 
   const checkDailyLimit = () => {
-    if (!userId) return;
+    if (!userId) {
+      setCanPlay(true);
+      return;
+    }
 
     const storageKey = getStorageKey();
     const lastPlayDate = localStorage.getItem(storageKey);
     const today = new Date().toDateString();
 
+    console.log('🎰 Checking daily limit for user:', userId);
+    console.log('📦 Storage key:', storageKey);
+    console.log('📅 Last play date:', lastPlayDate);
+    console.log('📅 Today:', today);
+
     if (lastPlayDate === today) {
+      console.log('❌ User already played today');
       setCanPlay(false);
       calculateTimeUntilReset();
     } else {
+      console.log('✅ User can play today');
       setCanPlay(true);
+      setTimeUntilReset('');
     }
   };
 
@@ -135,7 +147,11 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId }) => {
 
       // Zapisz z user_id w kluczu
       const storageKey = getStorageKey();
-      localStorage.setItem(storageKey, new Date().toDateString());
+      const today = new Date().toDateString();
+      console.log('💾 Saving play for user:', userId);
+      console.log('📦 Storage key:', storageKey);
+      console.log('📅 Date:', today);
+      localStorage.setItem(storageKey, today);
       setCanPlay(false);
 
       if (onWinCoins) {
