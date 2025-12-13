@@ -20,6 +20,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId }) => {
   const getStorageKey = () => `slotMachineLastPlay_user_${userId}`;
 
   useEffect(() => {
+    console.log('🔄 SlotMachine mounted/updated - isOpen:', isOpen, 'userId:', userId);
     if (isOpen && userId) {
       setShowResult(false); // Reset wyniku przy otwarciu
       checkDailyLimit();
@@ -308,6 +309,29 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId }) => {
             <span className="info-emoji">⏰</span>
             <span>Grasz raz dziennie!</span>
           </p>
+          {/* DEWELOPERSKI PRZYCISK - USUŃ PO TESTACH */}
+          {!canPlay && (
+            <button
+              onClick={() => {
+                const storageKey = getStorageKey();
+                localStorage.removeItem(storageKey);
+                console.log('🗑️ Usunięto:', storageKey);
+                checkDailyLimit();
+              }}
+              style={{
+                marginTop: '10px',
+                padding: '5px 10px',
+                background: '#ff4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+            >
+              🔧 DEV: Reset dla tego użytkownika
+            </button>
+          )}
         </div>
       </div>
     </div>
