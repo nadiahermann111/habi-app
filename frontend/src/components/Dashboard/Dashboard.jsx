@@ -300,11 +300,12 @@ const Dashboard = ({ user, onLogout }) => {
 
       {/* Automat jako popup modal */}
       <SlotMachine
-        isOpen={isSlotMachineOpen}
-        onClose={handleCloseFortuneWheel}
-        onWinCoins={handleWinCoins}
-        userCoins={profile?.coins || 0}
-        userId={profile?.id}
+        isOpen={isSlotOpen}
+        onClose={() => setIsSlotOpen(false)}
+        onWinCoins={(coins) => handleWin(coins)}
+        userCoins={user.coins}
+        userId={user.id}
+        username={user.username}  // ← DODAJ TO!
       />
     </div>
   );

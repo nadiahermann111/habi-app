@@ -13,36 +13,46 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
   const [canPlay, setCanPlay] = useState(true);
   const [timeUntilReset, setTimeUntilReset] = useState('');
 
-  // Wszystkie symbole
   const symbols = ['🍌', '🍎', '🍇', '🍊', '🍓', '🥥', '🍋', '🍑'];
 
-  // Klucz localStorage specyficzny dla użytkownika
+  // Użyj username jako klucza (unikalny per użytkownik)
   const getStorageKey = () => {
-    // Użyj username jeśli dostępny, inaczej userId
-    const identifier = username || userId;
+    const identifier = username || `user_${userId}`;
     return `slotMachineLastPlay_${identifier}`;
   };
 
+  // Wyczyść stare klucze tylko raz
   useEffect(() => {
-    const identifier = username || userId;
-    console.log('🔄 SlotMachine mounted/updated - isOpen:', isOpen, 'userId:', userId, 'username:', username, 'identifier:', identifier);
-    if (isOpen && identifier) {
-      setShowResult(false); // Reset wyniku przy otwarciu
+    const cleanupKey = 'slotMachine_migrated_v2';
+    const alreadyMigrated = localStorage.getItem(cleanupKey);
+
+    if (!alreadyMigrated) {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && key.match(/^slotMachineLastPlay_user_\d+$/)) {
+          localStorage.removeItem(key);
+        }
+      }
+      localStorage.setItem(cleanupKey, 'true');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && (username || userId)) {
+      setShowResult(false);
       checkDailyLimit();
     }
   }, [isOpen, userId, username]);
 
   useEffect(() => {
-    const identifier = username || userId;
-    if (identifier) {
+    if (username || userId) {
       const interval = setInterval(checkDailyLimit, 60000);
       return () => clearInterval(interval);
     }
   }, [userId, username]);
 
   const checkDailyLimit = () => {
-    const identifier = username || userId;
-    if (!identifier) {
+    if (!username && !userId) {
       setCanPlay(true);
       return;
     }
@@ -51,17 +61,10 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     const lastPlayDate = localStorage.getItem(storageKey);
     const today = new Date().toDateString();
 
-    console.log('🎰 Checking daily limit for identifier:', identifier, '(username:', username, 'userId:', userId, ')');
-    console.log('📦 Storage key:', storageKey);
-    console.log('📅 Last play date:', lastPlayDate);
-    console.log('📅 Today:', today);
-
     if (lastPlayDate === today) {
-      console.log('❌ User already played today');
       setCanPlay(false);
       calculateTimeUntilReset();
     } else {
-      console.log('✅ User can play today');
       setCanPlay(true);
       setTimeUntilReset('');
     }
@@ -92,9 +95,8 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     if (isSpinning || !canPlay) return;
 
     setIsSpinning(true);
-    setShowResult(false); // Ukryj stary wynik
+    setShowResult(false);
 
-    // Animacja - zmieniaj symbole w bębnach
     let count = 0;
     const interval = setInterval(() => {
       setReels([getRandomReel(), getRandomReel(), getRandomReel()]);
@@ -102,7 +104,6 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
 
       if (count >= 15) {
         clearInterval(interval);
-        // Poczekaj chwilę przed pokazaniem wyniku
         setTimeout(() => {
           determineResult();
         }, 300);
@@ -115,7 +116,6 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     let finalReels;
 
     if (random < 0.10) {
-      // 10% - 3 takie same (JACKPOT)
       const symbol = symbols[Math.floor(Math.random() * symbols.length)];
       finalReels = [
         [symbol, symbol, symbol],
@@ -123,7 +123,6 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
         [symbol, symbol, symbol]
       ];
     } else if (random < 0.40) {
-      // 30% - 2 takie same w środkowym rzędzie
       const symbol = symbols[Math.floor(Math.random() * symbols.length)];
       const other1 = symbols.find(s => s !== symbol);
       const other2 = symbols.find(s => s !== symbol && s !== other1);
@@ -134,7 +133,6 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
         [other1, other2, symbol]
       ];
     } else {
-      // 60% - wszystkie różne
       const shuffled1 = [...symbols].sort(() => Math.random() - 0.5).slice(0, 3);
       const shuffled2 = [...symbols].sort(() => Math.random() - 0.5).slice(0, 3);
       const shuffled3 = [...symbols].sort(() => Math.random() - 0.5).slice(0, 3);
@@ -143,23 +141,17 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     }
 
     setReels(finalReels);
-    setIsSpinning(false); // Zatrzymaj kręcenie
+    setIsSpinning(false);
 
-    // Poczekaj 1 sekundę przed pokazaniem wyniku
     setTimeout(() => {
       const centerRow = [finalReels[0][1], finalReels[1][1], finalReels[2][1]];
       const coins = calculateWinnings(centerRow);
 
       setWonCoins(coins);
-      setShowResult(true); // TERAZ pokaż wynik
+      setShowResult(true);
 
-      // Zapisz z user_id w kluczu
       const storageKey = getStorageKey();
       const today = new Date().toDateString();
-      const identifier = username || userId;
-      console.log('💾 Saving play for identifier:', identifier, '(username:', username, 'userId:', userId, ')');
-      console.log('📦 Storage key:', storageKey);
-      console.log('📅 Date:', today);
       localStorage.setItem(storageKey, today);
       setCanPlay(false);
 
@@ -175,29 +167,26 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     const [r1, r2, r3] = centerRow;
 
     if (r1 === r2 && r2 === r3) {
-      return 30; // JACKPOT
+      return 30;
     }
     if (r1 === r2 || r2 === r3 || r1 === r3) {
-      return 15; // 2 takie same
+      return 15;
     }
-    return 5; // Pocieszenie
+    return 5;
   };
 
   const handleClose = () => {
     if (!isSpinning && !showResult) {
-      // Zamknij tylko jeśli nie kręci się I nie ma wyniku
       setShowResult(false);
       onClose();
     }
   };
 
   const handleResultClose = () => {
-    // Zamknij wynik i wróć do widoku automatu
     setShowResult(false);
   };
 
   const handleFinalClose = () => {
-    // Zamknij cały automat
     setShowResult(false);
     onClose();
   };
@@ -223,13 +212,10 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
           <p className="slot-subtitle">Zagraj i wygraj monety!</p>
         </div>
 
-        {/* PRAWDZIWY AUTOMAT */}
         <div className="slot-machine-box">
           <div className="slot-machine-screen">
-            {/* Wskaźnik linii wygranej */}
             <div className="win-line"></div>
 
-            {/* 3 PIONOWE BĘBNY */}
             <div className="slot-reels-container">
               {reels.map((reel, reelIndex) => (
                 <div key={reelIndex} className={`slot-reel-column ${isSpinning ? 'spinning' : ''}`}>
@@ -246,7 +232,6 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
             </div>
           </div>
 
-          {/* Wynik - pokazuj środkowy rząd */}
           <div className="center-display">
             <div className="center-symbols">
               {centerRow.map((symbol, idx) => (
@@ -256,7 +241,6 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
           </div>
         </div>
 
-        {/* Przyciski */}
         <div className="slot-controls">
           {canPlay ? (
             <button
@@ -280,7 +264,6 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
           </div>
         </div>
 
-        {/* Pop-up wyniku */}
         {showResult && (
           <div className="slot-result-popup" onClick={(e) => e.stopPropagation()}>
             <div className="slot-result-content">
@@ -307,7 +290,6 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
           </div>
         )}
 
-        {/* Info */}
         <div className="slot-info">
           <p className="info-text">
             <span className="info-emoji">🎯</span>
@@ -317,29 +299,6 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
             <span className="info-emoji">⏰</span>
             <span>Grasz raz dziennie!</span>
           </p>
-          {/* DEWELOPERSKI PRZYCISK - USUŃ PO TESTACH */}
-          {!canPlay && (
-            <button
-              onClick={() => {
-                const storageKey = getStorageKey();
-                localStorage.removeItem(storageKey);
-                console.log('🗑️ Usunięto:', storageKey);
-                checkDailyLimit();
-              }}
-              style={{
-                marginTop: '10px',
-                padding: '5px 10px',
-                background: '#ff4444',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }}
-            >
-              🔧 DEV: Reset dla tego użytkownika
-            </button>
-          )}
         </div>
       </div>
     </div>
