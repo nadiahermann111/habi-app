@@ -16,18 +16,55 @@ function App() {
   }, []);
 
   const checkAuthStatus = async () => {
-    if (tokenUtils.getToken()) {
+    const token = tokenUtils.getToken();
+
+    if (!token) {
+      // ✅ Brak tokenu - spróbuj odzyskać sesję z cookies
+      console.log('Brak tokenu - próba odzyskania sesji...');
+
+      try {
+        const restored = await authAPI.refreshSession();
+        if (restored) {
+          console.log('✅ Sesja odzyskana z cookies!');
+          // Pobierz profil z nowym tokenem
+          const profile = await authAPI.getProfile();
+          setUser(profile);
+          setCurrentView('dashboard');
+        } else {
+          console.log('❌ Brak aktywnej sesji');
+          setCurrentView('login');
+        }
+      } catch (error) {
+        console.error('Błąd odzyskiwania sesji:', error);
+        setCurrentView('login');
+      }
+    } else {
+      // Token istnieje - spróbuj pobrać profil
       try {
         const profile = await authAPI.getProfile();
         setUser(profile);
         setCurrentView('dashboard');
       } catch (error) {
-        tokenUtils.removeToken();
-        setCurrentView('login');
+        console.log('Token nieważny, próba odświeżenia...');
+
+        // Token nieważny - spróbuj odświeżyć z cookies
+        try {
+          const restored = await authAPI.refreshSession();
+          if (restored) {
+            const profile = await authAPI.getProfile();
+            setUser(profile);
+            setCurrentView('dashboard');
+          } else {
+            tokenUtils.removeToken();
+            setCurrentView('login');
+          }
+        } catch (refreshError) {
+          tokenUtils.removeToken();
+          setCurrentView('login');
+        }
       }
-    } else {
-      setCurrentView('login');
     }
+
     setLoading(false);
   };
 
@@ -41,9 +78,16 @@ function App() {
     setCurrentView('dashboard');
   };
 
-  const handleLogout = () => {
-    setUser(null);
-    setCurrentView('login');
+  const handleLogout = async () => {
+    try {
+      await authAPI.logout();
+    } catch (error) {
+      console.error('Błąd wylogowania:', error);
+    } finally {
+      tokenUtils.removeToken();
+      setUser(null);
+      setCurrentView('login');
+    }
   };
 
   const switchToRegister = () => {

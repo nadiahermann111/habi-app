@@ -1,5 +1,25 @@
 const API_BASE_URL = 'https://habi-backend.onrender.com';
 
+// ========================================
+// FETCH WITH CREDENTIALS - dodaje credentials do każdego requesta
+// ========================================
+
+const fetchWithCredentials = async (url, options = {}) => {
+  const defaultOptions = {
+    credentials: 'include', // ⚠️ WAŻNE - wysyła cookies
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  };
+
+  return fetch(url, { ...defaultOptions, ...options });
+};
+
+// ========================================
+// TOKEN UTILS
+// ========================================
+
 export const tokenUtils = {
   getToken: () => localStorage.getItem('token'),
   setToken: (token) => localStorage.setItem('token', token),
@@ -10,13 +30,88 @@ export const tokenUtils = {
   }
 };
 
+// ========================================
+// REFRESH TOKEN LOGIC
+// ========================================
+
+let isRefreshing = false;
+let refreshPromise = null;
+
+const refreshAccessToken = async () => {
+  if (isRefreshing) {
+    return refreshPromise;
+  }
+
+  isRefreshing = true;
+
+  refreshPromise = fetchWithCredentials(`${API_BASE_URL}/api/refresh`, {
+    method: 'POST',
+  })
+    .then(async (response) => {
+      if (!response.ok) {
+        throw new Error('Refresh failed');
+      }
+      const data = await response.json();
+      if (data.access_token) {
+        tokenUtils.setToken(data.access_token);
+        return data.access_token;
+      }
+      throw new Error('No access token in response');
+    })
+    .finally(() => {
+      isRefreshing = false;
+      refreshPromise = null;
+    });
+
+  return refreshPromise;
+};
+
+// ========================================
+// AUTHENTICATED FETCH - automatyczne odświeżanie tokenu
+// ========================================
+
+const authenticatedFetch = async (url, options = {}) => {
+  const headers = {
+    ...options.headers,
+    ...tokenUtils.getAuthHeaders(),
+  };
+
+  let response = await fetchWithCredentials(url, { ...options, headers });
+
+  // Jeśli 401 (Unauthorized), spróbuj odświeżyć token
+  if (response.status === 401 && !options._retry) {
+    try {
+      const newToken = await refreshAccessToken();
+
+      // Powtórz request z nowym tokenem
+      const newHeaders = {
+        ...options.headers,
+        'Authorization': `Bearer ${newToken}`,
+      };
+
+      response = await fetchWithCredentials(url, {
+        ...options,
+        headers: newHeaders,
+        _retry: true
+      });
+    } catch (error) {
+      // Refresh token też wygasł - wyloguj
+      tokenUtils.removeToken();
+      throw new Error('Session expired');
+    }
+  }
+
+  return response;
+};
+
+// ========================================
+// AUTH API
+// ========================================
+
 export const authAPI = {
   async register(userData) {
-    const response = await fetch(`${API_BASE_URL}/api/register`, {
+    const response = await fetchWithCredentials(`${API_BASE_URL}/api/register`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(userData),
     });
 
@@ -25,15 +120,19 @@ export const authAPI = {
       throw new Error(error.detail || 'Registration failed');
     }
 
-    return response.json();
+    const data = await response.json();
+
+    // Zapisz token (cookies są automatycznie zapisane)
+    if (data.token) {
+      tokenUtils.setToken(data.token);
+    }
+
+    return data;
   },
 
   async login(credentials) {
-    const response = await fetch(`${API_BASE_URL}/api/login`, {
+    const response = await fetchWithCredentials(`${API_BASE_URL}/api/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(credentials),
     });
 
@@ -42,15 +141,30 @@ export const authAPI = {
       throw new Error(error.detail || 'Login failed');
     }
 
-    return response.json();
+    const data = await response.json();
+
+    // Zapisz token (cookies są automatycznie zapisane)
+    if (data.token) {
+      tokenUtils.setToken(data.token);
+    }
+
+    return data;
+  },
+
+  async logout() {
+    try {
+      await fetchWithCredentials(`${API_BASE_URL}/api/logout`, {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      tokenUtils.removeToken();
+    }
   },
 
   async getProfile() {
-    const response = await fetch(`${API_BASE_URL}/api/profile`, {
-      headers: {
-        ...tokenUtils.getAuthHeaders(),
-      },
-    });
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/profile`);
 
     if (!response.ok) {
       throw new Error('Failed to fetch profile');
@@ -59,12 +173,19 @@ export const authAPI = {
     return response.json();
   },
 
+  // ✅ NOWA FUNKCJA - Odśwież sesję z cookies
+  async refreshSession() {
+    try {
+      const newToken = await refreshAccessToken();
+      return !!newToken;
+    } catch (error) {
+      console.error('Refresh session error:', error);
+      return false;
+    }
+  },
+
   async getUserCoins() {
-    const response = await fetch(`${API_BASE_URL}/api/coins`, {
-      headers: {
-        ...tokenUtils.getAuthHeaders(),
-      },
-    });
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/coins`);
 
     if (!response.ok) {
       throw new Error('Failed to fetch coins');
@@ -78,12 +199,8 @@ export const authAPI = {
   },
 
   async addCoins(amount) {
-    const response = await fetch(`${API_BASE_URL}/api/coins/add`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/coins/add`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...tokenUtils.getAuthHeaders(),
-      },
       body: JSON.stringify({ amount }),
     });
 
@@ -118,14 +235,14 @@ export const authAPI = {
   }
 };
 
+// ========================================
+// HABIT API
+// ========================================
+
 export const habitAPI = {
   // Pobierz wszystkie nawyki użytkownika
   async getHabits() {
-    const response = await fetch(`${API_BASE_URL}/api/habits`, {
-      headers: {
-        ...tokenUtils.getAuthHeaders(),
-      },
-    });
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/habits`);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -140,16 +257,12 @@ export const habitAPI = {
     const payload = {
       name: habitData.name,
       description: habitData.description,
-      coin_value: habitData.coinValue || habitData.coin_value, // Obsłuż oba formaty
+      coin_value: habitData.coinValue || habitData.coin_value,
       icon: habitData.icon
     };
 
-    const response = await fetch(`${API_BASE_URL}/api/habits`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/habits`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...tokenUtils.getAuthHeaders(),
-      },
       body: JSON.stringify(payload),
     });
 
@@ -162,12 +275,8 @@ export const habitAPI = {
   },
 
   async completeHabit(habitId) {
-    const response = await fetch(`${API_BASE_URL}/api/habits/${habitId}/complete`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/habits/${habitId}/complete`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...tokenUtils.getAuthHeaders(),
-      },
     });
 
     if (!response.ok) {
@@ -196,11 +305,7 @@ export const habitAPI = {
 
   // Pobierz szczegóły nawyku
   async getHabit(habitId) {
-    const response = await fetch(`${API_BASE_URL}/api/habits/${habitId}`, {
-      headers: {
-        ...tokenUtils.getAuthHeaders(),
-      },
-    });
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/habits/${habitId}`);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -212,19 +317,14 @@ export const habitAPI = {
 
   // Zaktualizuj nawyk
   async updateHabit(habitId, habitData) {
-    // Mapuj pola jeśli potrzeba
     const payload = { ...habitData };
     if (payload.coinValue) {
       payload.coin_value = payload.coinValue;
       delete payload.coinValue;
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/habits/${habitId}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/habits/${habitId}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...tokenUtils.getAuthHeaders(),
-      },
       body: JSON.stringify(payload),
     });
 
@@ -238,11 +338,8 @@ export const habitAPI = {
 
   // Usuń nawyk
   async deleteHabit(habitId) {
-    const response = await fetch(`${API_BASE_URL}/api/habits/${habitId}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/habits/${habitId}`, {
       method: 'DELETE',
-      headers: {
-        ...tokenUtils.getAuthHeaders(),
-      },
     });
 
     if (!response.ok) {
@@ -255,11 +352,7 @@ export const habitAPI = {
 
   // Pobierz statystyki nawyków
   async getHabitStats() {
-    const response = await fetch(`${API_BASE_URL}/api/habits/stats`, {
-      headers: {
-        ...tokenUtils.getAuthHeaders(),
-      },
-    });
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/habits/stats`);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
