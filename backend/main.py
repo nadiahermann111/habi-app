@@ -7,7 +7,7 @@ from datetime import datetime, date, timedelta
 from typing import List, Optional
 import calendar
 import secrets
-import jwt
+from jose import jwt, JWTError
 
 # importowanie modułów aplikacji
 try:
@@ -496,10 +496,13 @@ async def refresh_token(
             "message": "Token odświeżony pomyślnie"
         }
 
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Refresh token wygasł")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy refresh token")
+    except JWTError as e:
+        # Obsługa wszystkich błędów JWT (wygasły token, nieprawidłowy token, itp.)
+        error_msg = str(e)
+        if "expired" in error_msg.lower():
+            raise HTTPException(status_code=401, detail="Refresh token wygasł")
+        else:
+            raise HTTPException(status_code=401, detail="Nieprawidłowy refresh token")
 
 
 @app.post("/api/logout")
@@ -1344,6 +1347,5 @@ async def get_habit_calendar(habit_id: int, year: int, month: int, authorization
 if __name__ == "__main__":
     """Uruchamia serwer aplikacji używając uvicorn."""
     import uvicorn
-
     port = int(os.environ.get("PORT", 10000))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
