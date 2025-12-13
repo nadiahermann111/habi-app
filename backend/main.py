@@ -254,7 +254,6 @@ app.add_middleware(
         "https://nadiahermann111.github.io",
         "http://localhost:3000",
         "http://localhost:5173",
-        "*"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -348,7 +347,7 @@ async def register(user_data: UserRegister, response: Response):
         value=tokens["refresh_token"],
         httponly=True,
         secure=True,
-        samesite="lax",
+        samesite="none",
         max_age=30 * 24 * 60 * 60  # 30 dni
     )
 
@@ -357,7 +356,7 @@ async def register(user_data: UserRegister, response: Response):
         value=tokens["session_token"],
         httponly=True,
         secure=True,
-        samesite="lax",
+        samesite="none",
         max_age=30 * 24 * 60 * 60
     )
 
@@ -410,7 +409,7 @@ async def login(login_data: UserLogin, response: Response):
         value=tokens["refresh_token"],
         httponly=True,
         secure=True,
-        samesite="lax",
+        samesite="none",
         max_age=30 * 24 * 60 * 60
     )
 
@@ -419,7 +418,7 @@ async def login(login_data: UserLogin, response: Response):
         value=tokens["session_token"],
         httponly=True,
         secure=True,
-        samesite="lax",
+        samesite="none",
         max_age=30 * 24 * 60 * 60
     )
 
