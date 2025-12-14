@@ -119,52 +119,26 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* ✅ KLUCZOWA ZMIANA: Hover tylko gdy NIE disabled i NIE loading */
-.food-item-redesigned:hover:not(.disabled):not(.loading) {
+/* ✅ Hover tylko gdy NIE disabled */
+.food-item-redesigned:hover:not(.disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   border-color: #f59e0b;
 }
 
-/* ✅ KLUCZOWA ZMIANA: Active tylko gdy NIE disabled i NIE loading */
-.food-item-redesigned:active:not(.disabled):not(.loading) {
+/* ✅ Active tylko gdy NIE disabled */
+.food-item-redesigned:active:not(.disabled) {
   transform: scale(0.98);
 }
 
-/* ✅ KLUCZOWA ZMIANA: Disabled blokuje wszystkie interakcje */
+/* ✅ Disabled blokuje wszystkie interakcje */
 .food-item-redesigned.disabled {
   opacity: 0.5;
   cursor: not-allowed;
   background: #f3f4f6;
   border-color: #d1d5db;
-  pointer-events: none; /* Blokuje wszystkie interakcje */
-  transform: none !important; /* Wymusza brak transformacji */
-}
-
-/* ✅ KLUCZOWA ZMIANA: Loading blokuje wszystkie interakcje */
-.food-item-redesigned.loading {
-  opacity: 0.6;
-  cursor: not-allowed;
-  position: relative;
-  pointer-events: none; /* Blokuje wszystkie interakcje */
-  transform: none !important; /* Wymusza brak transformacji */
-}
-
-.food-item-redesigned.loading::after {
-  content: '⏳';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 24px;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 50%;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: spin 1s linear infinite;
+  pointer-events: none;
+  transform: none !important;
 }
 
 .food-item-overlay {
@@ -184,7 +158,7 @@
   text-align: center;
   padding: 8px;
   box-sizing: border-box;
-  pointer-events: none; /* Overlay nie blokuje kliknięć */
+  pointer-events: none;
 }
 
 .food-item-image {
@@ -195,7 +169,7 @@
   justify-content: center;
   width: 100%;
   gap: 8px;
-  pointer-events: none; /* Zapobiega interakcjom z obrazkiem */
+  pointer-events: none;
 }
 
 .food-item-price {
@@ -209,7 +183,7 @@
   order: -1;
   margin-bottom: 6px;
   box-sizing: border-box;
-  pointer-events: none; /* Zapobiega interakcjom z ceną */
+  pointer-events: none;
 }
 
 .coin-icon {
@@ -226,11 +200,11 @@
   font-size: 32px;
   transition: transform 0.3s ease;
   margin-bottom: 6px;
-  pointer-events: none; /* Zapobiega interakcjom z emoji */
+  pointer-events: none;
 }
 
-/* ✅ POPRAWKA: Emoji skaluje się tylko gdy parent NIE jest disabled/loading */
-.food-item-redesigned:hover:not(.disabled):not(.loading) .food-emoji {
+/* ✅ Emoji skaluje się tylko gdy parent NIE jest disabled */
+.food-item-redesigned:hover:not(.disabled) .food-emoji {
   transform: scale(1.1);
 }
 
@@ -241,7 +215,7 @@
   text-align: center;
   margin: 0;
   line-height: 1.3;
-  pointer-events: none; /* Zapobiega interakcjom z nazwą */
+  pointer-events: none;
 }
 
 /* Habi Character Section */
@@ -362,11 +336,6 @@
   50% {
     transform: scale(1.1);
   }
-}
-
-@keyframes spin {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 /* Tips Section */
@@ -513,12 +482,6 @@
     border-radius: 12px;
     min-height: 110px;
     gap: 6px;
-  }
-
-  .food-item-redesigned.loading::after {
-    font-size: 20px;
-    width: 40px;
-    height: 40px;
   }
 
   .food-item-overlay {
@@ -689,8 +652,7 @@
   .purchase-icon,
   .food-item-redesigned,
   .tip-card,
-  .feed-back-btn,
-  .food-item-redesigned.loading::after {
+  .feed-back-btn {
     animation: none;
     transition: none;
   }

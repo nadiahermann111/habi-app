@@ -45,9 +45,8 @@ import './FeedHabi.css';
 const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
   const [currentCoins, setCurrentCoins] = useState(userCoins);
   const [purchaseAnimation, setPurchaseAnimation] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [processingItemId, setProcessingItemId] = useState(null); // ✅ Dodane: śledzimy które jedzenie jest przetwarzane
+  const [processingItemId, setProcessingItemId] = useState(null);
   const foodControlRef = useRef(null);
 
   // ✅ MAPA OBRAZKÓW
@@ -152,7 +151,7 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
 
   const handlePurchase = async (item) => {
     // ✅ Sprawdź czy już coś nie jest przetwarzane
-    if (loading || processingItemId) {
+    if (processingItemId) {
       console.log('⏳ Transakcja w toku, czekaj...');
       return;
     }
@@ -166,8 +165,7 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
       return;
     }
 
-    // ✅ Ustawiamy loading globalny i dla konkretnego itemu
-    setLoading(true);
+    // ✅ Ustawiamy tylko processingItemId (bez globalnego loading)
     setProcessingItemId(item.id);
 
     try {
@@ -210,8 +208,7 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
       const errorMsg = 'Błąd podczas zakupu - sprawdź połączenie internetowe';
       setError(errorMsg);
     } finally {
-      // ✅ Zawsze resetuj loading i processingItemId
-      setLoading(false);
+      // ✅ Zawsze resetuj processingItemId
       setProcessingItemId(null);
     }
   };
@@ -232,7 +229,7 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
       <div className="feed-habi-container">
         <div className="feed-header">
           <div className="feed-header-left">
-            <button className="feed-back-btn" onClick={onBack} disabled={loading}>
+            <button className="feed-back-btn" onClick={onBack} disabled={processingItemId}>
               ←
             </button>
             <img src={HabiLogo} alt="Habi" className="habi-logo-m" />
@@ -277,31 +274,22 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
           </div>
         )}
 
-        {loading && (
-          <div className="loading-indicator" style={{
-            textAlign: 'center',
-            padding: '10px',
-            background: '#f0f8ff',
-            borderRadius: '8px',
-            margin: '10px 0'
-          }}>
-            🔄 Przetwarzanie zakupu...
-          </div>
-        )}
-
         <div className="food-items-grid-redesigned">
           {foodItems.map(item => {
-            // ✅ Item jest disabled jeśli: brak monet, globalny loading, lub ten konkretny item jest przetwarzany
+            // ✅ Item jest disabled jeśli: brak monet lub ten konkretny item jest przetwarzany
             const isProcessing = processingItemId === item.id;
             const canAfford = currentCoins >= item.cost;
-            const isDisabled = !canAfford || loading || isProcessing;
+            const isDisabled = !canAfford || isProcessing;
 
             return (
               <div
                 key={item.id}
-                className={`food-item-redesigned ${isDisabled ? 'disabled' : ''} ${isProcessing ? 'loading' : ''}`}
+                className={`food-item-redesigned ${isDisabled ? 'disabled' : ''}`}
                 onClick={() => !isDisabled && handlePurchase(item)}
-                style={{ pointerEvents: isDisabled ? 'none' : 'auto' }} // ✅ Dodatkowa blokada
+                style={{
+                  pointerEvents: isDisabled ? 'none' : 'auto',
+                  opacity: isProcessing ? 0.6 : 1
+                }}
               >
                 <div className="food-item-image">
                   <span className="food-emoji">{item.icon}</span>
