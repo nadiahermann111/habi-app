@@ -11,7 +11,7 @@
 .habit-tracker-container {
   max-width: 100%;
   margin: 0 auto;
-  padding: 4px;
+  padding: 8px;
   box-sizing: border-box;
   width: 100%;
 }
@@ -31,9 +31,9 @@
 }
 
 .habit-header {
-  display: grid;
-  grid-template-columns: 60px 1fr 60px;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 14px;
   padding: 16px 20px;
   background: white;
@@ -64,7 +64,6 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  justify-self: start;
 }
 
 .habit-back-btn:active {
@@ -73,27 +72,31 @@
 }
 
 .habit-header-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   justify-content: center;
   align-items: center;
+  pointer-events: none;
 }
 
 .habi-logo {
-  height: 40px;
+  height: 36px;
   width: auto;
   display: block;
   object-fit: contain;
 }
 
 .habi-logo-k {
-  height: 40px;
+  height: 36px;
   width: auto;
   display: block;
   object-fit: contain;
 }
 
 .habit-coins-display {
-  justify-self: end;
+  flex-shrink: 0;
 }
 
 @media (min-width: 480px) {

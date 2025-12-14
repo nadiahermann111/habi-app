@@ -7,7 +7,7 @@ import FeedHabi from '../FeedHabi/FeedHabi.jsx';
 import DressHabi from '../DressHabi/DressHabi.jsx';
 import HabiSection from '../HabiSection/HabiSection';
 import SlotMachine from '../SlotMachine/SlotMachine.jsx';
-import { clothingStorage } from '../../utils/clothingHelper';
+import { clothingStorage, clearClothingOnLogout } from '../../utils/clothingHelper';
 import './Dashboard.css';
 
 const Dashboard = ({ user, onLogout }) => {
@@ -53,7 +53,13 @@ const Dashboard = ({ user, onLogout }) => {
 
   // Obsługa wylogowania użytkownika
   const handleLogout = () => {
+    // Wyczyść dane ubrań przed wylogowaniem
+    clearClothingOnLogout();
+
+    // Wyczyść token
     tokenUtils.removeToken();
+
+    // Wywołaj callback wylogowania
     onLogout();
   };
 

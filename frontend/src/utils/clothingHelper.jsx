@@ -82,21 +82,38 @@ export const clothingStorage = {
       console.warn('⚠️ Brak user_id - czyszczenie wszystkich kluczy');
       // Wyczyść wszystkie możliwe klucze
       Object.keys(localStorage)
-        .filter(key => key.startsWith('currentHabiClothing'))
+        .filter(key => key.startsWith('currentHabiClothing') || key.startsWith('ownedClothes'))
         .forEach(key => localStorage.removeItem(key));
       return;
     }
 
     const key = `currentHabiClothing_${userId}`;
+    const ownedKey = `ownedClothes_${userId}`;
+
     localStorage.removeItem(key);
-    console.log(`🗑️ Wyczyszczono ubranie dla użytkownika ${userId}`);
+    localStorage.removeItem(ownedKey);
+    // Usuń też stare klucze bez user_id (legacy)
+    localStorage.removeItem('currentClothing');
+    localStorage.removeItem('ownedClothes');
+
+    console.log(`🗑️ Wyczyszczono ubrania dla użytkownika ${userId}`);
   },
 
   // ✅ NOWA FUNKCJA - wyczyść ubranie dla wszystkich użytkowników (np. przy wylogowaniu)
   clearAll: () => {
     Object.keys(localStorage)
-      .filter(key => key.startsWith('currentHabiClothing'))
+      .filter(key =>
+        key.startsWith('currentHabiClothing') ||
+        key.startsWith('ownedClothes') ||
+        key === 'currentClothing'
+      )
       .forEach(key => localStorage.removeItem(key));
     console.log('🗑️ Wyczyszczono wszystkie ubrania');
   }
+};
+
+// ✅ Funkcja wywoływana przy wylogowaniu - czyści TYLKO dane bieżącego użytkownika
+export const clearClothingOnLogout = () => {
+  clothingStorage.clear();
+  console.log('👋 Wyczyszczono dane ubrań przy wylogowaniu');
 };
