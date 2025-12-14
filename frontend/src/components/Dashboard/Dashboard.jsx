@@ -7,7 +7,7 @@ import FeedHabi from '../FeedHabi/FeedHabi.jsx';
 import DressHabi from '../DressHabi/DressHabi.jsx';
 import HabiSection from '../HabiSection/HabiSection';
 import SlotMachine from '../SlotMachine/SlotMachine.jsx';
-import { clothingStorage } from '../../utils/clothingHelper'; // ← NOWY IMPORT
+import { clothingStorage } from '../../utils/clothingHelper';
 import './Dashboard.css';
 
 const Dashboard = ({ user, onLogout }) => {
@@ -16,7 +16,7 @@ const Dashboard = ({ user, onLogout }) => {
   const [error, setError] = useState('');
   const [currentView, setCurrentView] = useState('dashboard');
   const [isSlotMachineOpen, setIsSlotMachineOpen] = useState(false);
-  const [currentClothing, setCurrentClothing] = useState(null); // ← NOWY STAN
+  const [currentClothing, setCurrentClothing] = useState(null);
 
   // Wczytaj obecnie założone ubranie przy montowaniu
   useEffect(() => {
@@ -113,7 +113,7 @@ const Dashboard = ({ user, onLogout }) => {
     }));
   };
 
-  // ← NOWA FUNKCJA: Callback do zmiany ubrania
+  // Callback do zmiany ubrania
   const handleClothingChange = (clothingId) => {
     console.log('👗 Zmiana ubrania na ID:', clothingId);
     setCurrentClothing(clothingId);
@@ -219,7 +219,7 @@ const Dashboard = ({ user, onLogout }) => {
         onBack={handleBackToDashboard}
         userCoins={profile?.coins || 0}
         onCoinsUpdate={handleCoinsUpdate}
-        currentClothing={currentClothing} // ← PRZEKAŻ PROP
+        currentClothing={currentClothing}
       />
     );
   }
@@ -232,8 +232,8 @@ const Dashboard = ({ user, onLogout }) => {
         onBack={handleBackToDashboard}
         userCoins={profile?.coins || 0}
         onCoinsUpdate={handleCoinsUpdate}
-        currentClothing={currentClothing}           // ← PRZEKAŻ PROP
-        onClothingChange={handleClothingChange}     // ← PRZEKAŻ CALLBACK
+        currentClothing={currentClothing}
+        onClothingChange={handleClothingChange}
       />
     );
   }
@@ -259,7 +259,7 @@ const Dashboard = ({ user, onLogout }) => {
             <h1 className="welcome-message">Cześć {profile.username}! 👋</h1>
           </div>
 
-          {/* Komponent wyświetlający wirtualnego zwierzaka Habi - PRZEKAŻ PROP */}
+          {/* Komponent wyświetlający wirtualnego zwierzaka Habi */}
           <HabiSection currentClothing={currentClothing} />
 
           {/* Sekcja z przyciskami szybkich akcji */}
@@ -298,14 +298,14 @@ const Dashboard = ({ user, onLogout }) => {
         </div>
       )}
 
-      {/* Automat jako popup modal */}
+      {/* Automat jako popup modal - POPRAWIONE NAZWY ZMIENNYCH */}
       <SlotMachine
-        isOpen={isSlotOpen}
-        onClose={() => setIsSlotOpen(false)}
-        onWinCoins={(coins) => handleWin(coins)}
-        userCoins={user.coins}
-        userId={user.id}
-        username={user.username}  // ← DODAJ TO!
+        isOpen={isSlotMachineOpen}
+        onClose={handleCloseFortuneWheel}
+        onWinCoins={handleWinCoins}
+        userCoins={profile?.coins || 0}
+        userId={profile?.id}
+        username={profile?.username}
       />
     </div>
   );
