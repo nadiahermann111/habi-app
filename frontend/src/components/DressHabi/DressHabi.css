@@ -149,29 +149,29 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* ✅ KLUCZOWA ZMIANA: Hover tylko gdy NIE disabled, NIE loading i NIE owned */
-.clothing-item:hover:not(.disabled):not(.loading):not(.owned):not(.wearing) {
+/* ✅ Hover tylko gdy NIE disabled i NIE owned */
+.clothing-item:hover:not(.disabled):not(.owned):not(.wearing) {
   transform: translateY(-4px) scale(1.02);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   border-color: #f59e0b;
 }
 
-/* ✅ KLUCZOWA ZMIANA: Active tylko gdy NIE disabled, NIE loading i NIE owned */
-.clothing-item:active:not(.disabled):not(.loading):not(.owned):not(.wearing) {
+/* ✅ Active tylko gdy NIE disabled i NIE owned */
+.clothing-item:active:not(.disabled):not(.owned):not(.wearing) {
   transform: scale(0.98);
 }
 
-/* ✅ KLUCZOWA ZMIANA: Disabled blokuje wszystkie interakcje */
+/* ✅ Disabled blokuje wszystkie interakcje */
 .clothing-item.disabled {
   opacity: 0.5;
   cursor: not-allowed;
   background: #f3f4f6;
   border-color: #d1d5db;
-  pointer-events: none; /* Blokuje wszystkie interakcje */
-  transform: none !important; /* Wymusza brak transformacji */
+  pointer-events: none;
+  transform: none !important;
 }
 
-/* ✅ KLUCZOWA ZMIANA: Owned ma delikatny hover */
+/* ✅ Owned ma delikatny hover */
 .clothing-item.owned:not(.wearing) {
   background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
   border-color: #66bb6a;
@@ -181,32 +181,6 @@
 .clothing-item.owned:not(.wearing):hover {
   transform: translateY(-2px) scale(1.01);
   box-shadow: 0 4px 12px rgba(102, 187, 106, 0.3);
-}
-
-/* ✅ KLUCZOWA ZMIANA: Loading blokuje wszystkie interakcje */
-.clothing-item.loading {
-  opacity: 0.6;
-  cursor: not-allowed;
-  position: relative;
-  pointer-events: none; /* Blokuje wszystkie interakcje */
-  transform: none !important; /* Wymusza brak transformacji */
-}
-
-.clothing-item.loading::after {
-  content: '⏳';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 24px;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 50%;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: spin 1s linear infinite;
 }
 
 .clothing-item-overlay {
@@ -226,13 +200,13 @@
   text-align: center;
   padding: 8px;
   box-sizing: border-box;
-  pointer-events: none; /* Domyślnie overlay nie blokuje kliknięć */
+  pointer-events: none;
 }
 
 .clothing-item-overlay.owned-overlay {
   background: rgba(76, 175, 80, 0.85);
   color: white;
-  pointer-events: auto; /* Owned overlay reaguje na kliknięcia */
+  pointer-events: auto;
   cursor: pointer;
 }
 
@@ -242,7 +216,7 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  pointer-events: none; /* Zapobiega interakcjom z obrazkiem */
+  pointer-events: none;
 }
 
 .clothing-item-price {
@@ -257,7 +231,7 @@
   width: 100%;
   box-sizing: border-box;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  pointer-events: none; /* Zapobiega interakcjom z ceną */
+  pointer-events: none;
 }
 
 .coin-icon {
@@ -274,11 +248,11 @@
   font-size: 64px;
   transition: transform 0.3s ease;
   line-height: 1;
-  pointer-events: none; /* Zapobiega interakcjom z emoji */
+  pointer-events: none;
 }
 
-/* ✅ POPRAWKA: Emoji skaluje się tylko gdy parent NIE jest disabled/loading/owned */
-.clothing-item:hover:not(.disabled):not(.loading):not(.owned):not(.wearing) .clothing-emoji {
+/* ✅ Emoji skaluje się tylko gdy parent NIE jest disabled/owned */
+.clothing-item:hover:not(.disabled):not(.owned):not(.wearing) .clothing-emoji {
   transform: scale(1.15);
 }
 
@@ -294,7 +268,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none; /* Zapobiega interakcjom z nazwą */
+  pointer-events: none;
 }
 
 /* Habi Character Section */
@@ -448,11 +422,6 @@
   }
 }
 
-@keyframes spin {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
 /* Tips Section */
 .dress-tips {
   display: flex;
@@ -508,12 +477,12 @@
   font-weight: 600;
 }
 
-/* ✅ POPRAWKA: Wearing z bardziej kontrolowaną animacją */
+/* ✅ Wearing z kontrolowaną animacją */
 .clothing-item.wearing {
   border: 3px solid #4CAF50 !important;
   box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
   transform: scale(1.05);
-  pointer-events: none; /* Obecnie noszone nie reagują na kliknięcia */
+  pointer-events: none;
 }
 
 /* Overlay dla obecnie założonych ubrań */
@@ -528,7 +497,7 @@
   pointer-events: none;
 }
 
-/* Dodatkowa animacja dla założonych ubrań */
+/* Animacja dla założonych ubrań */
 @keyframes wearing-pulse {
   0%, 100% {
     box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
@@ -659,12 +628,6 @@
     min-width: 130px;
     max-width: 130px;
     min-height: 170px;
-  }
-
-  .clothing-item.loading::after {
-    font-size: 20px;
-    width: 40px;
-    height: 40px;
   }
 
   .clothing-item-overlay {
@@ -861,7 +824,6 @@
   .clothing-item,
   .tip-card,
   .dress-back-btn,
-  .clothing-item.loading::after,
   .progress-fill,
   .clothing-item.wearing {
     animation: none;
