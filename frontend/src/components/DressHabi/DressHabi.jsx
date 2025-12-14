@@ -33,12 +33,11 @@ import './DressHabi.css';
 const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothingChange }) => {
   const [currentCoins, setCurrentCoins] = useState(userCoins);
   const [purchaseAnimation, setPurchaseAnimation] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [ownedClothes, setOwnedClothes] = useState([]);
   const [clothingItems, setClothingItems] = useState([]);
   const [fetchingData, setFetchingData] = useState(true);
-  const [processingItemId, setProcessingItemId] = useState(null); // ✅ Dodane: śledzimy które ubranie jest przetwarzane
+  const [processingItemId, setProcessingItemId] = useState(null);
 
   const API_BASE_URL = 'https://habi-backend.onrender.com';
 
@@ -249,7 +248,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
 
   const handlePurchase = async (item) => {
     // ✅ Sprawdź czy już coś nie jest przetwarzane
-    if (loading || processingItemId) {
+    if (processingItemId) {
       console.log('⏳ Transakcja w toku, czekaj...');
       return;
     }
@@ -267,8 +266,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       return;
     }
 
-    // ✅ Ustawiamy loading globalny i dla konkretnego itemu
-    setLoading(true);
+    // ✅ Ustawiamy tylko processingItemId (bez globalnego loading)
     setProcessingItemId(item.id);
 
     try {
@@ -326,8 +324,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       const errorMsg = error.message || 'Błąd podczas zakupu';
       setError(errorMsg);
     } finally {
-      // ✅ Zawsze resetuj loading i processingItemId
-      setLoading(false);
+      // ✅ Zawsze resetuj processingItemId
       setProcessingItemId(null);
     }
   };
@@ -390,7 +387,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       <div className="dress-habi-container">
         <div className="dress-header">
           <div className="dress-header-left">
-            <button className="dress-back-btn" onClick={onBack} disabled={loading}>
+            <button className="dress-back-btn" onClick={onBack} disabled={processingItemId}>
               ←
             </button>
             <img src={HabiLogo} alt="Habi" className="habi-logo-m" />
@@ -434,22 +431,10 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
           </div>
         )}
 
-        {loading && (
-          <div className="loading-indicator" style={{
-            textAlign: 'center',
-            padding: '10px',
-            background: '#f0f8ff',
-            borderRadius: '8px',
-            margin: '10px 0'
-          }}>
-            🔄 Przetwarzanie zakupu...
-          </div>
-        )}
-
         <div className="clothing-slider-container">
           <div className="clothing-items-slider">
             {clothingItems.map(item => {
-              // ✅ Item jest disabled jeśli: brak monet, globalny loading, lub ten konkretny item jest przetwarzany
+              // ✅ Item jest disabled jeśli: brak monet lub ten konkretny item jest przetwarzany
               const isProcessing = processingItemId === item.id;
               const canAfford = currentCoins >= item.cost;
               const isOwned = ownedClothes.includes(item.id);
@@ -459,20 +444,20 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
               return (
                 <div
                   key={item.id}
-                  className={`clothing-item ${isDisabled ? 'disabled' : ''} ${isProcessing ? 'loading' : ''} ${isOwned ? 'owned' : ''} ${isWearing ? 'wearing' : ''}`}
+                  className={`clothing-item ${isDisabled ? 'disabled' : ''} ${isOwned ? 'owned' : ''} ${isWearing ? 'wearing' : ''}`}
                   onClick={() => {
-                    if (isProcessing || loading) return;
+                    if (isProcessing || processingItemId) return;
                     if (!isOwned && canAfford) {
                       handlePurchase(item);
                     }
                   }}
                   style={{
-                    cursor: (isProcessing || loading) ? 'not-allowed' :
+                    cursor: (isProcessing || processingItemId) ? 'not-allowed' :
                             (!isOwned && canAfford) ? 'pointer' :
                             (isOwned && !isWearing) ? 'pointer' :
                             'default',
-                    border: isWearing ? '3px solid #4CAF50' : undefined,
-                    pointerEvents: (isProcessing || loading || isWearing) ? 'none' : 'auto' // ✅ Dodatkowa blokada
+                    opacity: isProcessing ? 0.6 : 1,
+                    pointerEvents: (isProcessing || processingItemId || isWearing) ? 'none' : 'auto'
                   }}
                 >
                   <div className="clothing-item-price">
@@ -495,7 +480,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
                   {isOwned && !isWearing && (
                     <div className="clothing-item-overlay owned-overlay" onClick={(e) => {
                       e.stopPropagation();
-                      if (!loading && !processingItemId) {
+                      if (!processingItemId) {
                         handleClothingSelect(item);
                       }
                     }}>
