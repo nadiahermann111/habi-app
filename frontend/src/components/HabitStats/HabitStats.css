@@ -16,9 +16,9 @@
 }
 
 .stats-header {
-  display: grid;
-  grid-template-columns: 60px 1fr 60px;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 24px;
   padding: 16px 20px;
   background: rgba(255, 255, 255, 0.9);
@@ -27,12 +27,14 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   width: 100%;
   box-sizing: border-box;
+  position: relative;
 }
 
 .stats-header-left {
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  flex-shrink: 0;
 }
 
 .stats-back-btn {
@@ -57,13 +59,17 @@
 }
 
 .stats-header-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
 }
 
 .habi-logo-stats {
-  height: 40px;
+  height: 36px;
   width: auto;
   object-fit: contain;
 }
@@ -72,6 +78,8 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  flex-shrink: 0;
+  min-width: 44px;
 }
 
 .stats-title {
@@ -523,6 +531,13 @@
   box-sizing: border-box;
 }
 
+/*
+  UWAGA: Aby skrócić czas wyświetlania powiadomień,
+  zmień timeout w komponencie JS z 3000ms na 2000ms lub mniej:
+
+  setTimeout(() => setPurchaseAnimation(null), 2000); // 2 sekundy zamiast 3
+*/
+
 .empty-icon {
   font-size: 64px;
   margin-bottom: 20px;
@@ -558,7 +573,7 @@
   }
 
   .habi-logo-stats {
-    height: 36px;
+    height: 38px;
   }
 
   .overall-stats {
@@ -607,7 +622,6 @@
   .stats-header {
     padding: 12px 16px;
     margin-bottom: 16px;
-    grid-template-columns: 48px 1fr 48px;
   }
 
   .stats-back-btn {
@@ -617,7 +631,7 @@
   }
 
   .habi-logo-stats {
-    height: 32px;
+    height: 34px;
   }
 
   .overall-stats {

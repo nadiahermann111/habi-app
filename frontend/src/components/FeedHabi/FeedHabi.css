@@ -16,7 +16,6 @@
   width: 100%;
 }
 
-/* Header */
 .feed-header {
   display: flex;
   align-items: center;
@@ -87,7 +86,6 @@
   transform: translateX(-50%);
 }
 
-/* Food Grid */
 .food-items-grid-redesigned {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -119,19 +117,16 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* ✅ Hover tylko gdy NIE disabled */
 .food-item-redesigned:hover:not(.disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   border-color: #f59e0b;
 }
 
-/* ✅ Active tylko gdy NIE disabled */
 .food-item-redesigned:active:not(.disabled) {
   transform: scale(0.98);
 }
 
-/* ✅ Disabled blokuje wszystkie interakcje */
 .food-item-redesigned.disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -203,7 +198,6 @@
   pointer-events: none;
 }
 
-/* ✅ Emoji skaluje się tylko gdy parent NIE jest disabled */
 .food-item-redesigned:hover:not(.disabled) .food-emoji {
   transform: scale(1.1);
 }
@@ -218,7 +212,6 @@
   pointer-events: none;
 }
 
-/* Habi Character Section */
 .habi-character-section {
   display: flex;
   align-items: center;
@@ -256,7 +249,6 @@
   max-width: 400px;
 }
 
-/* Purchase Animation */
 .purchase-animation {
   position: fixed;
   top: 20%;
@@ -338,7 +330,6 @@
   }
 }
 
-/* Tips Section */
 .feed-tips {
   display: flex;
   flex-direction: column;
@@ -383,7 +374,6 @@
   font-weight: 600;
 }
 
-/* Tablet - 768px */
 @media (max-width: 768px) {
   .feed-header {
     padding: 14px 18px;
@@ -445,7 +435,6 @@
   }
 }
 
-/* Mobile - 480px */
 @media (max-width: 480px) {
   .feed-habi-container {
     padding: 12px;
@@ -578,13 +567,11 @@
   }
 }
 
-/* Focus states */
 .food-item-redesigned:focus-visible {
   outline: 3px solid #f59e0b;
   outline-offset: 2px;
 }
 
-/* Dark mode */
 @media (prefers-color-scheme: dark) {
   .feed-habi {
     background: linear-gradient(135deg, #451a03 0%, #7c2d12 100%);
@@ -629,7 +616,6 @@
   }
 }
 
-/* High contrast mode */
 @media (prefers-contrast: high) {
   .feed-header,
   .food-item-redesigned,
@@ -643,7 +629,6 @@
   }
 }
 
-/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .habi-image,
   .food-emoji,

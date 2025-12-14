@@ -73,7 +73,6 @@
   letter-spacing: 0.3px;
 }
 
-/* Compact Food Bar */
 .food-bar-compact {
   margin-bottom: 16px;
 }
@@ -200,7 +199,6 @@
   padding: 0 24px 24px 24px;
 }
 
-/* Habi Avatar in Popup */
 .habi-avatar {
   text-align: center;
   margin-bottom: 28px;
@@ -339,7 +337,6 @@
   }
 }
 
-/* Tablet - 768px */
 @media (max-width: 768px) {
   .food-control-compact {
     padding: 18px;
@@ -406,7 +403,6 @@
   }
 }
 
-/* Mobile - 480px */
 @media (max-width: 480px) {
   .food-control-compact {
     padding: 14px 16px;
@@ -529,7 +525,6 @@
   }
 }
 
-/* Dark mode */
 @media (prefers-color-scheme: dark) {
   .food-control-compact,
   .info-popup {
@@ -592,7 +587,6 @@
   }
 }
 
-/* High contrast mode */
 @media (prefers-contrast: high) {
   .food-control-compact,
   .info-popup {
@@ -609,7 +603,6 @@
   }
 }
 
-/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .habi-mood-small,
   .food-bar-fill-compact,

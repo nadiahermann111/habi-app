@@ -49,7 +49,6 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
   const [processingItemId, setProcessingItemId] = useState(null);
   const foodControlRef = useRef(null);
 
-  // ✅ MAPA OBRAZKÓW
   const clothingImages = {
     1: HabiPiercingHappy,
     2: HabiBowHappy,
@@ -63,7 +62,6 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
     10: HabiPlayboyHappy
   };
 
-  // 🔊 TABLICA WSZYSTKICH DŹWIĘKÓW JEDZENIA
   const foodSounds = [
     Food1Sound, Food2Sound, Food3Sound, Food4Sound, Food5Sound,
     Food6Sound, Food7Sound, Food8Sound, Food9Sound, Food10Sound,
@@ -72,7 +70,6 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
     Food21Sound, Food22Sound
   ];
 
-  // 🔊 FUNKCJA DO ODTWARZANIA LOSOWEGO DŹWIĘKU JEDZENIA
   const playRandomFoodSound = () => {
     try {
       const randomIndex = Math.floor(Math.random() * foodSounds.length);
@@ -150,7 +147,6 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
   };
 
   const handlePurchase = async (item) => {
-    // ✅ Sprawdź czy już coś nie jest przetwarzane
     if (processingItemId) {
       console.log('⏳ Transakcja w toku, czekaj...');
       return;
@@ -165,7 +161,6 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
       return;
     }
 
-    // ✅ Ustawiamy tylko processingItemId (bez globalnego loading)
     setProcessingItemId(item.id);
 
     try {
@@ -174,7 +169,6 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
       if (result.success) {
         console.log(`✅ Zakup udany! Pozostało monet: ${result.remainingCoins}`);
 
-        // 🔊 ODTWÓRZ LOSOWY DŹWIĘK JEDZENIA
         playRandomFoodSound();
 
         setCurrentCoins(result.remainingCoins);
@@ -197,7 +191,7 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
           cost: item.cost
         });
 
-        setTimeout(() => setPurchaseAnimation(null), 3000);
+        setTimeout(() => setPurchaseAnimation(null), 1500);
 
       } else {
         console.error('❌ Zakup nieudany:', result.error);
@@ -208,7 +202,7 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
       const errorMsg = 'Błąd podczas zakupu - sprawdź połączenie internetowe';
       setError(errorMsg);
     } finally {
-      // ✅ Zawsze resetuj processingItemId
+      // zawsze resetuj processingItemId
       setProcessingItemId(null);
     }
   };
@@ -276,7 +270,7 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
 
         <div className="food-items-grid-redesigned">
           {foodItems.map(item => {
-            // ✅ Item jest disabled jeśli: brak monet lub ten konkretny item jest przetwarzany
+            // Item jest disabled jeśli: brak monet lub ten konkretny item jest przetwarzany
             const isProcessing = processingItemId === item.id;
             const canAfford = currentCoins >= item.cost;
             const isDisabled = !canAfford || isProcessing;

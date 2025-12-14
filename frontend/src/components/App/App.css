@@ -84,13 +84,11 @@ body {
   text-align: center;
 }
 
-/* Focus-visible styles */
 *:focus-visible {
   outline: 3px solid var(--warm-yellow);
   outline-offset: 2px;
 }
 
-/* Selection styles */
 ::selection {
   background-color: var(--warm-yellow);
   color: var(--text-primary);
@@ -101,7 +99,6 @@ body {
   color: var(--text-primary);
 }
 
-/* Scrollbar styles */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -120,7 +117,6 @@ body {
   background: var(--deep-gold);
 }
 
-/* Tablet - 768px */
 @media (max-width: 768px) {
   .App {
     padding: 16px;
@@ -146,7 +142,6 @@ body {
   }
 }
 
-/* Mobile - 480px */
 @media (max-width: 480px) {
   .App {
     padding: 12px;
@@ -172,7 +167,6 @@ body {
   }
 }
 
-/* Dark mode support */
 @media (prefers-color-scheme: dark) {
   :root {
     --text-primary: #ffffff;
@@ -202,7 +196,6 @@ body {
   }
 }
 
-/* High contrast mode */
 @media (prefers-contrast: high) {
   *:focus-visible {
     outline-width: 4px;
@@ -213,7 +206,6 @@ body {
   }
 }
 
-/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .loading-spinner {
     animation: none;
@@ -226,7 +218,6 @@ body {
   }
 }
 
-/* Print styles */
 @media print {
   body {
     background: white;

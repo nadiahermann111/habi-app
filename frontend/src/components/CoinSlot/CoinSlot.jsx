@@ -52,7 +52,6 @@ const CoinSlot = ({
       console.error('Błąd pobierania monet:', error);
       setError('Błąd połączenia');
 
-      // Użycie cached wartości z localStorage w przypadku błędu połączenia
       const cachedCoins = localStorage.getItem('cached_coins');
       if (cachedCoins) {
         setCoins(parseInt(cachedCoins));

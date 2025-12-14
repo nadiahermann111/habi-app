@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import CoinSlot from '../CoinSlot/CoinSlot';
 import HabiLogo from './habi-logo.png';
 
-// ✅ STATYCZNE IMPORTY WSZYSTKICH OBRAZKÓW
 import HabiAdultHappy from '../HabiClothes/HabiAdultHappy.png';
 import HabiPiercingHappy from '../HabiClothes/HabiPiercingHappy.png';
 import HabiBowHappy from '../HabiClothes/HabiBowHappy.png';
@@ -15,7 +14,6 @@ import HabiJeansHappy from '../HabiClothes/HabiJeansHappy.png';
 import HabiShrekHappy from '../HabiClothes/HabiShrekHappy.png';
 import HabiPlayboyHappy from '../HabiClothes/HabiPlayboyHappy.png';
 
-// 🔊 IMPORTY DŹWIĘKÓW
 import BananySound from '../Sounds/Banany.mp3';
 import HabiSound from '../Sounds/Habi.mp3';
 import KokardaSound from '../Sounds/Kokarda.mp3';
@@ -41,7 +39,6 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
 
   const API_BASE_URL = 'https://habi-backend.onrender.com';
 
-  // ✅ MAPA OBRAZKÓW - BEZ require()
   const clothingImages = {
     1: HabiPiercingHappy,
     2: HabiBowHappy,
@@ -55,21 +52,19 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
     10: HabiPlayboyHappy
   };
 
-  // 🔊 MAPA DŹWIĘKÓW - dopasowana do ID ubranek
   const clothingSounds = {
     1: KolczykiSound,     // Kolczyki
     2: KokardaSound,      // Kokardka
     3: OpaskaSound,       // Opaska w Panterke
     4: KwiatekSound,      // Kwiatek Hibiskus
     5: TatuazeSound,      // Tatuaże
-    6: HabiSound,         // Koszulka i❤️ Habi
+    6: HabiSound,         // Koszulka Habi
     7: BananySound,       // Koszulka Banan
     8: OgrodnickiSound,   // Ogrodniczki
-    9: ShrekSound,        // Tajemnicza opcja (Shrek)
+    9: ShrekSound,        // Shrek
     10: PlayboySound      // Strój Playboy
   };
 
-  // 🔊 FUNKCJA DO ODTWARZANIA DŹWIĘKÓW
   const playSound = (itemId) => {
     try {
       const soundFile = clothingSounds[itemId];
@@ -85,7 +80,6 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
     }
   };
 
-  // ✅ FUNKCJA ZWRACAJĄCA OBRAZEK
   const getHabiImage = () => {
     if (!currentClothing) return HabiAdultHappy;
     return clothingImages[currentClothing] || HabiAdultHappy;
@@ -123,7 +117,6 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
     try {
       const token = localStorage.getItem('token');
 
-      // 🧹 JEŚLI NIE MA TOKENU - WYCZYŚĆ WSZYSTKO
       if (!token) {
         console.log('⚠️ Brak tokenu - czyszczenie lokalnych danych');
         localStorage.removeItem('currentClothing');
@@ -145,17 +138,16 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
 
       const data = await response.json();
 
-      // 🔍 DEBUGOWANIE - pokaż co zwrócił backend
       console.log('📦 Response z backendu:', data);
       console.log('  - owned_clothing_ids:', data.owned_clothing_ids);
       console.log('  - current_clothing_id:', data.current_clothing_id);
 
-      // ✅ Zapisz posiadane ubrania
+      //Zapisz posiadane ubrania
       const owned = data.owned_clothing_ids || [];
       setOwnedClothes(owned);
       localStorage.setItem('ownedClothes', JSON.stringify(owned));
 
-      // ✅ KRYTYCZNA CZĘŚĆ - synchronizacja aktualnie noszonego ubrania
+      //synchronizacja aktualnie noszonego ubrania
       const backendClothingId = data.current_clothing_id;
 
       // Jeśli backend zwraca null lub undefined - wyczyść lokalne dane
@@ -167,11 +159,10 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
           onClothingChange(null);
         }
       }
-      // Jeśli backend zwraca konkretne ID - ustaw je
+
       else {
         console.log('👔 Backend zwraca ID:', backendClothingId);
 
-        // Sprawdź czy użytkownik faktycznie posiada to ubranie
         if (owned.includes(backendClothingId)) {
           clothingStorage.save(backendClothingId);
           if (onClothingChange) {
@@ -190,7 +181,6 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
     } catch (error) {
       console.error('❌ Błąd fetchOwnedClothing:', error);
 
-      // W przypadku błędu - wyczyść wszystko dla bezpieczeństwa
       localStorage.removeItem('currentClothing');
       setOwnedClothes([]);
       clothingStorage.save(null);
@@ -200,7 +190,6 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
     }
   };
 
-  // ✅ FUNKCJA: Aktualizacja aktualnie noszonego ubrania na backendzie
   const updateCurrentClothing = async (clothingId) => {
     try {
       const token = localStorage.getItem('token');
@@ -240,14 +229,11 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       console.error('❌ Błąd updateCurrentClothing:', error);
       setError(`Nie udało się zmienić ubrania: ${error.message}`);
 
-      // NIE zapisuj lokalnie jeśli backend odmówił
-      // Odśwież dane z backendu
       await fetchOwnedClothing();
     }
   };
 
   const handlePurchase = async (item) => {
-    // ✅ Sprawdź czy już coś nie jest przetwarzane
     if (processingItemId) {
       console.log('⏳ Transakcja w toku, czekaj...');
       return;
@@ -266,7 +252,6 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       return;
     }
 
-    // ✅ Ustawiamy tylko processingItemId (bez globalnego loading)
     setProcessingItemId(item.id);
 
     try {
@@ -292,7 +277,6 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       const data = await response.json();
       console.log(`✅ Zakup udany!`, data);
 
-      // 🔊 ODTWÓRZ DŹWIĘK DLA ZAKUPIONEGO PRZEDMIOTU
       playSound(item.id);
 
       const newCoins = data.remaining_coins;
@@ -303,7 +287,6 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       setOwnedClothes(updatedOwned);
       localStorage.setItem('ownedClothes', JSON.stringify(updatedOwned));
 
-      // 🎉 ZMIANA UBRANIA PO ZAKUPIE - wysłanie do backendu
       console.log('👗 Automatyczne założenie', item.name, 'ID:', item.id);
       await updateCurrentClothing(item.id);
 
@@ -317,7 +300,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
         cost: data.cost
       });
 
-      setTimeout(() => setPurchaseAnimation(null), 3000);
+      setTimeout(() => setPurchaseAnimation(null), 1500);
 
     } catch (error) {
       console.error('❌ Błąd handlePurchase:', error);

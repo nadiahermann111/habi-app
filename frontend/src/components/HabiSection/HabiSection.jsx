@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import './HabiSection.css';
 
-// ✅ STATYCZNE IMPORTY WSZYSTKICH OBRAZKÓW
 import HabiAdultHappy from '../HabiClothes/HabiAdultHappy.png';
 import HabiPiercingHappy from '../HabiClothes/HabiPiercingHappy.png';
 import HabiBowHappy from '../HabiClothes/HabiBowHappy.png';
@@ -14,7 +13,6 @@ import HabiJeansHappy from '../HabiClothes/HabiJeansHappy.png';
 import HabiShrekHappy from '../HabiClothes/HabiShrekHappy.png';
 import HabiPlayboyHappy from '../HabiClothes/HabiPlayboyHappy.png';
 
-// 🔊 IMPORTY DŹWIĘKÓW MOTYWACYJNYCH
 import DzialaszLepiejSound from '../Sounds/DzialaszLepiej.mp3';
 import DzisRobimySound from '../Sounds/DzisRobimy.mp3';
 import JestemTuSound from '../Sounds/JestemTu.mp3';
@@ -44,7 +42,6 @@ const HabiSection = ({ currentClothing }) => {
   const timeoutRef = useRef(null);
   const lastClickTime = useRef(0);
 
-  // ✅ MAPA OBRAZKÓW
   const clothingImages = {
     1: HabiPiercingHappy,
     2: HabiBowHappy,
@@ -58,13 +55,11 @@ const HabiSection = ({ currentClothing }) => {
     10: HabiPlayboyHappy
   };
 
-  // ✅ FUNKCJA ZWRACAJĄCA OBRAZEK
   const getHabiImage = () => {
     if (!currentClothing) return HabiAdultHappy;
     return clothingImages[currentClothing] || HabiAdultHappy;
   };
 
-  // 🔊 TABLICA WIADOMOŚCI Z PRZYPISANYMI DŹWIĘKAMI
   const motivationalMessages = [
     { text: "Każdy dzień to nowy początek! 🌅", sound: KazdyDzienSound },
     { text: "Małymi krokami osiągniesz wielkie rzeczy! 👣", sound: MalymiKrokamiSound },
@@ -88,7 +83,6 @@ const HabiSection = ({ currentClothing }) => {
     { text: "Działasz lepiej niż poranna kawa ☕💪", sound: DzialaszLepiejSound }
   ];
 
-  // 🔊 FUNKCJA DO ODTWARZANIA DŹWIĘKÓW
   const playSound = (soundFile) => {
     try {
       if (soundFile) {
@@ -120,10 +114,8 @@ const HabiSection = ({ currentClothing }) => {
       const randomIndex = Math.floor(Math.random() * motivationalMessages.length);
       const selectedMessage = motivationalMessages[randomIndex];
 
-      // ✅ USTAW TEKST WIADOMOŚCI
       setCurrentMessage(selectedMessage.text);
 
-      // 🔊 ODTWÓRZ DŹWIĘK
       playSound(selectedMessage.sound);
 
       setShowMessage(true);

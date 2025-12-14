@@ -1,6 +1,4 @@
-// src/utils/clothingHelper.jsx
 
-// Mapowanie ID ubrań na nazwy plików PNG
 export const clothingImageMap = {
   1: 'HabiPiercingHappy.png',
   2: 'HabiBowHappy.png',
@@ -14,7 +12,6 @@ export const clothingImageMap = {
   10: 'HabiPlayboyHappy.png'
 };
 
-// Funkcja zwracająca nazwę pliku obrazka na podstawie ID
 export const getClothingImage = (clothingId) => {
   if (!clothingId) {
     return 'HabiAdultHappy.png'; // Domyślny obrazek
@@ -22,7 +19,6 @@ export const getClothingImage = (clothingId) => {
   return clothingImageMap[clothingId] || 'HabiAdultHappy.png';
 };
 
-// ✅ POMOCNICZA FUNKCJA - pobiera user_id z tokenu
 const getUserIdFromToken = () => {
   try {
     const token = localStorage.getItem('token');
@@ -36,7 +32,6 @@ const getUserIdFromToken = () => {
   }
 };
 
-// ✅ POPRAWIONE - Funkcje z izolacją użytkowników
 export const clothingStorage = {
   save: (clothingId) => {
     const userId = getUserIdFromToken();
@@ -99,7 +94,6 @@ export const clothingStorage = {
     console.log(`🗑️ Wyczyszczono ubrania dla użytkownika ${userId}`);
   },
 
-  // ✅ NOWA FUNKCJA - wyczyść ubranie dla wszystkich użytkowników (np. przy wylogowaniu)
   clearAll: () => {
     Object.keys(localStorage)
       .filter(key =>
@@ -112,7 +106,6 @@ export const clothingStorage = {
   }
 };
 
-// ✅ Funkcja wywoływana przy wylogowaniu - czyści TYLKO dane bieżącego użytkownika
 export const clearClothingOnLogout = () => {
   clothingStorage.clear();
   console.log('👋 Wyczyszczono dane ubrań przy wylogowaniu');

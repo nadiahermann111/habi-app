@@ -129,7 +129,12 @@ const HabitStats = ({ onBack }) => {
             <button className="stats-back-btn" onClick={onBack}>
               ←
             </button>
+          </div>
+          <div className="stats-header-center">
             <img src={HabiLogo} alt="Habi" className="habi-logo-stats" />
+          </div>
+          <div className="stats-header-right">
+            {/* Puste - dla symetrii */}
           </div>
         </div>
 

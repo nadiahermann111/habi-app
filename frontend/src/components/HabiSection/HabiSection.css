@@ -237,7 +237,6 @@
   }
 }
 
-/* Reduce motion dla użytkowników z preferencjami dostępności */
 @media (prefers-reduced-motion: reduce) {
   .habi-avatar,
   .habi-avatar img,

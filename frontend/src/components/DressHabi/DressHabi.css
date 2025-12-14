@@ -16,7 +16,6 @@
   width: 100%;
 }
 
-/* Header */
 .dress-header {
   display: flex;
   align-items: center;
@@ -88,7 +87,6 @@
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
-/* Clothing Slider */
 .clothing-slider-container {
   margin-bottom: 24px;
   position: relative;
@@ -149,19 +147,16 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* ✅ Hover tylko gdy NIE disabled i NIE owned */
 .clothing-item:hover:not(.disabled):not(.owned):not(.wearing) {
   transform: translateY(-4px) scale(1.02);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   border-color: #f59e0b;
 }
 
-/* ✅ Active tylko gdy NIE disabled i NIE owned */
 .clothing-item:active:not(.disabled):not(.owned):not(.wearing) {
   transform: scale(0.98);
 }
 
-/* ✅ Disabled blokuje wszystkie interakcje */
 .clothing-item.disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -171,7 +166,6 @@
   transform: none !important;
 }
 
-/* ✅ Owned ma delikatny hover */
 .clothing-item.owned:not(.wearing) {
   background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
   border-color: #66bb6a;
@@ -251,7 +245,6 @@
   pointer-events: none;
 }
 
-/* ✅ Emoji skaluje się tylko gdy parent NIE jest disabled/owned */
 .clothing-item:hover:not(.disabled):not(.owned):not(.wearing) .clothing-emoji {
   transform: scale(1.15);
 }
@@ -340,7 +333,6 @@
   border-radius: 10px;
 }
 
-/* Purchase Animation */
 .purchase-animation {
   position: fixed;
   top: 20%;
@@ -422,7 +414,6 @@
   }
 }
 
-/* Tips Section */
 .dress-tips {
   display: flex;
   flex-direction: column;
@@ -477,7 +468,6 @@
   font-weight: 600;
 }
 
-/* ✅ Wearing z kontrolowaną animacją */
 .clothing-item.wearing {
   border: 3px solid #4CAF50 !important;
   box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
@@ -737,13 +727,11 @@
   }
 }
 
-/* Focus states */
 .clothing-item:focus-visible {
   outline: 3px solid #f59e0b;
   outline-offset: 2px;
 }
 
-/* Dark mode */
 @media (prefers-color-scheme: dark) {
   .dress-habi {
     background: linear-gradient(135deg, #451a03 0%, #7c2d12 100%);
@@ -800,7 +788,6 @@
   }
 }
 
-/* High contrast mode */
 @media (prefers-contrast: high) {
   .dress-header,
   .clothing-item,
@@ -814,7 +801,6 @@
   }
 }
 
-/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .habi-image,
   .clothing-emoji,

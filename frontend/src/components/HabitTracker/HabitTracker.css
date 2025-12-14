@@ -822,7 +822,6 @@
   }
 }
 
-/* Responsywność dla mniejszych ekranów */
 @media (max-width: 480px) {
   .notification-container {
     width: 95%;
@@ -846,7 +845,6 @@
   }
 }
 
-/* Wsparcie dla trybu ciemnego */
 @media (prefers-color-scheme: dark) {
   .notification {
     background: #2d3748;
@@ -882,7 +880,6 @@
   }
 }
 
-/* Redukcja ruchu dla użytkowników z preferencją */
 @media (prefers-reduced-motion: reduce) {
   .notification {
     animation: none;
