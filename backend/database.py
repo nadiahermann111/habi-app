@@ -159,6 +159,45 @@ async def init_db():
         # utworzenie wszystkich tabel
         await db.executescript(CREATE_TABLES_SQL)
 
+        # ============================================
+        # MIGRACJE - Dodanie nowych kolumn
+        # ============================================
+
+        # Pobierz listę kolumn w tabeli users
+        cursor = await db.execute("PRAGMA table_info(users)")
+        columns = await cursor.fetchall()
+        column_names = [column[1] for column in columns]
+
+        # ✅ MIGRACJA 1: Dodaj kolumnę current_clothing_id
+        if 'current_clothing_id' not in column_names:
+            print("➕ Dodawanie kolumny current_clothing_id...")
+            try:
+                await db.execute("""
+                    ALTER TABLE users 
+                    ADD COLUMN current_clothing_id INTEGER DEFAULT NULL
+                """)
+                await db.commit()
+                print("✅ Kolumna current_clothing_id dodana pomyślnie")
+            except Exception as e:
+                print(f"⚠️ Błąd przy dodawaniu kolumny current_clothing_id: {e}")
+        else:
+            print("✅ Kolumna current_clothing_id już istnieje")
+
+        # ✅ MIGRACJA 2: Dodaj kolumnę last_slot_play
+        if 'last_slot_play' not in column_names:
+            print("➕ Dodawanie kolumny last_slot_play...")
+            try:
+                await db.execute("""
+                    ALTER TABLE users 
+                    ADD COLUMN last_slot_play TEXT DEFAULT NULL
+                """)
+                await db.commit()
+                print("✅ Kolumna last_slot_play dodana pomyślnie")
+            except Exception as e:
+                print(f"⚠️ Błąd przy dodawaniu kolumny last_slot_play: {e}")
+        else:
+            print("✅ Kolumna last_slot_play już istnieje")
+
         # sprawdzenie czy tabela rewards jest pusta
         cursor = await db.execute("SELECT COUNT(*) FROM rewards")
         count = await cursor.fetchone()

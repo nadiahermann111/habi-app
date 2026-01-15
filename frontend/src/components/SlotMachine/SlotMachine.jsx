@@ -12,174 +12,119 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
   const [wonCoins, setWonCoins] = useState(0);
   const [canPlay, setCanPlay] = useState(true);
   const [timeUntilReset, setTimeUntilReset] = useState('');
-  const previousUserIdRef = useRef(null);
+  const [loading, setLoading] = useState(false);
 
   const symbols = ['🍌', '🍎', '🍇', '🍊', '🍓', '🥥', '🍋', '🍑'];
 
   // ============================================
-  // Helper funkcje dla user-specific localStorage
+  // Sprawdzanie czy użytkownik może grać (z backendu)
   // ============================================
 
-  /**
-   * Zwraca klucz storage dla konkretnego użytkownika
-   * UŻYWA userId Z PROPS JAKO ŹRÓDŁA PRAWDY
-   */
-  const getStorageKey = (targetUserId) => {
-    const actualUserId = targetUserId || userId;
-
-    if (!actualUserId) {
-      console.warn('⚠️ SlotMachine: Brak userId');
-      return null;
+  const checkCanPlay = async () => {
+    if (!userId) {
+      console.warn('⚠️ Brak userId');
+      return;
     }
 
-    return `slotMachine_v4_user_${actualUserId}`;
-  };
+    setLoading(true);
 
-  /**
-   * Czyści legacy klucze (wszystkie stare formaty)
-   */
-  const cleanupAllLegacyKeys = () => {
-    const migrationKey = 'slotMachine_cleaned_v4';
-    const alreadyCleaned = localStorage.getItem(migrationKey);
+    try {
+      const token = localStorage.getItem('token');
 
-    if (!alreadyCleaned) {
-      console.log('🧹 SlotMachine: Czyszczenie wszystkich starych kluczy...');
-
-      const keysToRemove = [];
-
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (
-          key.startsWith('slotMachineLastPlay_') ||
-          key.startsWith('slotMachine_lastPlay_') ||
-          key.startsWith('slotMachine_v3_')
-        )) {
-          keysToRemove.push(key);
-        }
+      if (!token) {
+        console.error('❌ Brak tokenu');
+        return;
       }
 
-      keysToRemove.forEach(key => {
-        localStorage.removeItem(key);
-        console.log(`🗑️ Usunięto: ${key}`);
+      const response = await fetch('https://habi-backend.onrender.com/api/slot-machine/can-play', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
-      localStorage.setItem(migrationKey, 'true');
-      console.log(`✅ Wyczyszczono ${keysToRemove.length} starych kluczy`);
+      if (!response.ok) {
+        throw new Error('Błąd sprawdzania statusu automatu');
+      }
+
+      const data = await response.json();
+
+      console.log('🎰 Status automatu:', data);
+
+      setCanPlay(data.can_play);
+      setTimeUntilReset(data.time_until_reset || '');
+
+    } catch (error) {
+      console.error('❌ Błąd sprawdzania automatu:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   // ============================================
-  // Czyszczenie przy montowaniu - TYLKO RAZ
+  // Zapisywanie gry w backendzie
   // ============================================
 
-  useEffect(() => {
-    cleanupAllLegacyKeys();
-  }, []);
-
-  // ============================================
-  // Detekcja zmiany użytkownika
-  // ============================================
-
-  useEffect(() => {
-    // Sprawdź czy userId się zmienił
-    if (userId && userId !== previousUserIdRef.current) {
-      console.log(`👤 SlotMachine: Zmiana użytkownika ${previousUserIdRef.current} → ${userId}`);
-
-      // Resetuj stan automatu
-      setShowResult(false);
-      setWonCoins(0);
-      setIsSpinning(false);
-
-      // Zaktualizuj ref
-      previousUserIdRef.current = userId;
-
-      // Sprawdź czy nowy użytkownik może grać
-      checkDailyLimit(userId);
+  const savePlayToBackend = async () => {
+    if (!userId) {
+      console.error('❌ Brak userId - nie można zapisać gry');
+      return false;
     }
-  }, [userId]);
+
+    try {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        console.error('❌ Brak tokenu');
+        return false;
+      }
+
+      const response = await fetch('https://habi-backend.onrender.com/api/slot-machine/play', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('❌ Błąd zapisywania gry:', error);
+        return false;
+      }
+
+      const data = await response.json();
+      console.log('💾 Gra zapisana w backendzie:', data);
+
+      return true;
+
+    } catch (error) {
+      console.error('❌ Błąd zapisywania gry:', error);
+      return false;
+    }
+  };
 
   // ============================================
-  // Sprawdzanie limitu przy otwarciu
+  // Effects
   // ============================================
 
   useEffect(() => {
     if (isOpen && userId) {
-      console.log(`🎰 SlotMachine otwarto dla userId: ${userId}`);
       setShowResult(false);
-      checkDailyLimit(userId);
+      checkCanPlay();
     }
   }, [isOpen, userId]);
 
-  // ============================================
-  // Timer odświeżający czas do resetu
-  // ============================================
-
   useEffect(() => {
-    if (!userId) return;
+    if (userId && !canPlay) {
+      const interval = setInterval(() => {
+        // Przelicz czas co minutę
+        checkCanPlay();
+      }, 60000);
 
-    const interval = setInterval(() => {
-      if (!canPlay) {
-        calculateTimeUntilReset();
-      }
-    }, 60000); // Co minutę
-
-    return () => clearInterval(interval);
+      return () => clearInterval(interval);
+    }
   }, [userId, canPlay]);
-
-  // ============================================
-  // Funkcja sprawdzająca czy użytkownik może grać
-  // ============================================
-
-  const checkDailyLimit = (targetUserId) => {
-    const actualUserId = targetUserId || userId;
-
-    if (!actualUserId) {
-      console.warn('⚠️ checkDailyLimit: Brak userId');
-      setCanPlay(true);
-      return;
-    }
-
-    const storageKey = getStorageKey(actualUserId);
-    if (!storageKey) {
-      console.warn('⚠️ checkDailyLimit: Nie można utworzyć klucza');
-      setCanPlay(true);
-      return;
-    }
-
-    const lastPlayDate = localStorage.getItem(storageKey);
-    const today = new Date().toDateString();
-
-    console.log(`📅 Sprawdzanie limitu dla userId ${actualUserId}:`);
-    console.log(`   Key: ${storageKey}`);
-    console.log(`   Ostatnia gra: ${lastPlayDate || 'NIGDY'}`);
-    console.log(`   Dzisiaj: ${today}`);
-
-    if (lastPlayDate === today) {
-      console.log(`   ❌ Ten użytkownik już dzisiaj grał`);
-      setCanPlay(false);
-      calculateTimeUntilReset();
-    } else {
-      console.log(`   ✅ Ten użytkownik może grać`);
-      setCanPlay(true);
-      setTimeUntilReset('');
-    }
-  };
-
-  /**
-   * Oblicza czas do resetu (północy)
-   */
-  const calculateTimeUntilReset = () => {
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-
-    const diff = tomorrow - now;
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-    setTimeUntilReset(`${hours}h ${minutes}m`);
-  };
 
   // ============================================
   // Logika automatu
@@ -194,8 +139,8 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
   };
 
   const spinReels = () => {
-    if (isSpinning || !canPlay) {
-      console.log('⚠️ Nie można kręcić:', { isSpinning, canPlay });
+    if (isSpinning || !canPlay || loading) {
+      console.log('⚠️ Nie można kręcić:', { isSpinning, canPlay, loading });
       return;
     }
 
@@ -217,25 +162,17 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
       if (count >= 15) {
         clearInterval(interval);
         setTimeout(() => {
-          determineResult(userId);
+          determineResult();
         }, 300);
       }
     }, 100);
   };
 
-  const determineResult = (targetUserId) => {
-    const actualUserId = targetUserId || userId;
-
-    if (!actualUserId) {
-      console.error('❌ determineResult: Brak userId');
-      setIsSpinning(false);
-      return;
-    }
-
+  const determineResult = async () => {
     const random = Math.random();
     let finalReels;
 
-    // 10% szans na jackpot (3 takie same)
+    // 10% szans na jackpot
     if (random < 0.10) {
       const symbol = symbols[Math.floor(Math.random() * symbols.length)];
       finalReels = [
@@ -256,7 +193,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
         [other1, other2, symbol]
       ];
     }
-    // 60% szans na różne symbole
+    // 60% szans na różne
     else {
       const shuffled1 = [...symbols].sort(() => Math.random() - 0.5).slice(0, 3);
       const shuffled2 = [...symbols].sort(() => Math.random() - 0.5).slice(0, 3);
@@ -268,54 +205,45 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     setReels(finalReels);
     setIsSpinning(false);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const centerRow = [finalReels[0][1], finalReels[1][1], finalReels[2][1]];
       const coins = calculateWinnings(centerRow);
 
       setWonCoins(coins);
       setShowResult(true);
 
-      // ✅ Zapisz datę gry dla KONKRETNEGO użytkownika
-      const storageKey = getStorageKey(actualUserId);
-      if (storageKey) {
-        const today = new Date().toDateString();
-        localStorage.setItem(storageKey, today);
-        console.log(`💾 Zapisano grę: ${storageKey} = ${today}`);
-        console.log(`   userId: ${actualUserId}`);
+      // ✅ Zapisz grę w backendzie
+      const saved = await savePlayToBackend();
+
+      if (saved) {
+        setCanPlay(false);
+
+        // Przekaż wygrane monety
+        if (onWinCoins) {
+          onWinCoins(coins);
+        }
+
+        // Odśwież status
+        checkCanPlay();
       } else {
-        console.error('❌ Nie można zapisać - brak storageKey');
+        console.error('❌ Nie udało się zapisać gry');
       }
 
-      setCanPlay(false);
-      calculateTimeUntilReset();
-
-      // Przekaż wygrane monety do parent componentu
-      if (onWinCoins) {
-        onWinCoins(coins);
-      }
-
-      console.log(`🎊 Wynik: ${coins} monet (${centerRow.join(' ')})`);
+      console.log(`🎰 Wynik: ${coins} monet (${centerRow.join(' ')})`);
     }, 1000);
   };
 
   const calculateWinnings = (centerRow) => {
     const [r1, r2, r3] = centerRow;
 
-    // 3 takie same - JACKPOT!
     if (r1 === r2 && r2 === r3) {
       return 30;
     }
-    // 2 takie same
     if (r1 === r2 || r2 === r3 || r1 === r3) {
       return 15;
     }
-    // Wszystkie różne
     return 5;
   };
-
-  // ============================================
-  // Obsługa zamykania
-  // ============================================
 
   const handleClose = () => {
     if (!isSpinning && !showResult) {
@@ -332,10 +260,6 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     setShowResult(false);
     onClose();
   };
-
-  // ============================================
-  // Renderowanie
-  // ============================================
 
   if (!isOpen) return null;
 
@@ -388,7 +312,11 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
         </div>
 
         <div className="slot-controls">
-          {canPlay ? (
+          {loading ? (
+            <div className="slot-loading">
+              <p>⏳ Ładowanie...</p>
+            </div>
+          ) : canPlay ? (
             <button
               className="slot-spin-button"
               onClick={spinReels}
@@ -400,7 +328,9 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
             <div className="slot-locked">
               <div className="locked-icon">🔒</div>
               <p className="locked-text">Już dzisiaj zagrałeś!</p>
-              <p className="locked-time">Następna gra za: {timeUntilReset}</p>
+              {timeUntilReset && (
+                <p className="locked-time">Następna gra za: {timeUntilReset}</p>
+              )}
             </div>
           )}
 
