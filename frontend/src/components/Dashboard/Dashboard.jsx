@@ -18,6 +18,10 @@ const Dashboard = ({ user, onLogout }) => {
   const [isSlotMachineOpen, setIsSlotMachineOpen] = useState(false);
   const [currentClothing, setCurrentClothing] = useState(null);
 
+  // ============================================
+  // EFFECTS
+  // ============================================
+
   useEffect(() => {
     const savedClothing = clothingStorage.load();
     if (savedClothing) {
@@ -34,24 +38,31 @@ const Dashboard = ({ user, onLogout }) => {
     fetchProfile();
   }, []);
 
+  // ============================================
+  // FETCH PROFILE
+  // ============================================
+
   const fetchProfile = async () => {
     setLoading(true);
     try {
       const profileData = await authAPI.getProfile();
       setProfile(profileData);
+      console.log('✅ Profil załadowany:', profileData);
     } catch (err) {
       setError('Błąd pobierania profilu');
-      console.error(err);
+      console.error('❌ Błąd profilu:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ POPRAWIONA funkcja wylogowania (bez auth.js)
+  // ============================================
+  // LOGOUT
+  // ============================================
+
   const handleLogout = () => {
     console.log('🚪 Rozpoczęcie procesu wylogowania...');
 
-    // Pobierz dane użytkownika dla logów
     try {
       const userData = localStorage.getItem('user');
       if (userData) {
@@ -62,21 +73,22 @@ const Dashboard = ({ user, onLogout }) => {
       console.warn('   ⚠️ Błąd parsowania danych użytkownika');
     }
 
-    // Wyczyść dane ubrań
     clearClothingOnLogout();
 
-    // ✅ Wyczyść WSZYSTKIE dane autoryzacji
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('authToken');
     localStorage.removeItem('userData');
     console.log('   🗑️ Dane autoryzacji wyczyszczone');
 
-    // Wywołaj callback wylogowania z App.jsx
     onLogout();
 
     console.log('✅ Wylogowanie zakończone');
   };
+
+  // ============================================
+  // DEV FUNCTIONS
+  // ============================================
 
   const handleAddTestCoins = async () => {
     try {
@@ -85,9 +97,12 @@ const Dashboard = ({ user, onLogout }) => {
         ...prev,
         coins: result.coins
       }));
-      window.dispatchEvent(new CustomEvent('coinsUpdated'));
+      window.dispatchEvent(new CustomEvent('coinsUpdated', {
+        detail: { coins: result.coins }
+      }));
       alert(`${result.message}! Masz teraz ${result.coins} monet.`);
     } catch (error) {
+      console.error('❌ Błąd dodawania monet:', error);
       alert('Błąd dodawania monet');
     }
   };
@@ -110,16 +125,95 @@ const Dashboard = ({ user, onLogout }) => {
       alert(`Habi stracił ${reductionAmount}% szczęścia! 😢 Poziom sytości: ${newLevel}%`);
     } catch (error) {
       alert('Błąd zmiany poziomu szczęścia Habi');
-      console.error('Error reducing Habi happiness:', error);
+      console.error('❌ Error reducing Habi happiness:', error);
     }
   };
 
+  // ============================================
+  // COINS HANDLING
+  // ============================================
+
   const handleCoinsUpdate = (newCoinsAmount) => {
+    console.log(`💰 handleCoinsUpdate: ${profile?.coins} → ${newCoinsAmount}`);
     setProfile(prev => ({
       ...prev,
       coins: newCoinsAmount
     }));
   };
+
+  // ✅ POPRAWIONA FUNKCJA - bezpośrednie wywołanie API
+  const handleWinCoins = async (amount) => {
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🎰 handleWinCoins START');
+    console.log(`   Amount to add: ${amount}`);
+    console.log(`   Current coins: ${profile?.coins}`);
+
+    try {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        console.error('❌ Brak tokenu w localStorage');
+        throw new Error('Brak tokenu autoryzacji');
+      }
+
+      console.log('📤 Wysyłanie requestu do /api/coins/add');
+      console.log(`   URL: https://habi-backend.onrender.com/api/coins/add`);
+      console.log(`   Body: { amount: ${amount} }`);
+
+      const response = await fetch('https://habi-backend.onrender.com/api/coins/add', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ amount: amount })
+      });
+
+      console.log(`📥 Response status: ${response.status}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Response error:', errorText);
+        throw new Error(`HTTP Error ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Response data:', result);
+
+      // Aktualizuj stan lokalny
+      console.log(`🔄 Aktualizacja stanu: ${profile?.coins} → ${result.coins}`);
+      setProfile(prev => ({
+        ...prev,
+        coins: result.coins
+      }));
+
+      // Wyślij event dla innych komponentów (MenuHeader)
+      console.log('📡 Wysyłanie eventu coinsUpdated');
+      window.dispatchEvent(new CustomEvent('coinsUpdated', {
+        detail: { coins: result.coins }
+      }));
+
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('✅ handleWinCoins SUCCESS');
+      console.log(`   New total: ${result.coins} monet`);
+      console.log(`   Added: ${amount} monet`);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    } catch (error) {
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error('❌ handleWinCoins ERROR');
+      console.error('   Error message:', error.message);
+      console.error('   Error stack:', error.stack);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+      alert('Nie udało się dodać wygranych monet. Spróbuj ponownie później.');
+      throw error;
+    }
+  };
+
+  // ============================================
+  // CLOTHING
+  // ============================================
 
   const handleClothingChange = (clothingId) => {
     console.log('👗 Zmiana ubrania na ID:', clothingId);
@@ -131,20 +225,9 @@ const Dashboard = ({ user, onLogout }) => {
     }));
   };
 
-  const handleWinCoins = async (amount) => {
-    try {
-      const result = await authAPI.addCoins(amount);
-      setProfile(prev => ({
-        ...prev,
-        coins: result.coins
-      }));
-      window.dispatchEvent(new CustomEvent('coinsUpdated'));
-      console.log(`🎉 Wygrałeś ${amount} monet! Nowy stan: ${result.coins}`);
-    } catch (error) {
-      console.error('Błąd dodawania wygranych monet:', error);
-      alert('Nie udało się dodać wygranych monet. Spróbuj ponownie.');
-    }
-  };
+  // ============================================
+  // NAVIGATION
+  // ============================================
 
   const handleNavigateToHabits = () => {
     console.log('🎯 Navigating to habits');
@@ -180,6 +263,10 @@ const Dashboard = ({ user, onLogout }) => {
     console.log('🏠 Navigating back to dashboard');
     setCurrentView('dashboard');
   };
+
+  // ============================================
+  // RENDERING
+  // ============================================
 
   if (loading) {
     return <div className="loading">Ładowanie profilu...</div>;

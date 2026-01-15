@@ -17,117 +17,77 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
   const symbols = ['🍌', '🍎', '🍇', '🍊', '🍓', '🥥', '🍋', '🍑'];
 
   // ============================================
-  // Helper funkcje dla user-specific localStorage
+  // Storage helpers
   // ============================================
 
-  /**
-   * Zwraca klucz storage dla konkretnego użytkownika
-   * UŻYWA userId Z PROPS JAKO ŹRÓDŁA PRAWDY
-   */
   const getStorageKey = (targetUserId) => {
     const actualUserId = targetUserId || userId;
-
-    if (!actualUserId) {
-      console.warn('⚠️ SlotMachine: Brak userId');
-      return null;
-    }
-
-    return `slotMachine_v4_user_${actualUserId}`;
+    if (!actualUserId) return null;
+    return `slotMachine_lastPlay_user_${actualUserId}`;
   };
 
-  /**
-   * Czyści legacy klucze (wszystkie stare formaty)
-   */
-  const cleanupAllLegacyKeys = () => {
-    const migrationKey = 'slotMachine_cleaned_v4';
-    const alreadyCleaned = localStorage.getItem(migrationKey);
+  const cleanupLegacyKeys = () => {
+    const migrationKey = 'slotMachine_cleaned_v5';
+    if (localStorage.getItem(migrationKey)) return;
 
-    if (!alreadyCleaned) {
-      console.log('🧹 SlotMachine: Czyszczenie wszystkich starych kluczy...');
+    console.log('🧹 Czyszczenie starych kluczy automatu...');
+    const keysToRemove = [];
 
-      const keysToRemove = [];
-
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (
-          key.startsWith('slotMachineLastPlay_') ||
-          key.startsWith('slotMachine_lastPlay_') ||
-          key.startsWith('slotMachine_v3_')
-        )) {
-          keysToRemove.push(key);
-        }
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (
+        key.startsWith('slotMachineLastPlay_') ||
+        key.startsWith('slotMachine_v') ||
+        key === 'slotMachineLastPlay'
+      )) {
+        keysToRemove.push(key);
       }
-
-      keysToRemove.forEach(key => {
-        localStorage.removeItem(key);
-        console.log(`🗑️ Usunięto: ${key}`);
-      });
-
-      localStorage.setItem(migrationKey, 'true');
-      console.log(`✅ Wyczyszczono ${keysToRemove.length} starych kluczy`);
     }
+
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    localStorage.setItem(migrationKey, 'true');
+    console.log(`✅ Wyczyszczono ${keysToRemove.length} starych kluczy`);
   };
 
   // ============================================
-  // Czyszczenie przy montowaniu - TYLKO RAZ
+  // Effects
   // ============================================
 
   useEffect(() => {
-    cleanupAllLegacyKeys();
+    cleanupLegacyKeys();
   }, []);
 
-  // ============================================
-  // Detekcja zmiany użytkownika
-  // ============================================
-
   useEffect(() => {
-    // Sprawdź czy userId się zmienił
     if (userId && userId !== previousUserIdRef.current) {
-      console.log(`👤 SlotMachine: Zmiana użytkownika ${previousUserIdRef.current} → ${userId}`);
-
-      // Resetuj stan automatu
+      console.log(`👤 Zmiana użytkownika: ${previousUserIdRef.current} → ${userId}`);
       setShowResult(false);
       setWonCoins(0);
       setIsSpinning(false);
-
-      // Zaktualizuj ref
       previousUserIdRef.current = userId;
-
-      // Sprawdź czy nowy użytkownik może grać
       checkDailyLimit(userId);
     }
   }, [userId]);
 
-  // ============================================
-  // Sprawdzanie limitu przy otwarciu
-  // ============================================
-
   useEffect(() => {
     if (isOpen && userId) {
-      console.log(`🎰 SlotMachine otwarto dla userId: ${userId}`);
+      console.log(`🎰 Automat otwarty dla userId: ${userId}`);
       setShowResult(false);
       checkDailyLimit(userId);
     }
   }, [isOpen, userId]);
 
-  // ============================================
-  // Timer odświeżający czas do resetu
-  // ============================================
-
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || canPlay) return;
 
     const interval = setInterval(() => {
-      if (!canPlay) {
-        calculateTimeUntilReset();
-      }
-    }, 60000); // Co minutę
+      calculateTimeUntilReset();
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [userId, canPlay]);
 
   // ============================================
-  // Funkcja sprawdzająca czy użytkownik może grać
+  // Sprawdzanie limitu dziennego (localStorage ONLY)
   // ============================================
 
   const checkDailyLimit = (targetUserId) => {
@@ -141,7 +101,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
 
     const storageKey = getStorageKey(actualUserId);
     if (!storageKey) {
-      console.warn('⚠️ checkDailyLimit: Nie można utworzyć klucza');
+      console.warn('⚠️ Nie można utworzyć klucza storage');
       setCanPlay(true);
       return;
     }
@@ -149,25 +109,26 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     const lastPlayDate = localStorage.getItem(storageKey);
     const today = new Date().toDateString();
 
-    console.log(`📅 Sprawdzanie limitu dla userId ${actualUserId}:`);
-    console.log(`   Key: ${storageKey}`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📅 Sprawdzanie limitu automatu:');
+    console.log(`   User ID: ${actualUserId}`);
+    console.log(`   Storage key: ${storageKey}`);
     console.log(`   Ostatnia gra: ${lastPlayDate || 'NIGDY'}`);
     console.log(`   Dzisiaj: ${today}`);
 
     if (lastPlayDate === today) {
-      console.log(`   ❌ Ten użytkownik już dzisiaj grał`);
+      console.log('   ❌ Użytkownik już dzisiaj grał');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       setCanPlay(false);
       calculateTimeUntilReset();
     } else {
-      console.log(`   ✅ Ten użytkownik może grać`);
+      console.log('   ✅ Użytkownik może grać');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       setCanPlay(true);
       setTimeUntilReset('');
     }
   };
 
-  /**
-   * Oblicza czas do resetu (północy)
-   */
   const calculateTimeUntilReset = () => {
     const now = new Date();
     const tomorrow = new Date(now);
@@ -193,6 +154,18 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     return reel;
   };
 
+  const calculateWinnings = (centerRow) => {
+    const [r1, r2, r3] = centerRow;
+
+    if (r1 === r2 && r2 === r3) {
+      return 30;
+    }
+    if (r1 === r2 || r2 === r3 || r1 === r3) {
+      return 15;
+    }
+    return 5;
+  };
+
   const spinReels = () => {
     if (isSpinning || !canPlay) {
       console.log('⚠️ Nie można kręcić:', { isSpinning, canPlay });
@@ -201,13 +174,18 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
 
     if (!userId) {
       console.error('❌ Brak userId - nie można grać');
+      alert('Błąd: Brak identyfikatora użytkownika');
       return;
     }
 
-    console.log(`🎰 userId ${userId} kręci automatem`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🎰 ROZPOCZĘCIE GRY');
+    console.log(`   User ID: ${userId}`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     setIsSpinning(true);
     setShowResult(false);
+    setWonCoins(0);
 
     let count = 0;
     const interval = setInterval(() => {
@@ -223,7 +201,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     }, 100);
   };
 
-  const determineResult = (targetUserId) => {
+  const determineResult = async (targetUserId) => {
     const actualUserId = targetUserId || userId;
 
     if (!actualUserId) {
@@ -235,7 +213,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     const random = Math.random();
     let finalReels;
 
-    // 10% szans na jackpot (3 takie same)
+    // 10% szans na jackpot
     if (random < 0.10) {
       const symbol = symbols[Math.floor(Math.random() * symbols.length)];
       finalReels = [
@@ -256,7 +234,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
         [other1, other2, symbol]
       ];
     }
-    // 60% szans na różne symbole
+    // 60% szans na różne
     else {
       const shuffled1 = [...symbols].sort(() => Math.random() - 0.5).slice(0, 3);
       const shuffled2 = [...symbols].sort(() => Math.random() - 0.5).slice(0, 3);
@@ -268,49 +246,55 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     setReels(finalReels);
     setIsSpinning(false);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const centerRow = [finalReels[0][1], finalReels[1][1], finalReels[2][1]];
       const coins = calculateWinnings(centerRow);
 
-      setWonCoins(coins);
-      setShowResult(true);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🎊 WYNIK GRY:');
+      console.log(`   Symbole: ${centerRow.join(' ')}`);
+      console.log(`   Wygrana: ${coins} monet`);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-      // ✅ Zapisz datę gry dla KONKRETNEGO użytkownika
+      // ✅ KROK 1: Zapisz grę w localStorage
       const storageKey = getStorageKey(actualUserId);
       if (storageKey) {
         const today = new Date().toDateString();
         localStorage.setItem(storageKey, today);
-        console.log(`💾 Zapisano grę: ${storageKey} = ${today}`);
-        console.log(`   userId: ${actualUserId}`);
+        console.log(`💾 KROK 1: Zapisano w localStorage`);
+        console.log(`   Key: ${storageKey}`);
+        console.log(`   Value: ${today}`);
       } else {
         console.error('❌ Nie można zapisać - brak storageKey');
+        return;
       }
 
+      // ✅ KROK 2: Dodaj monety przez onWinCoins
+      if (coins > 0 && onWinCoins) {
+        console.log(`💰 KROK 2: Dodawanie ${coins} monet...`);
+
+        try {
+          await onWinCoins(coins);
+          console.log('✅ Monety dodane pomyślnie');
+        } catch (error) {
+          console.error('❌ Błąd dodawania monet:', error);
+          alert('Nie udało się dodać monet. Spróbuj ponownie później.');
+          // NIE cofaj zapisanej gry - użytkownik i tak grał
+        }
+      }
+
+      // ✅ KROK 3: Pokaż wynik
+      console.log('🎉 KROK 3: Pokazywanie wyniku');
+      setWonCoins(coins);
+      setShowResult(true);
       setCanPlay(false);
       calculateTimeUntilReset();
 
-      // Przekaż wygrane monety do parent componentu
-      if (onWinCoins) {
-        onWinCoins(coins);
-      }
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('✅ GRA ZAKOŃCZONA');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-      console.log(`🎊 Wynik: ${coins} monet (${centerRow.join(' ')})`);
     }, 1000);
-  };
-
-  const calculateWinnings = (centerRow) => {
-    const [r1, r2, r3] = centerRow;
-
-    // 3 takie same - JACKPOT!
-    if (r1 === r2 && r2 === r3) {
-      return 30;
-    }
-    // 2 takie same
-    if (r1 === r2 || r2 === r3 || r1 === r3) {
-      return 15;
-    }
-    // Wszystkie różne
-    return 5;
   };
 
   // ============================================
@@ -400,7 +384,9 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
             <div className="slot-locked">
               <div className="locked-icon">🔒</div>
               <p className="locked-text">Już dzisiaj zagrałeś!</p>
-              <p className="locked-time">Następna gra za: {timeUntilReset}</p>
+              {timeUntilReset && (
+                <p className="locked-time">Następna gra za: {timeUntilReset}</p>
+              )}
             </div>
           )}
 
