@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authAPI, tokenUtils } from "../../services/api.jsx";
+import { clearAllAuthData } from '../../utils/auth';
 import MenuHeader from '../MenuHeader/MenuHeader';
 import HabitTracker from '../HabitTracker/HabitTracker.jsx';
 import HabitStats from '../HabitStats/HabitStats.jsx';
@@ -27,17 +28,14 @@ const Dashboard = ({ user, onLogout }) => {
     }
   }, []);
 
-  // Debug - monitoruj zmiany currentView
   useEffect(() => {
     console.log('📍 Current view changed to:', currentView);
   }, [currentView]);
 
-  // Pobranie profilu użytkownika przy pierwszym załadowaniu komponentu
   useEffect(() => {
     fetchProfile();
   }, []);
 
-  // Funkcja pobierająca dane profilu użytkownika z serwera
   const fetchProfile = async () => {
     setLoading(true);
     try {
@@ -51,55 +49,47 @@ const Dashboard = ({ user, onLogout }) => {
     }
   };
 
-  // Obsługa wylogowania użytkownika
+  // ✅ POPRAWIONA funkcja wylogowania
   const handleLogout = () => {
-    // Wyczyść dane ubrań przed wylogowaniem
+    console.log('🚪 Rozpoczęcie procesu wylogowania...');
+
+    // Wyczyść dane ubrań
     clearClothingOnLogout();
 
-    // Wyczyść token
-    tokenUtils.removeToken();
+    // ✅ Wyczyść WSZYSTKIE dane autoryzacji (token, user, etc.)
+    clearAllAuthData();
 
-    // Wywołaj callback wylogowania
+    // Wywołaj callback wylogowania z App.jsx
     onLogout();
+
+    console.log('✅ Wylogowanie zakończone');
   };
 
-  // Funkcja testowa do dodawania monet (tylko w trybie deweloperskim)
   const handleAddTestCoins = async () => {
     try {
       const result = await authAPI.addCoins(10);
-
-      // Aktualizacja lokalnego stanu profilu z nową liczbą monet
       setProfile(prev => ({
         ...prev,
         coins: result.coins
       }));
-
-      // Wysłanie globalnego eventu o zmianie liczby monet
       window.dispatchEvent(new CustomEvent('coinsUpdated'));
-
       alert(`${result.message}! Masz teraz ${result.coins} monet.`);
     } catch (error) {
       alert('Błąd dodawania monet');
     }
   };
 
-  // Funkcja testowa do zmniejszania szczęścia Habi (tylko w trybie deweloperskim)
   const handleReduceHabiHappiness = () => {
     try {
-      // Pobranie aktualnego poziomu sytości z pamięci lokalnej
       const currentFoodLevel = localStorage.getItem('habiFoodLevel');
       const currentLevel = currentFoodLevel ? parseInt(currentFoodLevel) : 75;
-
-      // Obliczenie redukcji (10% poziomu, minimum 5, maksimum 25 punktów)
       const reductionAmount = Math.max(5, Math.min(25, Math.floor(currentLevel * 0.1)));
       const newLevel = Math.max(0, currentLevel - reductionAmount);
-
-      // Zapisanie nowego poziomu i czasu aktualizacji
       const currentTime = Date.now();
+
       localStorage.setItem('habiFoodLevel', newLevel.toString());
       localStorage.setItem('habiLastUpdate', currentTime.toString());
 
-      // Wysłanie eventu o zmianie poziomu sytości Habi
       window.dispatchEvent(new CustomEvent('habiFoodLevelChanged', {
         detail: { newLevel, reductionAmount }
       }));
@@ -111,7 +101,6 @@ const Dashboard = ({ user, onLogout }) => {
     }
   };
 
-  // Callback wywoływany przy aktualizacji liczby monet
   const handleCoinsUpdate = (newCoinsAmount) => {
     setProfile(prev => ({
       ...prev,
@@ -119,32 +108,24 @@ const Dashboard = ({ user, onLogout }) => {
     }));
   };
 
-  // Callback do zmiany ubrania
   const handleClothingChange = (clothingId) => {
     console.log('👗 Zmiana ubrania na ID:', clothingId);
     setCurrentClothing(clothingId);
     clothingStorage.save(clothingId);
 
-    // Opcjonalnie: wyślij globalny event
     window.dispatchEvent(new CustomEvent('clothingChanged', {
       detail: { clothingId }
     }));
   };
 
-  // Funkcja obsługująca wygrane monety z koła fortuny
   const handleWinCoins = async (amount) => {
     try {
       const result = await authAPI.addCoins(amount);
-
-      // Aktualizacja lokalnego stanu profilu z nową liczbą monet
       setProfile(prev => ({
         ...prev,
         coins: result.coins
       }));
-
-      // Wysłanie globalnego eventu o zmianie liczby monet
       window.dispatchEvent(new CustomEvent('coinsUpdated'));
-
       console.log(`🎉 Wygrałeś ${amount} monet! Nowy stan: ${result.coins}`);
     } catch (error) {
       console.error('Błąd dodawania wygranych monet:', error);
@@ -152,7 +133,6 @@ const Dashboard = ({ user, onLogout }) => {
     }
   };
 
-  // Funkcje nawigacji między różnymi widokami aplikacji
   const handleNavigateToHabits = () => {
     console.log('🎯 Navigating to habits');
     setCurrentView('habits');
@@ -188,14 +168,10 @@ const Dashboard = ({ user, onLogout }) => {
     setCurrentView('dashboard');
   };
 
-  // Wyświetlenie ekranu ładowania podczas pobierania danych
   if (loading) {
     return <div className="loading">Ładowanie profilu...</div>;
   }
 
-  // WAŻNE: Sprawdzanie widoków w odpowiedniej kolejności
-
-  // Renderowanie widoku statystyk nawyków
   if (currentView === 'stats') {
     console.log('✅ Rendering HabitStats component');
     return (
@@ -205,7 +181,6 @@ const Dashboard = ({ user, onLogout }) => {
     );
   }
 
-  // Renderowanie widoku trackera nawyków (dodawanie nawyków)
   if (currentView === 'habits') {
     console.log('✅ Rendering HabitTracker component');
     return (
@@ -217,7 +192,6 @@ const Dashboard = ({ user, onLogout }) => {
     );
   }
 
-  // Renderowanie widoku karmienia Habi
   if (currentView === 'feed') {
     console.log('✅ Rendering FeedHabi component');
     return (
@@ -230,7 +204,6 @@ const Dashboard = ({ user, onLogout }) => {
     );
   }
 
-  // Renderowanie widoku ubierania Habi
   if (currentView === 'dress') {
     console.log('✅ Rendering DressHabi component');
     return (
@@ -244,31 +217,25 @@ const Dashboard = ({ user, onLogout }) => {
     );
   }
 
-  // Renderowanie głównego widoku Dashboard
   console.log('✅ Rendering main Dashboard');
   return (
     <div className="dashboard">
-      {/* Nagłówek z menu i informacjami o monetach */}
       <MenuHeader
         onLogout={handleLogout}
         initialCoins={profile?.coins || 0}
         onCoinsUpdate={handleCoinsUpdate}
       />
 
-      {/* Wyświetlenie komunikatu błędu jeśli wystąpił */}
       {error && <div className="error-message">{error}</div>}
 
       {profile && (
         <div className="profile-section">
-          {/* Sekcja powitalna z imieniem użytkownika */}
           <div className="welcome-section">
             <h1 className="welcome-message">Cześć {profile.username}! 👋</h1>
           </div>
 
-          {/* Komponent wyświetlający wirtualnego zwierzaka Habi */}
           <HabiSection currentClothing={currentClothing} />
 
-          {/* Sekcja z przyciskami szybkich akcji */}
           <div className="quick-actions">
             <h3>Szybkie akcje</h3>
             <div className="action-buttons">
@@ -290,7 +257,6 @@ const Dashboard = ({ user, onLogout }) => {
             </div>
           </div>
 
-          {/* Przyciski deweloperskie widoczne tylko w trybie development */}
           {process.env.NODE_ENV === 'development' && (
             <div className="dev-actions">
               <button className="dev-btn" onClick={handleAddTestCoins}>
@@ -304,7 +270,6 @@ const Dashboard = ({ user, onLogout }) => {
         </div>
       )}
 
-      {/* Automat jako popup modal - POPRAWIONE NAZWY ZMIENNYCH */}
       <SlotMachine
         isOpen={isSlotMachineOpen}
         onClose={handleCloseFortuneWheel}
