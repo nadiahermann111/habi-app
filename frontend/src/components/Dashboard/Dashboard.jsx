@@ -18,12 +18,48 @@ const Dashboard = ({ user, onLogout }) => {
   const [isSlotMachineOpen, setIsSlotMachineOpen] = useState(false);
   const [currentClothing, setCurrentClothing] = useState(null);
 
+  // ✅ Wczytaj ubranie z backendu przy montowaniu
   useEffect(() => {
-    const savedClothing = clothingStorage.load();
-    if (savedClothing) {
-      console.log('👗 Wczytano ubranie z localStorage:', savedClothing);
-      setCurrentClothing(savedClothing);
-    }
+    const loadCurrentClothing = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.warn('⚠️ Brak tokenu - nie można pobrać ubrania');
+          return;
+        }
+
+        console.log('🔄 Pobieranie ubrania z backendu...');
+        const response = await fetch('https://habi-backend.onrender.com/api/clothing/owned', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.current_clothing_id) {
+            console.log('👗 Wczytano ubranie z backendu:', data.current_clothing_id);
+            setCurrentClothing(data.current_clothing_id);
+            // Zapisz też w localStorage dla cache
+            clothingStorage.save(data.current_clothing_id);
+          } else {
+            console.log('👗 Brak ubrania w bazie danych');
+          }
+        } else {
+          console.warn('⚠️ Błąd odpowiedzi z backendu:', response.status);
+        }
+      } catch (error) {
+        console.error('❌ Błąd ładowania ubrania z backendu:', error);
+        // Fallback do localStorage
+        const savedClothing = clothingStorage.load();
+        if (savedClothing) {
+          console.log('👗 Fallback: wczytano ubranie z localStorage:', savedClothing);
+          setCurrentClothing(savedClothing);
+        }
+      }
+    };
+
+    loadCurrentClothing();
   }, []);
 
   useEffect(() => {
