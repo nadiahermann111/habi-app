@@ -57,33 +57,53 @@ const Dashboard = ({ user, onLogout }) => {
   };
 
   // ============================================
-  // LOGOUT
+  // LOGOUT - PEŁNE CZYSZCZENIE
   // ============================================
 
   const handleLogout = () => {
-    console.log('🚪 Rozpoczęcie procesu wylogowania...');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🚪 ROZPOCZĘCIE WYLOGOWANIA');
 
     try {
       const userData = localStorage.getItem('user');
       if (userData) {
         const user = JSON.parse(userData);
-        console.log(`   👤 Wylogowywanie użytkownika: ${user.username} (ID: ${user.id})`);
+        console.log(`   👤 Wylogowywanie: ${user.username} (ID: ${user.id})`);
       }
     } catch (e) {
-      console.warn('   ⚠️ Błąd parsowania danych użytkownika');
+      console.warn('   ⚠️ Błąd parsowania user data');
     }
 
+    // 1. Wyczyść dane ubrań
+    console.log('   🗑️ Czyszczenie danych ubrań...');
     clearClothingOnLogout();
 
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userData');
-    console.log('   🗑️ Dane autoryzacji wyczyszczone');
+    // 2. Wyczyść WSZYSTKIE dane z localStorage
+    console.log('   🗑️ Czyszczenie localStorage...');
+    const keysToKeep = ['slotMachine_cleaned_v5']; // Zachowaj tylko migration flag
+    const allKeys = Object.keys(localStorage);
 
+    allKeys.forEach(key => {
+      if (!keysToKeep.includes(key)) {
+        localStorage.removeItem(key);
+        console.log(`      ✓ Usunięto: ${key}`);
+      }
+    });
+
+    // 3. Zresetuj stan komponentu
+    console.log('   🔄 Resetowanie stanu Dashboard...');
+    setProfile(null);
+    setCurrentView('dashboard');
+    setIsSlotMachineOpen(false);
+    setCurrentClothing(null);
+    setError('');
+
+    // 4. Wywołaj callback wylogowania
+    console.log('   📤 Wywołanie onLogout...');
     onLogout();
 
-    console.log('✅ Wylogowanie zakończone');
+    console.log('✅ WYLOGOWANIE ZAKOŃCZONE');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   };
 
   // ============================================
@@ -141,10 +161,10 @@ const Dashboard = ({ user, onLogout }) => {
     }));
   };
 
-  // ✅ POPRAWIONA FUNKCJA - bezpośrednie wywołanie API
   const handleWinCoins = async (amount) => {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🎰 handleWinCoins START');
+    console.log(`   User ID: ${profile?.id}`);
     console.log(`   Amount to add: ${amount}`);
     console.log(`   Current coins: ${profile?.coins}`);
 
@@ -157,8 +177,6 @@ const Dashboard = ({ user, onLogout }) => {
       }
 
       console.log('📤 Wysyłanie requestu do /api/coins/add');
-      console.log(`   URL: https://habi-backend.onrender.com/api/coins/add`);
-      console.log(`   Body: { amount: ${amount} }`);
 
       const response = await fetch('https://habi-backend.onrender.com/api/coins/add', {
         method: 'POST',
@@ -180,14 +198,14 @@ const Dashboard = ({ user, onLogout }) => {
       const result = await response.json();
       console.log('✅ Response data:', result);
 
-      // Aktualizuj stan lokalny
+      // Aktualizuj stan
       console.log(`🔄 Aktualizacja stanu: ${profile?.coins} → ${result.coins}`);
       setProfile(prev => ({
         ...prev,
         coins: result.coins
       }));
 
-      // Wyślij event dla innych komponentów (MenuHeader)
+      // Event
       console.log('📡 Wysyłanie eventu coinsUpdated');
       window.dispatchEvent(new CustomEvent('coinsUpdated', {
         detail: { coins: result.coins }
@@ -196,14 +214,12 @@ const Dashboard = ({ user, onLogout }) => {
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('✅ handleWinCoins SUCCESS');
       console.log(`   New total: ${result.coins} monet`);
-      console.log(`   Added: ${amount} monet`);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     } catch (error) {
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.error('❌ handleWinCoins ERROR');
-      console.error('   Error message:', error.message);
-      console.error('   Error stack:', error.stack);
+      console.error('   Error:', error.message);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
       alert('Nie udało się dodać wygranych monet. Spróbuj ponownie później.');
@@ -273,7 +289,6 @@ const Dashboard = ({ user, onLogout }) => {
   }
 
   if (currentView === 'stats') {
-    console.log('✅ Rendering HabitStats component');
     return (
       <HabitStats
         onBack={handleBackToDashboard}
@@ -282,7 +297,6 @@ const Dashboard = ({ user, onLogout }) => {
   }
 
   if (currentView === 'habits') {
-    console.log('✅ Rendering HabitTracker component');
     return (
       <HabitTracker
         onBack={handleBackToDashboard}
@@ -293,7 +307,6 @@ const Dashboard = ({ user, onLogout }) => {
   }
 
   if (currentView === 'feed') {
-    console.log('✅ Rendering FeedHabi component');
     return (
       <FeedHabi
         onBack={handleBackToDashboard}
@@ -305,7 +318,6 @@ const Dashboard = ({ user, onLogout }) => {
   }
 
   if (currentView === 'dress') {
-    console.log('✅ Rendering DressHabi component');
     return (
       <DressHabi
         onBack={handleBackToDashboard}
@@ -317,7 +329,6 @@ const Dashboard = ({ user, onLogout }) => {
     );
   }
 
-  console.log('✅ Rendering main Dashboard');
   return (
     <div className="dashboard">
       <MenuHeader

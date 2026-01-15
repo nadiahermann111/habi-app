@@ -84,11 +84,24 @@ function App() {
   };
 
   const handleLogout = () => {
-    console.log('🚪 App.jsx: Obsługa wylogowania');
-    setUser(null);
-    setCurrentView('login');
-    console.log('✅ Przekierowano do logowania');
-  };
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('🚪 App.jsx: Wylogowanie START');
+
+  // Wyczyść stan
+  setUser(null);
+  setIsAuthenticated(false);
+
+  // Wyczyść localStorage (zachowaj tylko migration flag)
+  const keysToKeep = ['slotMachine_cleaned_v5'];
+  Object.keys(localStorage).forEach(key => {
+    if (!keysToKeep.includes(key)) {
+      localStorage.removeItem(key);
+    }
+  });
+
+  console.log('✅ App.jsx: Wylogowanie zakończone');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+};
 
   const switchToRegister = () => {
     setCurrentView('register');
