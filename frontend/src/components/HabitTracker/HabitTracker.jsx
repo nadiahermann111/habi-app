@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { habitAPI } from '../../services/api.jsx';
+import { habitAPI, authAPI, tokenUtils, cacheManager } from '../../services/api.jsx';
 import CoinSlot from '../CoinSlot/CoinSlot';
 import HabiLogo from './habi-logo.png';
 import './HabitTracker.css';
 
+// ============================================
 // Komponent powiadomień wewnątrz aplikacji
+// ============================================
 const NotificationContainer = ({ notifications, onRemove }) => {
   return (
     <div className="notification-container">
@@ -53,6 +55,9 @@ const Notification = ({ id, type, title, message, onRemove }) => {
   );
 };
 
+// ============================================
+// Główny komponent HabitTracker
+// ============================================
 const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
   // Stan określający aktualny widok ('list' - lista nawyków, 'add' - formularz dodawania)
   const [currentView, setCurrentView] = useState('list');
@@ -91,7 +96,9 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     1: -1   // bez limitu dla nawyków za 1 monetę (-1 = bez limitu)
   };
 
+  // ============================================
   // Funkcja do wyświetlania powiadomień
+  // ============================================
   const showNotification = (type, message, title = '') => {
     const id = Date.now() + Math.random();
     const notification = { id, type, title, message };
@@ -104,7 +111,9 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
-  // Funkcja sprawdzająca czy można dodać nawyk o określonej wartości
+  // ============================================
+  // Funkcje sprawdzające limity nawyków
+  // ============================================
   const canAddHabit = (coinValue) => {
     const currentCount = habits.filter(habit => habit.coin_value === coinValue && habit.is_active).length;
     const limit = HABIT_LIMITS[coinValue];
@@ -119,7 +128,6 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     };
   };
 
-  // Funkcja generująca tekst informacji o limitach dla danej wartości
   const getLimitInfo = (coinValue) => {
     const info = canAddHabit(coinValue);
     if (info.limit === 'bez limitu') {
@@ -128,7 +136,6 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     return `${info.current}/${info.limit} nawyków`;
   };
 
-  // Funkcja generująca style dla suwaka wartości nawyku (kolory według limitów)
   const getSliderStyle = (coinValue) => {
     const info = canAddHabit(coinValue);
     let color = '#f4d03f'; // domyślny złoty kolor
@@ -144,7 +151,9 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     };
   };
 
-  // Callback do obsługi aktualizacji monet z komponentu CoinSlot
+  // ============================================
+  // Callback do obsługi aktualizacji monet
+  // ============================================
   const handleCoinsUpdate = (newCoins) => {
     setUserCoins(newCoins);
     if (onCoinsUpdate) {
@@ -152,7 +161,60 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     }
   };
 
-  // Nasłuchiwanie zmian stanu połączenia internetowego
+  // ============================================
+  // Nasłuchiwanie na event 'unauthorized'
+  // ============================================
+  useEffect(() => {
+    const handleUnauthorized = (event) => {
+      showNotification('error', event.detail.message, 'Sesja wygasła');
+
+      // Poczekaj chwilę przed przekierowaniem
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 2000);
+    };
+
+    window.addEventListener('unauthorized', handleUnauthorized);
+
+    return () => {
+      window.removeEventListener('unauthorized', handleUnauthorized);
+    };
+  }, []);
+
+  // ============================================
+  // Sprawdzenie ważności tokenu przy starcie
+  // ============================================
+  useEffect(() => {
+    const verifyTokenOnStart = async () => {
+      if (!tokenUtils.hasToken()) {
+        console.warn('⚠️ Brak tokenu - przekierowanie na login');
+        window.location.href = '/login';
+        return;
+      }
+
+      try {
+        const isValid = await authAPI.verifyToken();
+
+        if (isValid === false) {
+          showNotification('error', 'Sesja wygasła', 'Wylogowano');
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 2000);
+        } else if (isValid === true) {
+          console.log('✅ Token ważny');
+        }
+        // null = błąd sieciowy, nie wylogowuj
+      } catch (error) {
+        console.error('Błąd weryfikacji tokenu:', error);
+      }
+    };
+
+    verifyTokenOnStart();
+  }, []);
+
+  // ============================================
+  // Nasłuchiwanie zmian stanu połączenia
+  // ============================================
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
@@ -171,20 +233,30 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     };
   }, []);
 
-  // Synchronizacja monet z parent komponentem (Dashboard)
+  // ============================================
+  // Synchronizacja monet z parent komponentem
+  // ============================================
   useEffect(() => {
     setUserCoins(initialCoins);
   }, [initialCoins]);
 
-  // Załadowanie nawyków przy pierwszym uruchomieniu komponentu
+  // ============================================
+  // Załadowanie nawyków przy pierwszym uruchomieniu
+  // ============================================
   useEffect(() => {
     loadHabits();
   }, []);
 
-  // Funkcja synchronizująca zmiany wykonane offline z serwerem
+  // ============================================
+  // Synchronizacja zmian wykonanych offline
+  // ============================================
   const syncOfflineChanges = async () => {
     try {
       const offlineCompletions = JSON.parse(localStorage.getItem('offline_completions') || '[]');
+
+      if (offlineCompletions.length > 0) {
+        showNotification('info', 'Synchronizuję zmiany offline...', 'Synchronizacja');
+      }
 
       for (const completion of offlineCompletions) {
         try {
@@ -197,12 +269,18 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       localStorage.removeItem('offline_completions');
       await loadHabits();
 
+      if (offlineCompletions.length > 0) {
+        showNotification('success', 'Zmiany zsynchronizowane!', 'Synchronizacja');
+      }
+
     } catch (error) {
       console.error('Błąd synchronizacji offline:', error);
     }
   };
 
-  // Funkcja ładująca listę nawyków z serwera lub cache
+  // ============================================
+  // Ładowanie nawyków z serwera lub cache
+  // ============================================
   const loadHabits = async () => {
     try {
       setLoading(true);
@@ -211,7 +289,9 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       // Pobranie nawyków z API
       const habits = await habitAPI.getHabits();
       setHabits(habits);
-      localStorage.setItem('habits_cache', JSON.stringify(habits));
+
+      // Zapisz do cache z timestampem (ważny 7 dni)
+      cacheManager.save('habits_cache', habits, 7);
 
       // Sprawdzenie które nawyki zostały wykonane dzisiaj
       const today = new Date().toISOString().split('T')[0];
@@ -226,13 +306,20 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     } catch (error) {
       console.error('Błąd ładowania nawyków:', error);
 
-      try {
-        // Fallback do danych z cache w przypadku błędu połączenia
-        const cachedHabits = localStorage.getItem('habits_cache');
-        if (cachedHabits) {
-          const habits = JSON.parse(cachedHabits);
-          setHabits(habits);
+      // Jeśli to błąd wygasłej sesji, nie próbuj cache
+      if (error.message.includes('Sesja wygasła')) {
+        setError('Sesja wygasła. Za chwilę zostaniesz przekierowany...');
+        return;
+      }
 
+      // Fallback do cache w przypadku błędu połączenia
+      try {
+        const cachedHabits = cacheManager.get('habits_cache');
+
+        if (cachedHabits) {
+          setHabits(cachedHabits);
+
+          // Przywróć info o completed today
           const today = new Date().toISOString().split('T')[0];
           const completedKey = `completed_${today}`;
           const todayCompleted = localStorage.getItem(completedKey);
@@ -241,19 +328,25 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           }
 
           setError('Tryb offline - używam zapisanych danych');
+          showNotification('warning', 'Używam danych z cache', 'Offline');
+
         } else {
           setError('Nie udało się wczytać nawyków. Sprawdź połączenie internetowe.');
+          showNotification('error', 'Brak zapisanych danych', 'Błąd');
         }
       } catch (cacheError) {
         console.error('Błąd cache:', cacheError);
         setError('Nie udało się wczytać nawyków.');
+        showNotification('error', 'Błąd wczytywania danych', 'Błąd');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // Funkcja obsługująca dodawanie nowego nawyku
+  // ============================================
+  // Dodawanie nowego nawyku
+  // ============================================
   const handleAddHabit = async () => {
     if (!newHabit.name.trim()) {
       showNotification('error', 'Nazwa nawyku jest wymagana', 'Błąd');
@@ -286,7 +379,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
 
         setHabits(prev => {
           const updated = [...prev, createdHabit];
-          localStorage.setItem('habits_cache', JSON.stringify(updated));
+          cacheManager.save('habits_cache', updated, 7);
           return updated;
         });
 
@@ -308,7 +401,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
 
         setHabits(prev => {
           const updated = [...prev, localHabit];
-          localStorage.setItem('habits_cache', JSON.stringify(updated));
+          cacheManager.save('habits_cache', updated, 7);
           return updated;
         });
 
@@ -325,13 +418,20 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
 
     } catch (error) {
       console.error('Błąd tworzenia nawyku:', error);
-      showNotification('error', error.message, 'Błąd tworzenia nawyku');
+
+      if (error.message.includes('Sesja wygasła')) {
+        showNotification('error', 'Sesja wygasła', 'Wylogowano');
+      } else {
+        showNotification('error', error.message, 'Błąd tworzenia nawyku');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Funkcja obsługująca wykonanie nawyku i zdobycie monet
+  // ============================================
+  // Wykonanie nawyku i zdobycie monet
+  // ============================================
   const handleCompleteHabit = async (habitId) => {
     if (completedToday.has(habitId)) return;
 
@@ -376,7 +476,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
               ? { ...h, completion_dates: [...(h.completion_dates || []), today] }
               : h
           );
-          localStorage.setItem('habits_cache', JSON.stringify(updated));
+          cacheManager.save('habits_cache', updated, 7);
           return updated;
         });
 
@@ -424,7 +524,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
               ? { ...h, completion_dates: [...(h.completion_dates || []), today] }
               : h
           );
-          localStorage.setItem('habits_cache', JSON.stringify(updated));
+          cacheManager.save('habits_cache', updated, 7);
           return updated;
         });
 
@@ -441,6 +541,12 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
 
     } catch (error) {
       console.error('Błąd wykonywania nawyku:', error);
+
+      // Jeśli to błąd wygasłej sesji, nie próbuj fallback
+      if (error.message.includes('Sesja wygasła')) {
+        showNotification('error', 'Sesja wygasła', 'Wylogowano');
+        return;
+      }
 
       // Fallback - dodanie monet lokalnie nawet przy błędzie API
       const newCoinsAmount = userCoins + coinsToEarn;
@@ -476,7 +582,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
             ? { ...h, completion_dates: [...(h.completion_dates || []), today] }
             : h
         );
-        localStorage.setItem('habits_cache', JSON.stringify(updated));
+        cacheManager.save('habits_cache', updated, 7);
         return updated;
       });
 
@@ -488,13 +594,14 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     }
   };
 
-  // Funkcja obsługująca usuwanie nawyku
+  // ============================================
+  // Usuwanie nawyku
+  // ============================================
   const handleDeleteHabit = async (habitId) => {
     const habit = habits.find(h => h.id === habitId);
     if (!habit) return;
 
-    // Potwierdzenie poprzez powiadomienie zamiast confirm()
-    const confirmDelete = window.confirm('Czy na pewno chcesz usunąć ten nawyk?');
+    const confirmDelete = window.confirm(`Czy na pewno chcesz usunąć nawyk "${habit.name}"?`);
     if (!confirmDelete) return;
 
     try {
@@ -509,7 +616,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       // Usunięcie z lokalnej listy
       setHabits(prev => {
         const updated = prev.filter(h => h.id !== habitId);
-        localStorage.setItem('habits_cache', JSON.stringify(updated));
+        cacheManager.save('habits_cache', updated, 7);
         return updated;
       });
 
@@ -527,10 +634,15 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     } catch (error) {
       console.error('Błąd usuwania nawyku:', error);
 
+      if (error.message.includes('Sesja wygasła')) {
+        showNotification('error', 'Sesja wygasła', 'Wylogowano');
+        return;
+      }
+
       // Usunięcie lokalne nawet przy błędzie API
       setHabits(prev => {
         const updated = prev.filter(h => h.id !== habitId);
-        localStorage.setItem('habits_cache', JSON.stringify(updated));
+        cacheManager.save('habits_cache', updated, 7);
         return updated;
       });
 
@@ -549,12 +661,16 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     }
   };
 
-  // Funkcja do ponownego połączenia z serwerem
+  // ============================================
+  // Ponowne połączenie z serwerem
+  // ============================================
   const retryConnection = async () => {
     await loadHabits();
   };
 
-  // Renderowanie widoku dodawania nowego nawyku
+  // ============================================
+  // RENDEROWANIE - Widok dodawania nawyku
+  // ============================================
   if (currentView === 'add') {
     const limitInfo = canAddHabit(newHabit.coinValue);
 
@@ -691,7 +807,9 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
     );
   }
 
-  // Renderowanie głównego widoku listy nawyków
+  // ============================================
+  // RENDEROWANIE - Główny widok listy nawyków
+  // ============================================
   return (
     <div className="habit-tracker">
       <NotificationContainer
