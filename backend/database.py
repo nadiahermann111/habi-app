@@ -9,11 +9,14 @@ import sqlite3
 import asyncio
 import aiosqlite
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 DATABASE_PATH = "database.db"
 
-# definicje SQL do tworzenia wszystkich tabel aplikacji
+# ============================================
+# DEFINICJE SQL
+# ============================================
+
 CREATE_TABLES_SQL = """
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -111,7 +114,10 @@ CREATE TABLE IF NOT EXISTS habit_statistics (
 );
 """
 
-# domyślne nagrody dodawane przy inicjalizacji bazy danych
+# ============================================
+# DANE DOMYŚLNE
+# ============================================
+
 DEFAULT_REWARDS = [
     ("Woda", 1, 5, "🥤", "food"),
     ("Banan", 3, 15, "🍌", "food"),
@@ -121,7 +127,6 @@ DEFAULT_REWARDS = [
     ("Kawa", 20, 40, "☕", "food")
 ]
 
-# domyślne ubrania dodawane przy inicjalizacji bazy danych
 DEFAULT_CLOTHING = [
     ("Kolczyki", 50, "💎", "Biżuteria"),
     ("Kokardka", 50, "🎀", "Dodatki"),
@@ -135,6 +140,10 @@ DEFAULT_CLOTHING = [
     ("Strój Playboy", 500, "🐰", "Premium")
 ]
 
+
+# ============================================
+# INICJALIZACJA BAZY DANYCH
+# ============================================
 
 async def init_db():
     """
@@ -153,21 +162,22 @@ async def init_db():
         ✅ Baza danych została zainicjalizowana pomyślnie
     """
     async with aiosqlite.connect(DATABASE_PATH) as db:
-        # włączenie obsługi kluczy obcych
+        # Włączenie obsługi kluczy obcych
         await db.execute("PRAGMA foreign_keys = ON")
 
-        # utworzenie wszystkich tabel
+        # Utworzenie wszystkich tabel
         await db.executescript(CREATE_TABLES_SQL)
+        print("✅ Tabele utworzone")
 
         # ============================================
         # MIGRACJE - Dodanie nowych kolumn
         # ============================================
-
+        
         # Pobierz listę kolumn w tabeli users
         cursor = await db.execute("PRAGMA table_info(users)")
         columns = await cursor.fetchall()
         column_names = [column[1] for column in columns]
-
+        
         # ✅ MIGRACJA 1: Dodaj kolumnę current_clothing_id
         if 'current_clothing_id' not in column_names:
             print("➕ Dodawanie kolumny current_clothing_id...")
@@ -182,7 +192,7 @@ async def init_db():
                 print(f"⚠️ Błąd przy dodawaniu kolumny current_clothing_id: {e}")
         else:
             print("✅ Kolumna current_clothing_id już istnieje")
-
+        
         # ✅ MIGRACJA 2: Dodaj kolumnę last_slot_play
         if 'last_slot_play' not in column_names:
             print("➕ Dodawanie kolumny last_slot_play...")
@@ -198,31 +208,43 @@ async def init_db():
         else:
             print("✅ Kolumna last_slot_play już istnieje")
 
-        # sprawdzenie czy tabela rewards jest pusta
+        # ============================================
+        # INICJALIZACJA DANYCH DOMYŚLNYCH
+        # ============================================
+
+        # Sprawdzenie czy tabela rewards jest pusta
         cursor = await db.execute("SELECT COUNT(*) FROM rewards")
         count = await cursor.fetchone()
 
-        # dodanie domyślnych nagród jeśli tabela jest pusta
+        # Dodanie domyślnych nagród jeśli tabela jest pusta
         if count[0] == 0:
+            print("➕ Dodawanie domyślnych nagród...")
             await db.executemany(
                 "INSERT INTO rewards (name, cost, nutrition_value, icon, type) VALUES (?, ?, ?, ?, ?)",
                 DEFAULT_REWARDS
             )
+            print("✅ Domyślne nagrody dodane")
 
-        # sprawdzenie czy tabela clothing_items jest pusta
+        # Sprawdzenie czy tabela clothing_items jest pusta
         cursor = await db.execute("SELECT COUNT(*) FROM clothing_items")
         count = await cursor.fetchone()
 
-        # dodanie domyślnych ubrań jeśli tabela jest pusta
+        # Dodanie domyślnych ubrań jeśli tabela jest pusta
         if count[0] == 0:
+            print("➕ Dodawanie domyślnych ubrań...")
             await db.executemany(
                 "INSERT INTO clothing_items (name, cost, icon, category) VALUES (?, ?, ?, ?)",
                 DEFAULT_CLOTHING
             )
+            print("✅ Domyślne ubrania dodane")
 
         await db.commit()
         print("✅ Baza danych została zainicjalizowana pomyślnie")
 
+
+# ============================================
+# GENERATOR POŁĄCZENIA DO BAZY
+# ============================================
 
 async def get_db():
     """
@@ -237,15 +259,17 @@ async def get_db():
 
     Example:
         async for db in get_db():
-        ...    result = await db.execute("SELECT * FROM users")
+            result = await db.execute("SELECT * FROM users")
     """
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
-        db.row_factory = aiosqlite.Row  # Dostęp do kolumn po nazwie
+        db.row_factory = aiosqlite.Row
         yield db
 
 
-#funkcje pomocnicze
+# ============================================
+# FUNKCJE POMOCNICZE - ZAPYTANIA SQL
+# ============================================
 
 async def execute_query(query: str, params: tuple = ()) -> int:
     """
@@ -266,9 +290,9 @@ async def execute_query(query: str, params: tuple = ()) -> int:
 
     Example:
         count = await execute_query(
-        ...     "INSERT INTO users (username, email) VALUES (?, ?)",
-        ...     ("jan_kowalski", "jan@example.com")
-        ... )
+            "INSERT INTO users (username, email) VALUES (?, ?)",
+            ("jan_kowalski", "jan@example.com")
+        )
         print(f"Dodano {count} użytkownika")
     """
     async with aiosqlite.connect(DATABASE_PATH) as db:
@@ -293,12 +317,12 @@ async def fetch_one(query: str, params: tuple = ()):
         aiosqlite.Error: Gdy wystąpi błąd podczas wykonywania zapytania
 
     Example:
-        >user = await fetch_one(
-        ...     "SELECT * FROM users WHERE username = ?",
-        ...     ("jan_kowalski",)
-        ... )
-       if user:
-        ...     print(f"Znaleziono użytkownika: {user['username']}")
+        user = await fetch_one(
+            "SELECT * FROM users WHERE username = ?",
+            ("jan_kowalski",)
+        )
+        if user:
+            print(f"Znaleziono użytkownika: {user['username']}")
     """
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
@@ -324,7 +348,7 @@ async def fetch_all(query: str, params: tuple = ()):
     Example:
         users = await fetch_all("SELECT * FROM users WHERE coins > ?", (10,))
         for user in users:
-        ...     print(f"Użytkownik {user['username']} ma {user['coins']} monet")
+            print(f"Użytkownik {user['username']} ma {user['coins']} monet")
     """
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
@@ -351,8 +375,8 @@ async def fetch_one_value(query: str, params: tuple = ()):
         aiosqlite.Error: Gdy wystąpi błąd podczas wykonywania zapytania
 
     Example:
-       total_users = await fetch_one_value("SELECT COUNT(*) FROM users")
-       print(f"Łącznie użytkowników: {total_users}")
+        total_users = await fetch_one_value("SELECT COUNT(*) FROM users")
+        print(f"Łącznie użytkowników: {total_users}")
     """
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
@@ -360,7 +384,10 @@ async def fetch_one_value(query: str, params: tuple = ()):
         result = await cursor.fetchone()
         return result[0] if result else None
 
-#funkcje dla konkretnych działań
+
+# ============================================
+# FUNKCJE DLA UŻYTKOWNIKÓW
+# ============================================
 
 async def create_user_habi_status(user_id: int):
     """
@@ -389,6 +416,10 @@ async def create_user_habi_status(user_id: int):
     return await execute_query(query, (user_id,))
 
 
+# ============================================
+# FUNKCJE DLA NAWYKÓW
+# ============================================
+
 async def get_user_habits_with_completions(user_id: int):
     """
     Pobiera wszystkie aktywne nawyki użytkownika wraz z historią wykonań.
@@ -415,8 +446,8 @@ async def get_user_habits_with_completions(user_id: int):
 
     Example:
         habits = await get_user_habits_with_completions(1)
-       for habit in habits:
-        print(f"Nawyk: {habit['name']}, wykonania: {habit['completion_dates']}")
+        for habit in habits:
+            print(f"Nawyk: {habit['name']}, wykonania: {habit['completion_dates']}")
     """
     query = """
         SELECT h.id, h.name, h.description, h.reward_coins, h.is_active, h.created_at,
@@ -451,9 +482,9 @@ async def check_habit_completed_today(habit_id: int, user_id: int, today: str) -
         today = date.today().isoformat()
         is_completed = await check_habit_completed_today(1, 1, today)
         if is_completed:
-        ...     print("Nawyk już wykonany dzisiaj!")
-        ... else:
-        ...     print("Nawyk jeszcze nie wykonany.")
+            print("Nawyk już wykonany dzisiaj!")
+        else:
+            print("Nawyk jeszcze nie wykonany.")
     """
     query = """
         SELECT 1 FROM habit_completions 
@@ -463,6 +494,10 @@ async def check_habit_completed_today(habit_id: int, user_id: int, today: str) -
     return result is not None
 
 
+# ============================================
+# FUNKCJE DLA STATYSTYK NAWYKÓW
+# ============================================
+
 async def update_habit_statistics(user_id: int, habit_id: int, completion_date: str):
     """
     Aktualizuje statystyki nawyku po jego wykonaniu.
@@ -470,7 +505,13 @@ async def update_habit_statistics(user_id: int, habit_id: int, completion_date: 
     Args:
         user_id (int): ID użytkownika
         habit_id (int): ID nawyku
-        completion_date (str): Data wykonania w formacie ISO
+        completion_date (str): Data wykonania w formacie ISO (YYYY-MM-DD)
+        
+    Returns:
+        None
+        
+    Raises:
+        aiosqlite.Error: Gdy wystąpi błąd podczas aktualizacji
     """
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
@@ -491,6 +532,7 @@ async def update_habit_statistics(user_id: int, habit_id: int, completion_date: 
                    VALUES (?, ?, 1, 1, 1, ?)""",
                 (user_id, habit_id, completion_date)
             )
+            print(f"✅ Utworzono nowe statystyki dla nawyku {habit_id}")
         else:
             # Aktualizuj istniejące statystyki
             total_completions = stats['total_completions'] + 1
@@ -498,7 +540,7 @@ async def update_habit_statistics(user_id: int, habit_id: int, completion_date: 
             longest_streak = stats['longest_streak']
             last_date = stats['last_completion_date']
 
-            # Oblicz streak
+            # Oblicz streak (seria wykonań)
             from datetime import datetime as dt
             if last_date:
                 last_date_obj = dt.fromisoformat(last_date).date()
@@ -529,6 +571,7 @@ async def update_habit_statistics(user_id: int, habit_id: int, completion_date: 
                    WHERE user_id = ? AND habit_id = ?""",
                 (total_completions, current_streak, longest_streak, completion_date, user_id, habit_id)
             )
+            print(f"✅ Zaktualizowano statystyki dla nawyku {habit_id}: streak={current_streak}")
 
         await db.commit()
 
@@ -541,7 +584,23 @@ async def get_user_habit_statistics(user_id: int):
         user_id (int): ID użytkownika
 
     Returns:
-        List[dict]: Lista statystyk nawyków
+        List[dict]: Lista statystyk nawyków z następującymi kluczami:
+            - habit_id: ID nawyku
+            - habit_name: Nazwa nawyku
+            - habit_icon: Ikona nawyku
+            - reward_coins: Monety za wykonanie
+            - total_completions: Całkowita liczba wykonań
+            - current_streak: Obecna seria wykonań
+            - longest_streak: Najdłuższa seria wykonań
+            - last_completion_date: Data ostatniego wykonania
+
+    Raises:
+        aiosqlite.Error: Gdy wystąpi błąd podczas pobierania danych
+
+    Example:
+        stats = await get_user_habit_statistics(1)
+        for stat in stats:
+            print(f"{stat['habit_name']}: {stat['total_completions']} wykonań")
     """
     async with aiosqlite.connect(DATABASE_PATH) as db:
         db.row_factory = aiosqlite.Row
@@ -559,3 +618,81 @@ async def get_user_habit_statistics(user_id: int):
         )
         stats = await cursor.fetchall()
         return [dict(row) for row in stats]
+
+
+# ============================================
+# FUNKCJE TESTOWE
+# ============================================
+
+async def test_database_connection():
+    """
+    Testuje połączenie z bazą danych.
+    
+    Returns:
+        bool: True jeśli połączenie działa, False w przeciwnym razie
+    """
+    try:
+        async with aiosqlite.connect(DATABASE_PATH) as db:
+            cursor = await db.execute("SELECT 1")
+            result = await cursor.fetchone()
+            print("✅ Połączenie z bazą danych działa")
+            return True
+    except Exception as e:
+        print(f"❌ Błąd połączenia z bazą danych: {e}")
+        return False
+
+
+async def get_database_info():
+    """
+    Wyświetla informacje o bazie danych.
+    """
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        # Pobierz listę tabel
+        cursor = await db.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+        )
+        tables = await cursor.fetchall()
+        
+        print("\n" + "="*50)
+        print("📊 INFORMACJE O BAZIE DANYCH")
+        print("="*50)
+        print(f"Ścieżka: {DATABASE_PATH}")
+        print(f"Liczba tabel: {len(tables)}")
+        print("\nTabele:")
+        
+        for table in tables:
+            table_name = table[0]
+            cursor = await db.execute(f"SELECT COUNT(*) FROM {table_name}")
+            count = await cursor.fetchone()
+            print(f"  - {table_name}: {count[0]} rekordów")
+        
+        print("="*50 + "\n")
+
+
+# ============================================
+# GŁÓWNA FUNKCJA (DO TESTOWANIA)
+# ============================================
+
+if __name__ == "__main__":
+    """
+    Uruchom testy modułu database.
+    
+    Użycie:
+        python database.py
+    """
+    print("\n🚀 URUCHAMIANIE TESTÓW MODUŁU DATABASE\n")
+    
+    async def run_tests():
+        # Test połączenia
+        await test_database_connection()
+        
+        # Inicjalizacja bazy
+        await init_db()
+        
+        # Informacje o bazie
+        await get_database_info()
+        
+        print("✅ Wszystkie testy zakończone\n")
+    
+    # Uruchom testy
+    asyncio.run(run_tests())
