@@ -16,34 +16,78 @@ function App() {
   }, []);
 
   const checkAuthStatus = async () => {
-    if (tokenUtils.getToken()) {
+    console.log('🔍 Sprawdzanie stanu autoryzacji...');
+
+    // Pobierz dane z localStorage
+    const token = localStorage.getItem('token');
+    const userDataStr = localStorage.getItem('user');
+
+    console.log('   Token:', token ? '✅ obecny' : '❌ brak');
+
+    let savedUser = null;
+    if (userDataStr) {
       try {
+        savedUser = JSON.parse(userDataStr);
+        console.log('   User:', savedUser ? `✅ ${savedUser.username} (ID: ${savedUser.id})` : '❌ brak');
+      } catch (e) {
+        console.error('   ❌ Błąd parsowania danych użytkownika');
+        // Wyczyść uszkodzone dane
+        localStorage.removeItem('user');
+      }
+    } else {
+      console.log('   User: ❌ brak');
+    }
+
+    if (token && savedUser && savedUser.id) {
+      try {
+        console.log('🔄 Weryfikacja tokenu z serwerem...');
         const profile = await authAPI.getProfile();
-        setUser(profile);
-        setCurrentView('dashboard');
+
+        // Sprawdź czy ID użytkownika się zgadza
+        if (profile.id === savedUser.id) {
+          console.log('✅ Token ważny, użytkownik zweryfikowany');
+          setUser(profile);
+          setCurrentView('dashboard');
+        } else {
+          console.warn('⚠️ Niezgodność ID użytkownika - wylogowanie');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setCurrentView('login');
+        }
       } catch (error) {
-        tokenUtils.removeToken();
+        console.error('❌ Token nieważny lub błąd weryfikacji:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
         setCurrentView('login');
       }
     } else {
+      console.log('❌ Brak danych autoryzacji - przekierowanie do logowania');
+      // Wyczyść ewentualne niepełne dane
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       setCurrentView('login');
     }
+
     setLoading(false);
   };
 
   const handleLoginSuccess = (userData) => {
+    console.log('✅ Logowanie zakończone sukcesem:', userData);
     setUser(userData);
     setCurrentView('dashboard');
   };
 
   const handleRegisterSuccess = (userData) => {
+    console.log('✅ Rejestracja zakończona sukcesem:', userData);
     setUser(userData);
     setCurrentView('dashboard');
   };
 
   const handleLogout = () => {
+    console.log('🚪 App.jsx: Obsługa wylogowania');
     setUser(null);
     setCurrentView('login');
+    console.log('✅ Przekierowano do logowania');
   };
 
   const switchToRegister = () => {

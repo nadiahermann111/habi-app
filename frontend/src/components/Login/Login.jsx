@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { authAPI, tokenUtils } from '../../services/api.jsx';
-import { clearAllAuthData, saveAuthData } from '../../utils/auth';
 import './Login.css';
 
 const Login = ({ onLoginSuccess, switchToRegister }) => {
@@ -54,7 +53,11 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
       console.log('🔐 Rozpoczęcie procesu logowania...', { email: formData.email });
 
       // ✅ WAŻNE: Wyczyść WSZYSTKIE stare dane przed logowaniem
-      clearAllAuthData();
+      console.log('🧹 Czyszczenie starych danych sesji...');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userData');
       console.log('✅ Stare dane sesji wyczyszczone');
 
       // Wywołanie API logowania
@@ -67,7 +70,9 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
 
       // ✅ Zapisz nowe dane autoryzacji
       if (response.token && response.user) {
-        saveAuthData(response.token, response.user);
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+        console.log(`💾 Zapisano dane: ${response.user.username} (ID: ${response.user.id})`);
 
         // Wywołaj callback z danymi użytkownika
         if (onLoginSuccess) {
@@ -83,7 +88,8 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
       console.error('❌ Błąd logowania:', err);
 
       // Wyczyść dane w razie błędu
-      clearAllAuthData();
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
 
       // Obsługa różnych typów błędów
       if (err.message.includes('Failed to fetch') || err.message.includes('CORS')) {

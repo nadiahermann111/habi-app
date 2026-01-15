@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { authAPI, tokenUtils } from "../../services/api.jsx";
-import { clearAllAuthData } from '../../utils/auth';
 import MenuHeader from '../MenuHeader/MenuHeader';
 import HabitTracker from '../HabitTracker/HabitTracker.jsx';
 import HabitStats from '../HabitStats/HabitStats.jsx';
@@ -19,7 +18,6 @@ const Dashboard = ({ user, onLogout }) => {
   const [isSlotMachineOpen, setIsSlotMachineOpen] = useState(false);
   const [currentClothing, setCurrentClothing] = useState(null);
 
-  // Wczytaj obecnie założone ubranie przy montowaniu
   useEffect(() => {
     const savedClothing = clothingStorage.load();
     if (savedClothing) {
@@ -49,15 +47,30 @@ const Dashboard = ({ user, onLogout }) => {
     }
   };
 
-  // ✅ POPRAWIONA funkcja wylogowania
+  // ✅ POPRAWIONA funkcja wylogowania (bez auth.js)
   const handleLogout = () => {
     console.log('🚪 Rozpoczęcie procesu wylogowania...');
+
+    // Pobierz dane użytkownika dla logów
+    try {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        console.log(`   👤 Wylogowywanie użytkownika: ${user.username} (ID: ${user.id})`);
+      }
+    } catch (e) {
+      console.warn('   ⚠️ Błąd parsowania danych użytkownika');
+    }
 
     // Wyczyść dane ubrań
     clearClothingOnLogout();
 
-    // ✅ Wyczyść WSZYSTKIE dane autoryzacji (token, user, etc.)
-    clearAllAuthData();
+    // ✅ Wyczyść WSZYSTKIE dane autoryzacji
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userData');
+    console.log('   🗑️ Dane autoryzacji wyczyszczone');
 
     // Wywołaj callback wylogowania z App.jsx
     onLogout();
