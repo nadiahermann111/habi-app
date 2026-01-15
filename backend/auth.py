@@ -11,8 +11,8 @@ Centralne miejsce do zarządzania:
 """
 
 import os
-import jwt
-import bcrypt
+from jose import jwt, JWTError  # python-jose zamiast PyJWT
+from passlib.context import CryptContext  # passlib zamiast bcrypt
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from functools import wraps
@@ -35,6 +35,9 @@ TOKEN_EXPIRATION_DAYS = 30
 # Minimalna długość hasła
 MIN_PASSWORD_LENGTH = 6
 
+# Konfiguracja passlib dla bcrypt
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 # ============================================
 # FUNKCJE HASZOWANIA HASEŁ
@@ -42,7 +45,7 @@ MIN_PASSWORD_LENGTH = 6
 
 def hash_password(password: str) -> str:
     """
-    Haszuje hasło używając bcrypt.
+    Haszuje hasło używając bcrypt (poprzez passlib).
 
     Args:
         password (str): Hasło w postaci plaintext
@@ -61,15 +64,10 @@ def hash_password(password: str) -> str:
     if len(password) < MIN_PASSWORD_LENGTH:
         raise ValueError(f"Hasło musi mieć co najmniej {MIN_PASSWORD_LENGTH} znaków")
 
-    # Konwersja hasła do bytes
-    password_bytes = password.encode('utf-8')
+    # Haszowanie hasła używając passlib
+    hashed = pwd_context.hash(password)
 
-    # Generowanie salt i haszowanie
-    salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(password_bytes, salt)
-
-    # Zwróć jako string (dekodowanie z bytes)
-    return hashed.decode('utf-8')
+    return hashed
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -94,12 +92,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
 
     try:
-        # Konwersja do bytes
-        password_bytes = plain_password.encode('utf-8')
-        hashed_bytes = hashed_password.encode('utf-8')
-
-        # Weryfikacja hasła
-        return bcrypt.checkpw(password_bytes, hashed_bytes)
+        # Weryfikacja hasła używając passlib
+        return pwd_context.verify(plain_password, hashed_password)
 
     except Exception as e:
         print(f"❌ Błąd weryfikacji hasła: {e}")
@@ -147,7 +141,7 @@ def create_token(user_id: int, additional_data: Optional[Dict[str, Any]] = None)
     if additional_data:
         payload.update(additional_data)
 
-    # Zakoduj token
+    # Zakoduj token używając python-jose
     token = jwt.encode(payload, SECRET_KEY, algorithm=JWT_ALGORITHM)
 
     print(f"✅ Token utworzony dla user_id: {user_id}, wygasa: {expiration.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -176,7 +170,7 @@ def verify_token(token: str) -> Optional[int]:
         return None
 
     try:
-        # Dekoduj token
+        # Dekoduj token używając python-jose
         payload = jwt.decode(token, SECRET_KEY, algorithms=[JWT_ALGORITHM])
 
         # Pobierz user_id z payload
@@ -193,7 +187,7 @@ def verify_token(token: str) -> Optional[int]:
         print("⚠️ Token wygasł")
         return None
 
-    except jwt.InvalidTokenError as e:
+    except JWTError as e:
         print(f"⚠️ Nieprawidłowy token: {e}")
         return None
 
@@ -229,7 +223,7 @@ def decode_token(token: str) -> Optional[Dict[str, Any]]:
         print("⚠️ Token wygasł")
         return None
 
-    except jwt.InvalidTokenError as e:
+    except JWTError as e:
         print(f"⚠️ Nieprawidłowy token: {e}")
         return None
 
@@ -356,7 +350,6 @@ def require_auth(func):
         async def protected_endpoint(authorization: str = Header(None)):
             return {"message": "Dostęp dozwolony"}
     """
-
     @wraps(func)
     async def wrapper(*args, **kwargs):
         authorization = kwargs.get('authorization')
@@ -406,11 +399,6 @@ def validate_password(password: str) -> tuple[bool, str]:
     if len(password) > 128:
         return False, "Hasło jest zbyt długie (max 128 znaków)"
 
-    # Opcjonalnie: dodaj więcej reguł
-    # - Wymóg dużych liter
-    # - Wymóg cyfr
-    # - Wymóg znaków specjalnych
-
     return True, "Hasło poprawne"
 
 
@@ -452,9 +440,9 @@ def debug_token(token: str) -> None:
     Args:
         token (str): Token JWT do zbadania
     """
-    print("\n" + "=" * 50)
+    print("\n" + "="*50)
     print("🔍 INFORMACJE O TOKENIE")
-    print("=" * 50)
+    print("="*50)
 
     if not token:
         print("❌ Brak tokenu")
@@ -462,7 +450,8 @@ def debug_token(token: str) -> None:
 
     # Spróbuj zdekodować bez weryfikacji (do debugowania)
     try:
-        payload = jwt.decode(token, options={"verify_signature": False})
+        # python-jose wymaga options zamiast verify=False
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[JWT_ALGORITHM], options={"verify_signature": False})
 
         print(f"📋 Payload:")
         for key, value in payload.items():
@@ -487,16 +476,16 @@ def debug_token(token: str) -> None:
     except Exception as e:
         print(f"❌ Błąd dekodowania tokenu: {e}")
 
-    print("=" * 50 + "\n")
+    print("="*50 + "\n")
 
 
 def test_password_hash() -> None:
     """
     Testuje funkcje haszowania i weryfikacji haseł.
     """
-    print("\n" + "=" * 50)
+    print("\n" + "="*50)
     print("🧪 TEST HASZOWANIA HASEŁ")
-    print("=" * 50)
+    print("="*50)
 
     test_password = "test_password_123"
 
@@ -515,16 +504,16 @@ def test_password_hash() -> None:
     result = verify_password("wrong_password", hashed)
     print(f"   {'✅ SUKCES - odrzucono' if not result else '❌ BŁĄD - przyjęto'}")
 
-    print("\n" + "=" * 50 + "\n")
+    print("\n" + "="*50 + "\n")
 
 
 def test_jwt_token() -> None:
     """
     Testuje funkcje tworzenia i weryfikacji tokenów JWT.
     """
-    print("\n" + "=" * 50)
+    print("\n" + "="*50)
     print("🧪 TEST TOKENÓW JWT")
-    print("=" * 50)
+    print("="*50)
 
     test_user_id = 123
 
@@ -547,7 +536,7 @@ def test_jwt_token() -> None:
     # Debug tokenu
     debug_token(token)
 
-    print("=" * 50 + "\n")
+    print("="*50 + "\n")
 
 
 # ============================================
@@ -557,7 +546,7 @@ def test_jwt_token() -> None:
 if __name__ == "__main__":
     """
     Uruchom testy modułu autoryzacji.
-
+    
     Użycie:
         python auth.py
     """
