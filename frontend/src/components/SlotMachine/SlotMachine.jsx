@@ -12,7 +12,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
   const [wonCoins, setWonCoins] = useState(0);
   const [canPlay, setCanPlay] = useState(true);
   const [timeUntilReset, setTimeUntilReset] = useState('');
-  const currentUserRef = useRef(null);
+  const previousUserIdRef = useRef(null);
 
   const symbols = ['🍌', '🍎', '🍇', '🍊', '🍓', '🥥', '🍋', '🍑'];
 
@@ -21,148 +21,127 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
   // ============================================
 
   /**
-   * Pobiera ID aktualnie zalogowanego użytkownika z localStorage
-   */
-  const getCurrentUserId = () => {
-    try {
-      const user = localStorage.getItem('user');
-      if (user) {
-        const userData = JSON.parse(user);
-        return userData.id;
-      }
-    } catch (error) {
-      console.error('Błąd pobierania user ID:', error);
-    }
-    return null;
-  };
-
-  /**
    * Zwraca klucz storage dla konkretnego użytkownika
+   * UŻYWA userId Z PROPS JAKO ŹRÓDŁA PRAWDY
    */
   const getStorageKey = (targetUserId) => {
-    // Używaj userId z localStorage jako źródła prawdy
-    const actualUserId = targetUserId || getCurrentUserId();
+    const actualUserId = targetUserId || userId;
 
     if (!actualUserId) {
-      console.warn('⚠️ Brak userId - nie można zapisać stanu automatu');
+      console.warn('⚠️ SlotMachine: Brak userId');
       return null;
     }
 
-    return `slotMachine_lastPlay_${actualUserId}`;
+    return `slotMachine_v4_user_${actualUserId}`;
   };
 
   /**
-   * Czyści dane automatu dla starego użytkownika
+   * Czyści legacy klucze (wszystkie stare formaty)
    */
-  const cleanupOldUserData = (oldUserId) => {
-    if (oldUserId) {
-      const oldKey = `slotMachine_lastPlay_${oldUserId}`;
-      localStorage.removeItem(oldKey);
-      console.log(`🗑️ Wyczyszczono dane automatu dla użytkownika ${oldUserId}`);
-    }
-  };
+  const cleanupAllLegacyKeys = () => {
+    const migrationKey = 'slotMachine_cleaned_v4';
+    const alreadyCleaned = localStorage.getItem(migrationKey);
 
-  /**
-   * Czyści legacy klucze (stare klucze z username)
-   */
-  const cleanupLegacyKeys = () => {
-    const cleanupKey = 'slotMachine_migrated_v3';
-    const alreadyMigrated = localStorage.getItem(cleanupKey);
+    if (!alreadyCleaned) {
+      console.log('🧹 SlotMachine: Czyszczenie wszystkich starych kluczy...');
 
-    if (!alreadyMigrated) {
-      console.log('🧹 Czyszczenie starych kluczy automatu...');
+      const keysToRemove = [];
 
-      // Usuń wszystkie stare klucze
-      for (let i = localStorage.length - 1; i >= 0; i--) {
+      for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && (
-          key.match(/^slotMachineLastPlay_/) ||
-          key.match(/^slotMachine_lastPlay_user_/)
+          key.startsWith('slotMachineLastPlay_') ||
+          key.startsWith('slotMachine_lastPlay_') ||
+          key.startsWith('slotMachine_v3_')
         )) {
-          localStorage.removeItem(key);
-          console.log(`🗑️ Usunięto stary klucz: ${key}`);
+          keysToRemove.push(key);
         }
       }
 
-      localStorage.setItem(cleanupKey, 'true');
-      console.log('✅ Czyszczenie zakończone');
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        console.log(`🗑️ Usunięto: ${key}`);
+      });
+
+      localStorage.setItem(migrationKey, 'true');
+      console.log(`✅ Wyczyszczono ${keysToRemove.length} starych kluczy`);
     }
   };
+
+  // ============================================
+  // Czyszczenie przy montowaniu - TYLKO RAZ
+  // ============================================
+
+  useEffect(() => {
+    cleanupAllLegacyKeys();
+  }, []);
 
   // ============================================
   // Detekcja zmiany użytkownika
   // ============================================
 
   useEffect(() => {
-    const actualUserId = getCurrentUserId();
-
-    // Sprawdź czy użytkownik się zmienił
-    if (actualUserId !== currentUserRef.current) {
-      console.log(`👤 Zmiana użytkownika: ${currentUserRef.current} → ${actualUserId}`);
-
-      // Wyczyść dane poprzedniego użytkownika
-      if (currentUserRef.current) {
-        cleanupOldUserData(currentUserRef.current);
-      }
-
-      // Zaktualizuj ref
-      currentUserRef.current = actualUserId;
+    // Sprawdź czy userId się zmienił
+    if (userId && userId !== previousUserIdRef.current) {
+      console.log(`👤 SlotMachine: Zmiana użytkownika ${previousUserIdRef.current} → ${userId}`);
 
       // Resetuj stan automatu
       setShowResult(false);
       setWonCoins(0);
+      setIsSpinning(false);
+
+      // Zaktualizuj ref
+      previousUserIdRef.current = userId;
 
       // Sprawdź czy nowy użytkownik może grać
-      if (actualUserId) {
-        checkDailyLimit(actualUserId);
+      checkDailyLimit(userId);
+    }
+  }, [userId]);
+
+  // ============================================
+  // Sprawdzanie limitu przy otwarciu
+  // ============================================
+
+  useEffect(() => {
+    if (isOpen && userId) {
+      console.log(`🎰 SlotMachine otwarto dla userId: ${userId}`);
+      setShowResult(false);
+      checkDailyLimit(userId);
+    }
+  }, [isOpen, userId]);
+
+  // ============================================
+  // Timer odświeżający czas do resetu
+  // ============================================
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const interval = setInterval(() => {
+      if (!canPlay) {
+        calculateTimeUntilReset();
       }
-    }
-  }, [userId, username, isOpen]);
+    }, 60000); // Co minutę
+
+    return () => clearInterval(interval);
+  }, [userId, canPlay]);
 
   // ============================================
-  // Jednorazowe czyszczenie przy montowaniu
+  // Funkcja sprawdzająca czy użytkownik może grać
   // ============================================
 
-  useEffect(() => {
-    cleanupLegacyKeys();
-  }, []);
-
-  // ============================================
-  // Sprawdzanie limitu dziennego
-  // ============================================
-
-  useEffect(() => {
-    if (isOpen) {
-      const actualUserId = getCurrentUserId();
-      if (actualUserId) {
-        setShowResult(false);
-        checkDailyLimit(actualUserId);
-      }
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    const actualUserId = getCurrentUserId();
-    if (actualUserId) {
-      const interval = setInterval(() => checkDailyLimit(actualUserId), 60000);
-      return () => clearInterval(interval);
-    }
-  }, []);
-
-  /**
-   * Sprawdza czy użytkownik może dziś grać
-   */
   const checkDailyLimit = (targetUserId) => {
-    const actualUserId = targetUserId || getCurrentUserId();
+    const actualUserId = targetUserId || userId;
 
     if (!actualUserId) {
-      console.warn('⚠️ Brak userId - zakładam że można grać');
+      console.warn('⚠️ checkDailyLimit: Brak userId');
       setCanPlay(true);
       return;
     }
 
     const storageKey = getStorageKey(actualUserId);
     if (!storageKey) {
+      console.warn('⚠️ checkDailyLimit: Nie można utworzyć klucza');
       setCanPlay(true);
       return;
     }
@@ -170,18 +149,19 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     const lastPlayDate = localStorage.getItem(storageKey);
     const today = new Date().toDateString();
 
-    console.log(`🎰 Sprawdzanie automatu dla użytkownika ${actualUserId}:`);
-    console.log(`  - Ostatnia gra: ${lastPlayDate || 'nigdy'}`);
-    console.log(`  - Dzisiaj: ${today}`);
+    console.log(`📅 Sprawdzanie limitu dla userId ${actualUserId}:`);
+    console.log(`   Key: ${storageKey}`);
+    console.log(`   Ostatnia gra: ${lastPlayDate || 'NIGDY'}`);
+    console.log(`   Dzisiaj: ${today}`);
 
     if (lastPlayDate === today) {
+      console.log(`   ❌ Ten użytkownik już dzisiaj grał`);
       setCanPlay(false);
       calculateTimeUntilReset();
-      console.log('  - ❌ Użytkownik już dzisiaj grał');
     } else {
+      console.log(`   ✅ Ten użytkownik może grać`);
       setCanPlay(true);
       setTimeUntilReset('');
-      console.log('  - ✅ Użytkownik może grać');
     }
   };
 
@@ -214,15 +194,17 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
   };
 
   const spinReels = () => {
-    if (isSpinning || !canPlay) return;
+    if (isSpinning || !canPlay) {
+      console.log('⚠️ Nie można kręcić:', { isSpinning, canPlay });
+      return;
+    }
 
-    const actualUserId = getCurrentUserId();
-    if (!actualUserId) {
+    if (!userId) {
       console.error('❌ Brak userId - nie można grać');
       return;
     }
 
-    console.log(`🎰 Użytkownik ${actualUserId} kręci automatem`);
+    console.log(`🎰 userId ${userId} kręci automatem`);
 
     setIsSpinning(true);
     setShowResult(false);
@@ -235,17 +217,17 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
       if (count >= 15) {
         clearInterval(interval);
         setTimeout(() => {
-          determineResult(actualUserId);
+          determineResult(userId);
         }, 300);
       }
     }, 100);
   };
 
   const determineResult = (targetUserId) => {
-    const actualUserId = targetUserId || getCurrentUserId();
+    const actualUserId = targetUserId || userId;
 
     if (!actualUserId) {
-      console.error('❌ Brak userId - nie można zapisać wyniku');
+      console.error('❌ determineResult: Brak userId');
       setIsSpinning(false);
       return;
     }
@@ -298,19 +280,21 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
       if (storageKey) {
         const today = new Date().toDateString();
         localStorage.setItem(storageKey, today);
-        console.log(`💾 Zapisano grę dla użytkownika ${actualUserId}: ${today}`);
+        console.log(`💾 Zapisano grę: ${storageKey} = ${today}`);
+        console.log(`   userId: ${actualUserId}`);
+      } else {
+        console.error('❌ Nie można zapisać - brak storageKey');
       }
 
       setCanPlay(false);
+      calculateTimeUntilReset();
 
       // Przekaż wygrane monety do parent componentu
       if (onWinCoins) {
         onWinCoins(coins);
       }
 
-      calculateTimeUntilReset();
-
-      console.log(`🎰 Wynik: ${coins} monet (${centerRow.join(' ')})`);
+      console.log(`🎊 Wynik: ${coins} monet (${centerRow.join(' ')})`);
     }, 1000);
   };
 
@@ -468,4 +452,3 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
 };
 
 export default SlotMachine;
-
