@@ -36,6 +36,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
         return;
       }
 
+      console.log('🔄 Sprawdzanie statusu automatu...');
       const response = await fetch('https://habi-backend.onrender.com/api/slot-machine/can-play', {
         method: 'GET',
         headers: {
@@ -79,6 +80,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
         return false;
       }
 
+      console.log('💾 Zapisywanie gry w backendzie...');
       const response = await fetch('https://habi-backend.onrender.com/api/slot-machine/play', {
         method: 'POST',
         headers: {
@@ -94,7 +96,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
       }
 
       const data = await response.json();
-      console.log('💾 Gra zapisana w backendzie:', data);
+      console.log('✅ Gra zapisana w backendzie:', data);
 
       return true;
 
@@ -209,27 +211,42 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
       const centerRow = [finalReels[0][1], finalReels[1][1], finalReels[2][1]];
       const coins = calculateWinnings(centerRow);
 
-      setWonCoins(coins);
-      setShowResult(true);
+      console.log(`🎰 Wynik: ${coins} monet (${centerRow.join(' ')})`);
 
-      // ✅ Zapisz grę w backendzie
+      // ✅ WAŻNE: NAJPIERW zapisz grę w backendzie
+      console.log('💾 Zapisywanie gry w backendzie...');
       const saved = await savePlayToBackend();
 
-      if (saved) {
-        setCanPlay(false);
-
-        // Przekaż wygrane monety
-        if (onWinCoins) {
-          onWinCoins(coins);
-        }
-
-        // Odśwież status
-        checkCanPlay();
-      } else {
-        console.error('❌ Nie udało się zapisać gry');
+      if (!saved) {
+        console.error('❌ Nie udało się zapisać gry - anulowanie nagrody');
+        alert('Błąd zapisywania gry. Spróbuj ponownie.');
+        setIsSpinning(false);
+        return;
       }
 
-      console.log(`🎰 Wynik: ${coins} monet (${centerRow.join(' ')})`);
+      console.log('✅ Gra zapisana w backendzie');
+
+      // ✅ POTEM przekaż wygrane monety
+      console.log(`💰 Przekazywanie ${coins} monet...`);
+      if (onWinCoins) {
+        try {
+          await onWinCoins(coins);
+          console.log('✅ Monety dodane');
+        } catch (error) {
+          console.error('❌ Błąd dodawania monet:', error);
+          alert('Nie udało się dodać monet. Skontaktuj się z pomocą techniczną.');
+          return;
+        }
+      }
+
+      // ✅ NA KOŃCU pokaż wynik i zablokuj automat
+      setWonCoins(coins);
+      setShowResult(true);
+      setCanPlay(false);
+
+      // ✅ Odśwież status automatu
+      await checkCanPlay();
+
     }, 1000);
   };
 

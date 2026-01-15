@@ -83,11 +83,9 @@ const Dashboard = ({ user, onLogout }) => {
     }
   };
 
-  // ✅ POPRAWIONA funkcja wylogowania (bez auth.js)
   const handleLogout = () => {
     console.log('🚪 Rozpoczęcie procesu wylogowania...');
 
-    // Pobierz dane użytkownika dla logów
     try {
       const userData = localStorage.getItem('user');
       if (userData) {
@@ -98,17 +96,14 @@ const Dashboard = ({ user, onLogout }) => {
       console.warn('   ⚠️ Błąd parsowania danych użytkownika');
     }
 
-    // Wyczyść dane ubrań
     clearClothingOnLogout();
 
-    // ✅ Wyczyść WSZYSTKIE dane autoryzacji
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('authToken');
     localStorage.removeItem('userData');
     console.log('   🗑️ Dane autoryzacji wyczyszczone');
 
-    // Wywołaj callback wylogowania z App.jsx
     onLogout();
 
     console.log('✅ Wylogowanie zakończone');
@@ -150,6 +145,33 @@ const Dashboard = ({ user, onLogout }) => {
     }
   };
 
+  const handleResetSlotMachine = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Brak tokenu');
+        return;
+      }
+
+      const response = await fetch('https://habi-backend.onrender.com/api/slot-machine/reset', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        alert('🎰 Automat zresetowany! Możesz zagrać ponownie.');
+      } else {
+        const error = await response.json();
+        alert(`Błąd: ${error.detail}`);
+      }
+    } catch (error) {
+      console.error('Błąd resetowania automatu:', error);
+      alert('Błąd resetowania automatu');
+    }
+  };
+
   const handleCoinsUpdate = (newCoinsAmount) => {
     setProfile(prev => ({
       ...prev,
@@ -169,16 +191,47 @@ const Dashboard = ({ user, onLogout }) => {
 
   const handleWinCoins = async (amount) => {
     try {
-      const result = await authAPI.addCoins(amount);
+      console.log(`🎰 handleWinCoins called with amount: ${amount}`);
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('❌ Brak tokenu');
+        throw new Error('Brak tokenu');
+      }
+
+      const response = await fetch('https://habi-backend.onrender.com/api/coins/add', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ coins: amount })
+      });
+
+      if (!response.ok) {
+        throw new Error('Błąd dodawania monet');
+      }
+
+      const result = await response.json();
+
+      console.log('💰 Coins added:', result);
+
+      // Aktualizuj stan lokalny
       setProfile(prev => ({
         ...prev,
         coins: result.coins
       }));
-      window.dispatchEvent(new CustomEvent('coinsUpdated'));
-      console.log(`🎉 Wygrałeś ${amount} monet! Nowy stan: ${result.coins}`);
+
+      // Wyślij event
+      window.dispatchEvent(new CustomEvent('coinsUpdated', {
+        detail: { coins: result.coins }
+      }));
+
+      console.log(`✅ Coins updated: ${result.coins}`);
+
     } catch (error) {
-      console.error('Błąd dodawania wygranych monet:', error);
-      alert('Nie udało się dodać wygranych monet. Spróbuj ponownie.');
+      console.error('❌ Błąd dodawania wygranych monet:', error);
+      throw error;
     }
   };
 
@@ -313,6 +366,9 @@ const Dashboard = ({ user, onLogout }) => {
               </button>
               <button className="dev-btn" onClick={handleReduceHabiHappiness}>
                 😢 Usuń % najedzenia Habi (DEV)
+              </button>
+              <button className="dev-btn" onClick={handleResetSlotMachine}>
+                🎰 Resetuj automat (DEV)
               </button>
             </div>
           )}
