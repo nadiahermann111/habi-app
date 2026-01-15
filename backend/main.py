@@ -10,14 +10,12 @@ import calendar
 # importowanie modułów aplikacji
 try:
     from database import init_db, update_habit_statistics
-
     print("✅ database.py imported successfully")
 except Exception as e:
     print(f"❌ Failed to import database.py: {e}")
 
 try:
     import aiosqlite
-
     print("✅ aiosqlite imported successfully")
 except Exception as e:
     print(f"❌ Failed to import aiosqlite: {e}")
@@ -27,14 +25,12 @@ try:
         UserRegister, UserLogin, UserResponse, LoginResponse,
         HabitCreate, HabitResponse, HabitUpdate, HabitCompletionResponse
     )
-
     print("✅ schemas.py imported successfully")
 except Exception as e:
     print(f"❌ Failed to import schemas.py: {e}")
 
 try:
     from auth import hash_password, verify_password, create_token, verify_token
-
     print("✅ auth.py imported successfully")
 except Exception as e:
     print(f"❌ Failed to import auth.py: {e}")
@@ -52,27 +48,12 @@ async def lifespan(app: FastAPI):
     try:
         await init_db()
         print("✅ Database initialized")
-
-        # ✅ SPRAWDŹ I DODAJ KOLUMNĘ current_clothing_id JEŚLI NIE ISTNIEJE
-        async with aiosqlite.connect("database.db") as db:
-            try:
-                cursor = await db.execute("PRAGMA table_info(users)")
-                columns = await cursor.fetchall()
-                column_names = [column[1] for column in columns]
-
-                if 'current_clothing_id' not in column_names:
-                    print("➕ Dodawanie kolumny current_clothing_id...")
-                    await db.execute("ALTER TABLE users ADD COLUMN current_clothing_id INTEGER DEFAULT NULL")
-                    await db.commit()
-                    print("✅ Kolumna current_clothing_id dodana pomyślnie")
-                else:
-                    print("✅ Kolumna current_clothing_id już istnieje")
-            except Exception as e:
-                print(f"⚠️ Błąd przy sprawdzaniu/dodawaniu kolumny: {e}")
-
     except Exception as e:
         print(f"❌ Database initialization failed: {e}")
+        raise
+
     yield
+
     # Zamykanie aplikacji
     print("👋 Shutting down")
 
@@ -100,7 +81,9 @@ app.add_middleware(
 )
 
 
-# podstawowe endpointy i testy
+# ============================================
+# PODSTAWOWE ENDPOINTY I TESTY
+# ============================================
 
 @app.get("/")
 async def root():
@@ -137,7 +120,9 @@ async def test_db():
         }
 
 
-# endpointy użytkowników
+# ============================================
+# ENDPOINTY UŻYTKOWNIKÓW
+# ============================================
 
 @app.post("/api/register", response_model=LoginResponse)
 async def register(user_data: UserRegister):
@@ -496,7 +481,9 @@ async def get_users():
         }
 
 
-# endpointy nawyków
+# ============================================
+# ENDPOINTY NAWYKÓW
+# ============================================
 
 @app.post("/api/habits")
 async def create_habit(habit_data: HabitCreate, authorization: str = Header(None)):
@@ -533,18 +520,6 @@ async def create_habit(habit_data: HabitCreate, authorization: str = Header(None
     async with aiosqlite.connect("database.db") as db:
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
-
-        # sprawdzenie i dodanie kolumny icon jeśli nie istnieje
-        try:
-            cursor = await db.execute("PRAGMA table_info(habits)")
-            columns = await cursor.fetchall()
-            column_names = [column[1] for column in columns]
-
-            if 'icon' not in column_names:
-                await db.execute("ALTER TABLE habits ADD COLUMN icon TEXT DEFAULT '🎯'")
-                await db.commit()
-        except Exception as e:
-            print(f"Error checking/adding icon column: {e}")
 
         # dodanie nowego nawyku do bazy danych
         cursor = await db.execute(
@@ -601,18 +576,6 @@ async def get_user_habits(authorization: str = Header(None)):
 
     async with aiosqlite.connect("database.db") as db:
         db.row_factory = aiosqlite.Row
-
-        # sprawdzenie i dodanie kolumny jeśli nie istnieje
-        try:
-            cursor = await db.execute("PRAGMA table_info(habits)")
-            columns = await cursor.fetchall()
-            column_names = [column[1] for column in columns]
-
-            if 'icon' not in column_names:
-                await db.execute("ALTER TABLE habits ADD COLUMN icon TEXT DEFAULT '🎯'")
-                await db.commit()
-        except Exception as e:
-            print(f"Error checking/adding icon column: {e}")
 
         # pobranie nawyków użytkownika z datami ukończenia
         cursor = await db.execute(
@@ -790,9 +753,9 @@ async def delete_habit(habit_id: int, authorization: str = Header(None)):
         return {"message": "Nawyk usunięty pomyślnie"}
 
 
-# ========================================
-# Endpointy dla ubrań - ZAKTUALIZOWANE
-# ========================================
+# ============================================
+# ENDPOINTY DLA UBRAŃ
+# ============================================
 
 @app.get("/api/clothing")
 async def get_clothing_items():
@@ -844,7 +807,7 @@ async def get_owned_clothing(authorization: str = Header(None)):
         )
         owned = await cursor.fetchall()
 
-        # ✅ Pobierz aktualnie noszone ubranie
+        # Pobierz aktualnie noszone ubranie
         cursor = await db.execute(
             "SELECT current_clothing_id FROM users WHERE id = ?",
             (user_id,)
@@ -957,7 +920,6 @@ async def purchase_clothing(clothing_id: int, authorization: str = Header(None))
 async def wear_clothing(clothing_id: int, authorization: str = Header(None)):
     """
     Zmienia aktualnie noszone ubranie dla użytkownika.
-    ✅ NOWY ENDPOINT - rozwiązuje problem współdzielenia ubrań między użytkownikami
 
     Args:
         clothing_id (int): ID ubrania do założenia
@@ -995,7 +957,7 @@ async def wear_clothing(clothing_id: int, authorization: str = Header(None)):
                 detail="Nie możesz założyć ubrania, którego nie posiadasz"
             )
 
-        # ✅ Zaktualizuj aktualnie noszone ubranie w bazie danych
+        # Zaktualizuj aktualnie noszone ubranie w bazie danych
         await db.execute(
             "UPDATE users SET current_clothing_id = ? WHERE id = ?",
             (clothing_id, user_id)
@@ -1020,7 +982,6 @@ async def wear_clothing(clothing_id: int, authorization: str = Header(None)):
 async def remove_clothing(authorization: str = Header(None)):
     """
     Usuwa aktualnie noszone ubranie (wraca do domyślnego wyglądu).
-    ✅ OPCJONALNY ENDPOINT - pozwala zdjąć ubranie
 
     Args:
         authorization (str): Token autoryzacyjny w headerze
@@ -1056,7 +1017,9 @@ async def remove_clothing(authorization: str = Header(None)):
         }
 
 
-# Endpointy dla statystyk nawyków
+# ============================================
+# ENDPOINTY DLA STATYSTYK NAWYKÓW
+# ============================================
 
 @app.get("/api/habits/statistics")
 async def get_habit_statistics(authorization: str = Header(None)):
@@ -1199,6 +1162,10 @@ async def get_habit_calendar(habit_id: int, year: int, month: int, authorization
             'total_completions_this_month': len(completion_dates)
         }
 
+
+# ============================================
+# URUCHOMIENIE APLIKACJI
+# ============================================
 
 if __name__ == "__main__":
     """
