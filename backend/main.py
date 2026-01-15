@@ -6,16 +6,19 @@ from contextlib import asynccontextmanager
 from datetime import datetime, date
 from typing import List
 import calendar
+import asyncio
 
 # importowanie modułów aplikacji
 try:
     from database import init_db, update_habit_statistics
+
     print("✅ database.py imported successfully")
 except Exception as e:
     print(f"❌ Failed to import database.py: {e}")
 
 try:
     import aiosqlite
+
     print("✅ aiosqlite imported successfully")
 except Exception as e:
     print(f"❌ Failed to import aiosqlite: {e}")
@@ -25,15 +28,78 @@ try:
         UserRegister, UserLogin, UserResponse, LoginResponse,
         HabitCreate, HabitResponse, HabitUpdate, HabitCompletionResponse
     )
+
     print("✅ schemas.py imported successfully")
 except Exception as e:
     print(f"❌ Failed to import schemas.py: {e}")
 
 try:
     from auth import hash_password, verify_password, create_token, verify_token
+
     print("✅ auth.py imported successfully")
 except Exception as e:
     print(f"❌ Failed to import auth.py: {e}")
+
+
+async def ensure_clothing_column_exists():
+    """
+    Sprawdza i dodaje kolumnę current_clothing_id do tabeli users jeśli nie istnieje.
+
+    Obsługuje race conditions gdy wiele procesów próbuje dodać kolumnę jednocześnie.
+    """
+    max_retries = 3
+    retry_count = 0
+
+    while retry_count < max_retries:
+        try:
+            async with aiosqlite.connect("database.db") as db:
+                # Sprawdź czy kolumna istnieje
+                cursor = await db.execute("PRAGMA table_info(users)")
+                columns = await cursor.fetchall()
+                column_names = [column[1] for column in columns]
+
+                if 'current_clothing_id' not in column_names:
+                    print("➕ Dodawanie kolumny current_clothing_id...")
+
+                    try:
+                        # Próba dodania kolumny
+                        await db.execute("ALTER TABLE users ADD COLUMN current_clothing_id INTEGER DEFAULT NULL")
+                        await db.commit()
+                        print("✅ Kolumna current_clothing_id dodana pomyślnie")
+                        return
+
+                    except Exception as alter_error:
+                        # Sprawdź czy kolumna została dodana przez inny proces
+                        cursor = await db.execute("PRAGMA table_info(users)")
+                        columns = await cursor.fetchall()
+                        column_names = [column[1] for column in columns]
+
+                        if 'current_clothing_id' in column_names:
+                            print("✅ Kolumna current_clothing_id już istnieje (dodana przez inny proces)")
+                            return
+                        else:
+                            # Jeśli kolumny nadal nie ma, spróbuj ponownie
+                            raise alter_error
+                else:
+                    print("✅ Kolumna current_clothing_id już istnieje")
+                    return
+
+        except Exception as e:
+            retry_count += 1
+            error_msg = str(e).lower()
+
+            # Jeśli błąd to "duplicate column name" - kolumna już istnieje, wszystko OK
+            if "duplicate column" in error_msg or "already exists" in error_msg:
+                print("✅ Kolumna current_clothing_id już istnieje")
+                return
+
+            if retry_count < max_retries:
+                print(f"⚠️ Próba {retry_count} nie powiodła się, ponawiam... ({e})")
+                await asyncio.sleep(0.5)  # Krótkie opóźnienie przed retry
+            else:
+                print(f"❌ Nie udało się dodać kolumny current_clothing_id po {max_retries} próbach: {e}")
+                # Nie przerywaj uruchamiania aplikacji - może kolumna już istnieje
+                return
 
 
 @asynccontextmanager
@@ -48,9 +114,13 @@ async def lifespan(app: FastAPI):
     try:
         await init_db()
         print("✅ Database initialized")
+
+        # ✅ Dodaj kolumnę current_clothing_id jeśli nie istnieje
+        await ensure_clothing_column_exists()
+
     except Exception as e:
         print(f"❌ Database initialization failed: {e}")
-        raise
+        # Nie przerywaj - aplikacja może nadal działać
 
     yield
 
@@ -807,16 +877,22 @@ async def get_owned_clothing(authorization: str = Header(None)):
         )
         owned = await cursor.fetchall()
 
-        # Pobierz aktualnie noszone ubranie
-        cursor = await db.execute(
-            "SELECT current_clothing_id FROM users WHERE id = ?",
-            (user_id,)
-        )
-        user = await cursor.fetchone()
+        # ✅ Pobierz aktualnie noszone ubranie - z obsługą brakującej kolumny
+        try:
+            cursor = await db.execute(
+                "SELECT current_clothing_id FROM users WHERE id = ?",
+                (user_id,)
+            )
+            user = await cursor.fetchone()
+            current_clothing_id = user["current_clothing_id"] if user else None
+        except Exception as e:
+            # Jeśli kolumna nie istnieje, zwróć None
+            print(f"⚠️ Błąd pobierania current_clothing_id: {e}")
+            current_clothing_id = None
 
         return {
             "owned_clothing_ids": [item["clothing_id"] for item in owned],
-            "current_clothing_id": user["current_clothing_id"] if user else None
+            "current_clothing_id": current_clothing_id
         }
 
 
@@ -957,12 +1033,23 @@ async def wear_clothing(clothing_id: int, authorization: str = Header(None)):
                 detail="Nie możesz założyć ubrania, którego nie posiadasz"
             )
 
-        # Zaktualizuj aktualnie noszone ubranie w bazie danych
-        await db.execute(
-            "UPDATE users SET current_clothing_id = ? WHERE id = ?",
-            (clothing_id, user_id)
-        )
-        await db.commit()
+        # ✅ Zaktualizuj aktualnie noszone ubranie - z obsługą brakującej kolumny
+        try:
+            await db.execute(
+                "UPDATE users SET current_clothing_id = ? WHERE id = ?",
+                (clothing_id, user_id)
+            )
+            await db.commit()
+        except Exception as e:
+            print(f"⚠️ Błąd aktualizacji current_clothing_id: {e}")
+            # Jeśli kolumna nie istnieje, spróbuj ją dodać
+            await ensure_clothing_column_exists()
+            # Spróbuj ponownie
+            await db.execute(
+                "UPDATE users SET current_clothing_id = ? WHERE id = ?",
+                (clothing_id, user_id)
+            )
+            await db.commit()
 
         # Pobierz nazwę ubrania dla potwierdzenia
         cursor = await db.execute(
@@ -1004,12 +1091,16 @@ async def remove_clothing(authorization: str = Header(None)):
     async with aiosqlite.connect("database.db") as db:
         await db.execute("PRAGMA foreign_keys = ON")
 
-        # Usuń aktualnie noszone ubranie
-        await db.execute(
-            "UPDATE users SET current_clothing_id = NULL WHERE id = ?",
-            (user_id,)
-        )
-        await db.commit()
+        # ✅ Usuń aktualnie noszone ubranie - z obsługą brakującej kolumny
+        try:
+            await db.execute(
+                "UPDATE users SET current_clothing_id = NULL WHERE id = ?",
+                (user_id,)
+            )
+            await db.commit()
+        except Exception as e:
+            print(f"⚠️ Błąd usuwania current_clothing_id: {e}")
+            # Jeśli kolumna nie istnieje, to już domyślnie NULL
 
         return {
             "message": "Ubranie zdjęte - powrót do domyślnego wyglądu",
