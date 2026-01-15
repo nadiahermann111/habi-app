@@ -190,50 +190,70 @@ const Dashboard = ({ user, onLogout }) => {
   };
 
   const handleWinCoins = async (amount) => {
-    try {
-      console.log(`🎰 handleWinCoins called with amount: ${amount}`);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('🎰 handleWinCoins START');
+  console.log(`   Amount to add: ${amount}`);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.error('❌ Brak tokenu');
-        throw new Error('Brak tokenu');
-      }
+  try {
+    const token = localStorage.getItem('token');
 
-      const response = await fetch('https://habi-backend.onrender.com/api/coins/add', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ coins: amount })
-      });
-
-      if (!response.ok) {
-        throw new Error('Błąd dodawania monet');
-      }
-
-      const result = await response.json();
-
-      console.log('💰 Coins added:', result);
-
-      // Aktualizuj stan lokalny
-      setProfile(prev => ({
-        ...prev,
-        coins: result.coins
-      }));
-
-      // Wyślij event
-      window.dispatchEvent(new CustomEvent('coinsUpdated', {
-        detail: { coins: result.coins }
-      }));
-
-      console.log(`✅ Coins updated: ${result.coins}`);
-
-    } catch (error) {
-      console.error('❌ Błąd dodawania wygranych monet:', error);
-      throw error;
+    if (!token) {
+      console.error('❌ Brak tokenu w localStorage');
+      throw new Error('Brak tokenu autoryzacji');
     }
-  };
+
+    console.log('📤 Wysyłanie requestu do /api/coins/add');
+    console.log(`   URL: https://habi-backend.onrender.com/api/coins/add`);
+    console.log(`   Body: { coins: ${amount} }`);
+
+    const response = await fetch('https://habi-backend.onrender.com/api/coins/add', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ coins: amount })
+    });
+
+    console.log(`📥 Response status: ${response.status}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Response not OK:', errorText);
+      throw new Error(`Błąd HTTP: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('✅ Response data:', result);
+
+    // Aktualizuj stan lokalny
+    console.log(`🔄 Aktualizacja stanu: ${profile?.coins} → ${result.coins}`);
+    setProfile(prev => ({
+      ...prev,
+      coins: result.coins
+    }));
+
+    // Wyślij event
+    console.log('📡 Wysyłanie eventu coinsUpdated');
+    window.dispatchEvent(new CustomEvent('coinsUpdated', {
+      detail: { coins: result.coins }
+    }));
+
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('✅ handleWinCoins SUCCESS');
+    console.log(`   New total: ${result.coins} monet`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+  } catch (error) {
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('❌ handleWinCoins ERROR:', error);
+    console.error('   Error message:', error.message);
+    console.error('   Error stack:', error.stack);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    throw error;
+  }
+};
 
   const handleNavigateToHabits = () => {
     console.log('🎯 Navigating to habits');

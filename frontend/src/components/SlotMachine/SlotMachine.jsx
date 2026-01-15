@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import './SlotMachine.css';
 
 const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username }) => {
@@ -17,7 +17,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
   const symbols = ['🍌', '🍎', '🍇', '🍊', '🍓', '🥥', '🍋', '🍑'];
 
   // ============================================
-  // Sprawdzanie czy użytkownik może grać (z backendu)
+  // Sprawdzanie czy użytkownik może grać
   // ============================================
 
   const checkCanPlay = async () => {
@@ -120,7 +120,6 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
   useEffect(() => {
     if (userId && !canPlay) {
       const interval = setInterval(() => {
-        // Przelicz czas co minutę
         checkCanPlay();
       }, 60000);
 
@@ -140,6 +139,18 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     return reel;
   };
 
+  const calculateWinnings = (centerRow) => {
+    const [r1, r2, r3] = centerRow;
+
+    if (r1 === r2 && r2 === r3) {
+      return 30;
+    }
+    if (r1 === r2 || r2 === r3 || r1 === r3) {
+      return 15;
+    }
+    return 5;
+  };
+
   const spinReels = () => {
     if (isSpinning || !canPlay || loading) {
       console.log('⚠️ Nie można kręcić:', { isSpinning, canPlay, loading });
@@ -148,13 +159,15 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
 
     if (!userId) {
       console.error('❌ Brak userId - nie można grać');
+      alert('Błąd: Brak identyfikatora użytkownika');
       return;
     }
 
-    console.log(`🎰 userId ${userId} kręci automatem`);
+    console.log(`🎰 User ${userId} kręci automatem`);
 
     setIsSpinning(true);
     setShowResult(false);
+    setWonCoins(0);
 
     let count = 0;
     const interval = setInterval(() => {
@@ -174,7 +187,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     const random = Math.random();
     let finalReels;
 
-    // 10% szans na jackpot
+    // 10% szans na jackpot (3 takie same)
     if (random < 0.10) {
       const symbol = symbols[Math.floor(Math.random() * symbols.length)];
       finalReels = [
@@ -207,59 +220,53 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     setReels(finalReels);
     setIsSpinning(false);
 
+    // Poczekaj na animację
     setTimeout(async () => {
       const centerRow = [finalReels[0][1], finalReels[1][1], finalReels[2][1]];
       const coins = calculateWinnings(centerRow);
 
-      console.log(`🎰 Wynik: ${coins} monet (${centerRow.join(' ')})`);
+      console.log(`🎰 Wynik gry:`);
+      console.log(`   Symbole: ${centerRow.join(' ')}`);
+      console.log(`   Wygrana: ${coins} monet`);
 
-      // ✅ WAŻNE: NAJPIERW zapisz grę w backendzie
-      console.log('💾 Zapisywanie gry w backendzie...');
+      // ✅ KROK 1: Zapisz grę w backendzie
+      console.log('💾 Krok 1: Zapisywanie gry...');
       const saved = await savePlayToBackend();
 
       if (!saved) {
-        console.error('❌ Nie udało się zapisać gry - anulowanie nagrody');
+        console.error('❌ Nie udało się zapisać gry - anulowanie');
         alert('Błąd zapisywania gry. Spróbuj ponownie.');
         setIsSpinning(false);
         return;
       }
 
-      console.log('✅ Gra zapisana w backendzie');
+      console.log('✅ Gra zapisana');
 
-      // ✅ POTEM przekaż wygrane monety
-      console.log(`💰 Przekazywanie ${coins} monet...`);
-      if (onWinCoins) {
+      // ✅ KROK 2: Dodaj monety
+      if (coins > 0 && onWinCoins) {
+        console.log(`💰 Krok 2: Dodawanie ${coins} monet...`);
+
         try {
           await onWinCoins(coins);
-          console.log('✅ Monety dodane');
+          console.log('✅ Monety dodane pomyślnie');
         } catch (error) {
           console.error('❌ Błąd dodawania monet:', error);
-          alert('Nie udało się dodać monet. Skontaktuj się z pomocą techniczną.');
+          alert('Nie udało się dodać monet. Skontaktuj się z pomocą.');
           return;
         }
       }
 
-      // ✅ NA KOŃCU pokaż wynik i zablokuj automat
+      // ✅ KROK 3: Pokaż wynik
+      console.log('🎉 Krok 3: Pokazywanie wyniku');
       setWonCoins(coins);
       setShowResult(true);
       setCanPlay(false);
 
-      // ✅ Odśwież status automatu
+      // ✅ KROK 4: Odśwież status
       await checkCanPlay();
+      console.log('✅ Proces zakończony');
 
     }, 1000);
-  };
-
-  const calculateWinnings = (centerRow) => {
-    const [r1, r2, r3] = centerRow;
-
-    if (r1 === r2 && r2 === r3) {
-      return 30;
-    }
-    if (r1 === r2 || r2 === r3 || r1 === r3) {
-      return 15;
-    }
-    return 5;
   };
 
   const handleClose = () => {
