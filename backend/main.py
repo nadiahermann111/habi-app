@@ -10,9 +10,10 @@ import asyncio
 
 # importowanie modułów aplikacji
 try:
-    from database import init_db, update_habit_statistics
+    from database import init_db, update_habit_statistics, DATABASE_PATH
 
     print("✅ database.py imported successfully")
+    print(f"🔗 main.py używa bazy: {DATABASE_PATH}")
 except Exception as e:
     print(f"❌ Failed to import database.py: {e}")
 
@@ -52,7 +53,7 @@ async def ensure_clothing_column_exists():
 
     while retry_count < max_retries:
         try:
-            async with aiosqlite.connect("database.db") as db:
+            async with aiosqlite.connect(DATABASE_PATH) as db:
                 # Sprawdź czy kolumna istnieje
                 cursor = await db.execute("PRAGMA table_info(users)")
                 columns = await cursor.fetchall()
@@ -176,12 +177,13 @@ async def test_db():
         dict: Status połączenia i lista tabel w bazie danych
     """
     try:
-        async with aiosqlite.connect("database.db") as db:
+        async with aiosqlite.connect(DATABASE_PATH) as db:
             cursor = await db.execute("SELECT name FROM sqlite_master WHERE type='table'")
             tables = await cursor.fetchall()
             return {
                 "message": "Database works!",
-                "tables": [table[0] for table in tables]
+                "tables": [table[0] for table in tables],
+                "database_path": DATABASE_PATH
             }
     except Exception as e:
         return {
@@ -208,7 +210,7 @@ async def register(user_data: UserRegister):
     Raises:
         HTTPException: Gdy email lub username już istnieje
     """
-    async with aiosqlite.connect("database.db") as db:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
@@ -268,7 +270,7 @@ async def login(login_data: UserLogin):
     Raises:
         HTTPException: Gdy dane logowania są nieprawidłowe
     """
-    async with aiosqlite.connect("database.db") as db:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
@@ -324,7 +326,7 @@ async def get_profile(authorization: str = Header(None)):
     if not user_id:
         raise HTTPException(status_code=401, detail="Nieprawidłowy token")
 
-    async with aiosqlite.connect("database.db") as db:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(
             "SELECT id, username, email, coins FROM users WHERE id = ?",
@@ -366,7 +368,7 @@ async def get_user_coins(authorization: str = Header(None)):
     if not user_id:
         raise HTTPException(status_code=401, detail="Nieprawidłowy token")
 
-    async with aiosqlite.connect("database.db") as db:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(
             "SELECT coins FROM users WHERE id = ?",
@@ -412,7 +414,7 @@ async def add_coins(data: dict, authorization: str = Header(None)):
     if amount == 0:
         raise HTTPException(status_code=400, detail="Kwota nie może być równa 0")
 
-    async with aiosqlite.connect("database.db") as db:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
@@ -493,7 +495,7 @@ async def spend_coins(data: dict, authorization: str = Header(None)):
     if amount <= 0:
         raise HTTPException(status_code=400, detail="Kwota musi być większa od 0")
 
-    async with aiosqlite.connect("database.db") as db:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
@@ -542,7 +544,7 @@ async def get_users():
     Returns:
         dict: Lista użytkowników z ich podstawowymi danymi
     """
-    async with aiosqlite.connect("database.db") as db:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute("SELECT id, username, email, coins, created_at FROM users")
         users = await cursor.fetchall()
@@ -587,7 +589,7 @@ async def create_habit(habit_data: HabitCreate, authorization: str = Header(None
     if habit_data.coin_value < 1 or habit_data.coin_value > 5:
         raise HTTPException(status_code=400, detail="Wartość monet musi być między 1 a 5")
 
-    async with aiosqlite.connect("database.db") as db:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
@@ -644,7 +646,7 @@ async def get_user_habits(authorization: str = Header(None)):
     if not user_id:
         raise HTTPException(status_code=401, detail="Nieprawidłowy token")
 
-    async with aiosqlite.connect("database.db") as db:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
         db.row_factory = aiosqlite.Row
 
         # pobranie nawyków użytkownika z datami ukończenia
@@ -714,7 +716,7 @@ async def complete_habit(habit_id: int, authorization: str = Header(None)):
 
     today = date.today().isoformat()
 
-    async with aiosqlite.connect("database.db") as db:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
@@ -757,7 +759,7 @@ async def complete_habit(habit_id: int, authorization: str = Header(None)):
     # Aktualizacja statystyk (poza główną transakcją)
     await update_habit_statistics(user_id, habit_id, today)
 
-    async with aiosqlite.connect("database.db") as db:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
         db.row_factory = aiosqlite.Row
         # pobranie nowej liczby monet użytkownika
         cursor = await db.execute(
@@ -802,7 +804,7 @@ async def delete_habit(habit_id: int, authorization: str = Header(None)):
     if not user_id:
         raise HTTPException(status_code=401, detail="Nieprawidłowy token")
 
-    async with aiosqlite.connect("database.db") as db:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
 
         # sprawdzenie czy nawyk istnieje i należy do użytkownika
@@ -835,7 +837,7 @@ async def get_clothing_items():
     Returns:
         list: Lista wszystkich ubrań w systemie
     """
-    async with aiosqlite.connect("database.db") as db:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(
             "SELECT id, name, cost, icon, category FROM clothing_items ORDER BY cost ASC"
@@ -870,7 +872,7 @@ async def get_owned_clothing(authorization: str = Header(None)):
     if not user_id:
         raise HTTPException(status_code=401, detail="Nieprawidłowy token")
 
-    async with aiosqlite.connect("database.db") as db:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
@@ -941,7 +943,7 @@ async def purchase_clothing(clothing_id: int, authorization: str = Header(None))
     if not user_id:
         raise HTTPException(status_code=401, detail="Nieprawidłowy token")
 
-    async with aiosqlite.connect("database.db") as db:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
@@ -1038,7 +1040,7 @@ async def wear_clothing(clothing_id: int, authorization: str = Header(None)):
     if not user_id:
         raise HTTPException(status_code=401, detail="Nieprawidłowy token")
 
-    async with aiosqlite.connect("database.db") as db:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
@@ -1111,7 +1113,7 @@ async def remove_clothing(authorization: str = Header(None)):
     if not user_id:
         raise HTTPException(status_code=401, detail="Nieprawidłowy token")
 
-    async with aiosqlite.connect("database.db") as db:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
 
         # ✅ Usuń aktualnie noszone ubranie
@@ -1159,7 +1161,7 @@ async def get_habit_statistics(authorization: str = Header(None)):
     if not user_id:
         raise HTTPException(status_code=401, detail="Nieprawidłowy token")
 
-    async with aiosqlite.connect("database.db") as db:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
         db.row_factory = aiosqlite.Row
 
         # Pobierz statystyki
@@ -1236,7 +1238,7 @@ async def get_habit_calendar(habit_id: int, year: int, month: int, authorization
     if not user_id:
         raise HTTPException(status_code=401, detail="Nieprawidłowy token")
 
-    async with aiosqlite.connect("database.db") as db:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
         db.row_factory = aiosqlite.Row
 
         # Sprawdź czy nawyk należy do użytkownika
