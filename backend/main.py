@@ -103,6 +103,60 @@ async def ensure_clothing_column_exists():
                 return
 
 
+async def ensure_slot_machine_column_exists():
+    """
+    Sprawdza i dodaje kolumnę last_slot_machine_play do tabeli users jeśli nie istnieje.
+    """
+    max_retries = 3
+    retry_count = 0
+
+    while retry_count < max_retries:
+        try:
+            async with aiosqlite.connect(DATABASE_PATH) as db:
+                # Sprawdź czy kolumna istnieje
+                cursor = await db.execute("PRAGMA table_info(users)")
+                columns = await cursor.fetchall()
+                column_names = [column[1] for column in columns]
+
+                if 'last_slot_machine_play' not in column_names:
+                    print("➕ Dodawanie kolumny last_slot_machine_play...")
+
+                    try:
+                        await db.execute("ALTER TABLE users ADD COLUMN last_slot_machine_play DATE DEFAULT NULL")
+                        await db.commit()
+                        print("✅ Kolumna last_slot_machine_play dodana pomyślnie")
+                        return
+
+                    except Exception as alter_error:
+                        cursor = await db.execute("PRAGMA table_info(users)")
+                        columns = await cursor.fetchall()
+                        column_names = [column[1] for column in columns]
+
+                        if 'last_slot_machine_play' in column_names:
+                            print("✅ Kolumna last_slot_machine_play już istnieje (dodana przez inny proces)")
+                            return
+                        else:
+                            raise alter_error
+                else:
+                    print("✅ Kolumna last_slot_machine_play już istnieje")
+                    return
+
+        except Exception as e:
+            retry_count += 1
+            error_msg = str(e).lower()
+
+            if "duplicate column" in error_msg or "already exists" in error_msg:
+                print("✅ Kolumna last_slot_machine_play już istnieje")
+                return
+
+            if retry_count < max_retries:
+                print(f"⚠️ Próba {retry_count} nie powiodła się, ponawiam... ({e})")
+                await asyncio.sleep(0.5)
+            else:
+                print(f"❌ Nie udało się dodać kolumny last_slot_machine_play po {max_retries} próbach: {e}")
+                return
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -116,8 +170,9 @@ async def lifespan(app: FastAPI):
         await init_db()
         print("✅ Database initialized")
 
-        # ✅ Dodaj kolumnę current_clothing_id jeśli nie istnieje
+        # ✅ Dodaj kolumny jeśli nie istnieją
         await ensure_clothing_column_exists()
+        await ensure_slot_machine_column_exists()
 
     except Exception as e:
         print(f"❌ Database initialization failed: {e}")
@@ -1132,6 +1187,151 @@ async def remove_clothing(authorization: str = Header(None)):
             "message": "Ubranie zdjęte - powrót do domyślnego wyglądu",
             "current_clothing_id": None
         }
+
+
+# ============================================
+# ENDPOINTY DLA AUTOMATU (SLOT MACHINE)
+# ============================================
+
+@app.get("/api/slot-machine/check")
+async def check_slot_machine_limit(authorization: str = Header(None)):
+    """
+    Sprawdza czy użytkownik może dzisiaj grać w automat.
+
+    Returns:
+        dict: Informacja czy można grać, data ostatniej gry
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
+
+    token = authorization.replace("Bearer ", "")
+    user_id = verify_token(token)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        db.row_factory = aiosqlite.Row
+
+        try:
+            cursor = await db.execute(
+                "SELECT last_slot_machine_play FROM users WHERE id = ?",
+                (user_id,)
+            )
+            user = await cursor.fetchone()
+
+            if not user:
+                raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
+
+            last_play = user["last_slot_machine_play"]
+            today = date.today()
+
+            # Sprawdź czy ostatnia gra była dzisiaj
+            can_play = True
+            if last_play:
+                last_play_date = date.fromisoformat(last_play) if isinstance(last_play, str) else last_play
+                can_play = last_play_date < today
+
+            return {
+                "can_play": can_play,
+                "last_play_date": str(last_play) if last_play else None,
+                "next_available": str(today) if can_play else str(today)
+            }
+
+        except Exception as e:
+            print(f"❌ Błąd sprawdzania limitu automatu: {e}")
+            # Jeśli kolumna nie istnieje, spróbuj ją dodać
+            await ensure_slot_machine_column_exists()
+            # Domyślnie pozwól grać
+            return {
+                "can_play": True,
+                "last_play_date": None,
+                "next_available": str(date.today())
+            }
+
+
+@app.post("/api/slot-machine/play")
+async def record_slot_machine_play(authorization: str = Header(None)):
+    """
+    Zapisuje że użytkownik zagrał dzisiaj w automat.
+
+    Returns:
+        dict: Potwierdzenie zapisu gry
+
+    Raises:
+        HTTPException: Gdy token jest nieprawidłowy lub użytkownik już dzisiaj grał
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
+
+    token = authorization.replace("Bearer ", "")
+    user_id = verify_token(token)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+
+    today = date.today()
+
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute("PRAGMA foreign_keys = ON")
+        db.row_factory = aiosqlite.Row
+
+        try:
+            # Sprawdź czy użytkownik już dzisiaj grał
+            cursor = await db.execute(
+                "SELECT last_slot_machine_play FROM users WHERE id = ?",
+                (user_id,)
+            )
+            user = await cursor.fetchone()
+
+            if not user:
+                raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
+
+            last_play = user["last_slot_machine_play"]
+
+            # Walidacja - czy już dzisiaj grał
+            if last_play:
+                last_play_date = date.fromisoformat(last_play) if isinstance(last_play, str) else last_play
+                if last_play_date == today:
+                    raise HTTPException(status_code=400, detail="Już dzisiaj zagrałeś")
+
+            # Zapisz dzisiejszą datę
+            await db.execute(
+                "UPDATE users SET last_slot_machine_play = ? WHERE id = ?",
+                (today.isoformat(), user_id)
+            )
+            await db.commit()
+
+            print(f"✅ User {user_id} zagrał w automat dnia {today}")
+
+            return {
+                "success": True,
+                "message": "Gra zapisana",
+                "play_date": str(today)
+            }
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"❌ Błąd zapisywania gry w automat: {e}")
+            # Jeśli kolumna nie istnieje, spróbuj ją dodać
+            await ensure_slot_machine_column_exists()
+
+            # Spróbuj ponownie
+            await db.execute(
+                "UPDATE users SET last_slot_machine_play = ? WHERE id = ?",
+                (today.isoformat(), user_id)
+            )
+            await db.commit()
+
+            return {
+                "success": True,
+                "message": "Gra zapisana",
+                "play_date": str(today)
+            }
 
 
 # ============================================
