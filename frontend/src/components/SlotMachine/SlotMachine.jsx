@@ -13,6 +13,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
   const [canPlay, setCanPlay] = useState(true);
   const [timeUntilReset, setTimeUntilReset] = useState('');
   const previousUserIdRef = useRef(null);
+  const isCheckingRef = useRef(false); // ✅ NOWE: Zapobiegaj race conditions
 
   const symbols = ['🍌', '🍎', '🍇', '🍊', '🍓', '🥥', '🍋', '🍑'];
 
@@ -26,7 +27,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     return `slotMachine_lastPlay_user_${actualUserId}`;
   };
 
-  // ✅ NOWA FUNKCJA: Pobierz dzisiejszą datę w STAŁYM formacie YYYY-MM-DD
+  // ✅ Pobierz dzisiejszą datę w STAŁYM formacie YYYY-MM-DD
   const getTodayString = () => {
     const now = new Date();
     const year = now.getFullYear();
@@ -36,7 +37,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
   };
 
   const cleanupLegacyKeys = () => {
-    const migrationKey = 'slotMachine_cleaned_v6'; // ← Zwiększona wersja
+    const migrationKey = 'slotMachine_cleaned_v7'; // ✅ Zwiększona wersja
     if (localStorage.getItem(migrationKey)) return;
 
     console.log('🧹 Czyszczenie starych kluczy automatu...');
@@ -48,7 +49,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
         key.startsWith('slotMachineLastPlay_') ||
         key.startsWith('slotMachine_v') ||
         key === 'slotMachineLastPlay' ||
-        key === 'slotMachine_cleaned_v5' // Usuń starą wersję
+        key.startsWith('slotMachine_cleaned_') // ✅ Usuń wszystkie stare wersje cleanup
       )) {
         keysToRemove.push(key);
       }
@@ -67,22 +68,37 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     cleanupLegacyKeys();
   }, []);
 
+  // ✅ POPRAWIONY: Reset stanu przy zmianie użytkownika
   useEffect(() => {
     if (userId && userId !== previousUserIdRef.current) {
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log(`👤 Zmiana użytkownika: ${previousUserIdRef.current} → ${userId}`);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+      // Reset wszystkich stanów
       setShowResult(false);
       setWonCoins(0);
       setIsSpinning(false);
+      setTimeUntilReset('');
+
       previousUserIdRef.current = userId;
+      isCheckingRef.current = false; // Reset flagi
+
+      // Sprawdź limit dla nowego użytkownika
       checkDailyLimit(userId);
     }
   }, [userId]);
 
+  // ✅ POPRAWIONY: Sprawdź limit przy otwarciu
   useEffect(() => {
     if (isOpen && userId) {
       console.log(`🎰 Automat otwarty dla userId: ${userId}`);
       setShowResult(false);
-      checkDailyLimit(userId);
+
+      // Sprawdź limit tylko jeśli nie jest w trakcie sprawdzania
+      if (!isCheckingRef.current) {
+        checkDailyLimit(userId);
+      }
     }
   }, [isOpen, userId]);
 
@@ -97,15 +113,24 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
   }, [userId, canPlay]);
 
   // ============================================
-  // Sprawdzanie limitu dziennego (localStorage ONLY)
+  // Sprawdzanie limitu dziennego
   // ============================================
 
   const checkDailyLimit = (targetUserId) => {
+    // ✅ Zapobiegaj wielokrotnym wywołaniom
+    if (isCheckingRef.current) {
+      console.log('⚠️ checkDailyLimit już się wykonuje, pomijam');
+      return;
+    }
+
+    isCheckingRef.current = true;
+
     const actualUserId = targetUserId || userId;
 
     if (!actualUserId) {
       console.warn('⚠️ checkDailyLimit: Brak userId');
       setCanPlay(true);
+      isCheckingRef.current = false;
       return;
     }
 
@@ -113,11 +138,12 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     if (!storageKey) {
       console.warn('⚠️ Nie można utworzyć klucza storage');
       setCanPlay(true);
+      isCheckingRef.current = false;
       return;
     }
 
     const lastPlayDate = localStorage.getItem(storageKey);
-    const today = getTodayString(); // ✅ ZMIANA: Używamy YYYY-MM-DD
+    const today = getTodayString();
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📅 Sprawdzanie limitu automatu:');
@@ -137,6 +163,11 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
       setCanPlay(true);
       setTimeUntilReset('');
     }
+
+    // ✅ Odblokuj flagę po krótkiej chwili
+    setTimeout(() => {
+      isCheckingRef.current = false;
+    }, 100);
   };
 
   const calculateTimeUntilReset = () => {
@@ -193,7 +224,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     console.log(`   User ID: ${userId}`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-    // ✅ ZMIANA: Zapisz datę NATYCHMIAST po kliknięciu
+    // ✅ Zapisz datę NATYCHMIAST po kliknięciu
     const storageKey = getStorageKey(userId);
     const today = getTodayString();
 
@@ -291,7 +322,6 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
         } catch (error) {
           console.error('❌ Błąd dodawania monet:', error);
           alert('Nie udało się dodać monet. Spróbuj ponownie później.');
-          // NIE cofaj zapisanej gry - użytkownik i tak grał
         }
       }
 
@@ -325,6 +355,18 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
   const handleFinalClose = () => {
     setShowResult(false);
     onClose();
+  };
+
+  // ✅ NOWE: Funkcja debugowania (usuń w produkcji)
+  const handleDebugReset = () => {
+    if (!userId) return;
+
+    const storageKey = getStorageKey(userId);
+    if (storageKey) {
+      localStorage.removeItem(storageKey);
+      console.log('🔧 DEBUG: Usunięto klucz:', storageKey);
+      checkDailyLimit(userId);
+    }
   };
 
   // ============================================
@@ -397,6 +439,18 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
               {timeUntilReset && (
                 <p className="locked-time">Następna gra za: {timeUntilReset}</p>
               )}
+              {/* ✅ DEBUGOWANIE: Przycisk resetujący (usuń w produkcji) */}
+              <button
+                onClick={handleDebugReset}
+                style={{
+                  fontSize: '10px',
+                  padding: '2px 5px',
+                  marginTop: '5px',
+                  opacity: 0.3
+                }}
+              >
+                🔧 Debug: Reset
+              </button>
             </div>
           )}
 

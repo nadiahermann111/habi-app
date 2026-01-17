@@ -5,13 +5,26 @@ Ten moduł zawiera definicje tabel, funkcje inicjalizacji bazy danych
 oraz pomocnicze funkcje do wykonywania zapytań SQL.
 """
 
+import os
 import sqlite3
 import asyncio
 import aiosqlite
 from pathlib import Path
 from datetime import datetime, timedelta, date
 
-DATABASE_PATH = "database.db"
+# ============================================
+# KONFIGURACJA ŚCIEŻKI BAZY DANYCH
+# ============================================
+
+# ✅ Użyj Persistent Disk (/var/data) jeśli dostępny (Render),
+# w przeciwnym razie użyj lokalnej ścieżki (development)
+DATABASE_PATH = "/var/data/database.db" if os.path.exists("/var/data") else "database.db"
+
+print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+print("📂 KONFIGURACJA BAZY DANYCH:")
+print(f"   Ścieżka: {DATABASE_PATH}")
+print(f"   Typ: {'🔒 Persistent Disk (Render)' if '/var/data' in DATABASE_PATH else '💻 Local Development'}")
+print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 # ============================================
 # DEFINICJE SQL
