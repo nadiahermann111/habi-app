@@ -26,8 +26,17 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     return `slotMachine_lastPlay_user_${actualUserId}`;
   };
 
+  // ✅ NOWA FUNKCJA: Pobierz dzisiejszą datę w STAŁYM formacie YYYY-MM-DD
+  const getTodayString = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const cleanupLegacyKeys = () => {
-    const migrationKey = 'slotMachine_cleaned_v5';
+    const migrationKey = 'slotMachine_cleaned_v6'; // ← Zwiększona wersja
     if (localStorage.getItem(migrationKey)) return;
 
     console.log('🧹 Czyszczenie starych kluczy automatu...');
@@ -38,7 +47,8 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
       if (key && (
         key.startsWith('slotMachineLastPlay_') ||
         key.startsWith('slotMachine_v') ||
-        key === 'slotMachineLastPlay'
+        key === 'slotMachineLastPlay' ||
+        key === 'slotMachine_cleaned_v5' // Usuń starą wersję
       )) {
         keysToRemove.push(key);
       }
@@ -107,7 +117,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     }
 
     const lastPlayDate = localStorage.getItem(storageKey);
-    const today = new Date().toDateString();
+    const today = getTodayString(); // ✅ ZMIANA: Używamy YYYY-MM-DD
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📅 Sprawdzanie limitu automatu:');
@@ -183,6 +193,21 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     console.log(`   User ID: ${userId}`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
+    // ✅ ZMIANA: Zapisz datę NATYCHMIAST po kliknięciu
+    const storageKey = getStorageKey(userId);
+    const today = getTodayString();
+
+    if (storageKey) {
+      localStorage.setItem(storageKey, today);
+      console.log(`💾 NATYCHMIASTOWY ZAPIS w localStorage`);
+      console.log(`   Key: ${storageKey}`);
+      console.log(`   Value: ${today}`);
+
+      // Natychmiast zablokuj możliwość ponownej gry
+      setCanPlay(false);
+      calculateTimeUntilReset();
+    }
+
     setIsSpinning(true);
     setShowResult(false);
     setWonCoins(0);
@@ -256,22 +281,9 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
       console.log(`   Wygrana: ${coins} monet`);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-      // ✅ KROK 1: Zapisz grę w localStorage
-      const storageKey = getStorageKey(actualUserId);
-      if (storageKey) {
-        const today = new Date().toDateString();
-        localStorage.setItem(storageKey, today);
-        console.log(`💾 KROK 1: Zapisano w localStorage`);
-        console.log(`   Key: ${storageKey}`);
-        console.log(`   Value: ${today}`);
-      } else {
-        console.error('❌ Nie można zapisać - brak storageKey');
-        return;
-      }
-
-      // ✅ KROK 2: Dodaj monety przez onWinCoins
+      // ✅ Dodaj monety przez onWinCoins
       if (coins > 0 && onWinCoins) {
-        console.log(`💰 KROK 2: Dodawanie ${coins} monet...`);
+        console.log(`💰 Dodawanie ${coins} monet...`);
 
         try {
           await onWinCoins(coins);
@@ -283,12 +295,10 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
         }
       }
 
-      // ✅ KROK 3: Pokaż wynik
-      console.log('🎉 KROK 3: Pokazywanie wyniku');
+      // ✅ Pokaż wynik
+      console.log('🎉 Pokazywanie wyniku');
       setWonCoins(coins);
       setShowResult(true);
-      setCanPlay(false);
-      calculateTimeUntilReset();
 
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('✅ GRA ZAKOŃCZONA');

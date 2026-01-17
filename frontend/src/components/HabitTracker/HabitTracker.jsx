@@ -25,11 +25,11 @@ const Notification = ({ id, type, title, message, onRemove }) => {
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
-    // Automatyczne usunięcie powiadomienia po 2 sekundach
+    // Automatyczne usunięcie powiadomienia po 1 sekundzie
     const timer = setTimeout(() => {
       setIsExiting(true);
       setTimeout(onRemove, 300); // Czas na animację wyjścia
-    }, 2000);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, [onRemove]);

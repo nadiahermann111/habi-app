@@ -849,6 +849,9 @@ async def get_owned_clothing(authorization: str = Header(None)):
     """
     Pobiera ubrania posiadane przez użytkownika + aktualnie noszone ubranie.
 
+    ✅ WALIDACJA: Sprawdza czy current_clothing_id faktycznie należy do użytkownika.
+    Jeśli nie - automatycznie czyści.
+
     Args:
         authorization (str): Token autoryzacyjny w headerze
 
@@ -868,6 +871,7 @@ async def get_owned_clothing(authorization: str = Header(None)):
         raise HTTPException(status_code=401, detail="Nieprawidłowy token")
 
     async with aiosqlite.connect("database.db") as db:
+        await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
         # Pobierz posiadane ubrania
@@ -876,8 +880,10 @@ async def get_owned_clothing(authorization: str = Header(None)):
             (user_id,)
         )
         owned = await cursor.fetchall()
+        owned_clothing_ids = [item["clothing_id"] for item in owned]
 
-        # ✅ Pobierz aktualnie noszone ubranie - z obsługą brakującej kolumny
+        # ✅ Pobierz aktualnie noszone ubranie - z walidacją
+        current_clothing_id = None
         try:
             cursor = await db.execute(
                 "SELECT current_clothing_id FROM users WHERE id = ?",
@@ -885,13 +891,27 @@ async def get_owned_clothing(authorization: str = Header(None)):
             )
             user = await cursor.fetchone()
             current_clothing_id = user["current_clothing_id"] if user else None
+
+            # ✅ KLUCZOWA WALIDACJA: Sprawdź czy użytkownik faktycznie posiada to ubranie
+            if current_clothing_id and current_clothing_id not in owned_clothing_ids:
+                print(
+                    f"⚠️ User {user_id} ma current_clothing_id={current_clothing_id} którego nie posiada - CZYSZCZENIE")
+
+                # Automatycznie wyczyść nieprawidłowe ubranie
+                await db.execute(
+                    "UPDATE users SET current_clothing_id = NULL WHERE id = ?",
+                    (user_id,)
+                )
+                await db.commit()
+                current_clothing_id = None
+                print(f"✅ Wyczyszczono nieprawidłowe current_clothing_id dla user {user_id}")
+
         except Exception as e:
-            # Jeśli kolumna nie istnieje, zwróć None
             print(f"⚠️ Błąd pobierania current_clothing_id: {e}")
             current_clothing_id = None
 
         return {
-            "owned_clothing_ids": [item["clothing_id"] for item in owned],
+            "owned_clothing_ids": owned_clothing_ids,
             "current_clothing_id": current_clothing_id
         }
 
@@ -997,6 +1017,8 @@ async def wear_clothing(clothing_id: int, authorization: str = Header(None)):
     """
     Zmienia aktualnie noszone ubranie dla użytkownika.
 
+    ✅ WALIDACJA: Sprawdza czy użytkownik faktycznie posiada to ubranie.
+
     Args:
         clothing_id (int): ID ubrania do założenia
         authorization (str): Token autoryzacyjny w headerze
@@ -1020,7 +1042,7 @@ async def wear_clothing(clothing_id: int, authorization: str = Header(None)):
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
-        # Sprawdź czy użytkownik posiada to ubranie
+        # ✅ Sprawdź czy użytkownik posiada to ubranie
         cursor = await db.execute(
             "SELECT id FROM user_clothing WHERE user_id = ? AND clothing_id = ?",
             (user_id, clothing_id)
@@ -1033,13 +1055,14 @@ async def wear_clothing(clothing_id: int, authorization: str = Header(None)):
                 detail="Nie możesz założyć ubrania, którego nie posiadasz"
             )
 
-        # ✅ Zaktualizuj aktualnie noszone ubranie - z obsługą brakującej kolumny
+        # ✅ Zaktualizuj aktualnie noszone ubranie
         try:
             await db.execute(
                 "UPDATE users SET current_clothing_id = ? WHERE id = ?",
                 (clothing_id, user_id)
             )
             await db.commit()
+            print(f"✅ User {user_id} założył ubranie {clothing_id}")
         except Exception as e:
             print(f"⚠️ Błąd aktualizacji current_clothing_id: {e}")
             # Jeśli kolumna nie istnieje, spróbuj ją dodać
@@ -1091,13 +1114,14 @@ async def remove_clothing(authorization: str = Header(None)):
     async with aiosqlite.connect("database.db") as db:
         await db.execute("PRAGMA foreign_keys = ON")
 
-        # ✅ Usuń aktualnie noszone ubranie - z obsługą brakującej kolumny
+        # ✅ Usuń aktualnie noszone ubranie
         try:
             await db.execute(
                 "UPDATE users SET current_clothing_id = NULL WHERE id = ?",
                 (user_id,)
             )
             await db.commit()
+            print(f"✅ User {user_id} zdjął ubranie")
         except Exception as e:
             print(f"⚠️ Błąd usuwania current_clothing_id: {e}")
             # Jeśli kolumna nie istnieje, to już domyślnie NULL

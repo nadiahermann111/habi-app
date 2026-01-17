@@ -292,14 +292,30 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
         clothingStorage.save(null);
         if (onClothingChange) onClothingChange(null);
       } else {
-        // Sprawdź czy użytkownik faktycznie posiada to ubranie
+        // ✅ KLUCZOWA WALIDACJA: Sprawdź czy użytkownik faktycznie posiada to ubranie
         if (backendOwnedClothes.includes(backendCurrentClothing)) {
           console.log(`👔 Backend: założono ID ${backendCurrentClothing}`);
           saveCurrentClothingToStorage(userId, backendCurrentClothing);
           clothingStorage.save(backendCurrentClothing);
           if (onClothingChange) onClothingChange(backendCurrentClothing);
         } else {
-          console.warn('⚠️ Backend zwraca ubranie którego użytkownik nie posiada!');
+          console.warn(`⚠️ Backend zwraca ubranie ${backendCurrentClothing} którego użytkownik nie posiada - CZYSZCZENIE`);
+
+          // ✅ NAPRAW TO NA BACKENDZIE
+          try {
+            const token = tokenUtils.getToken();
+            await fetch(`${API_BASE_URL}/api/clothing/wear`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            console.log('✅ Wyczyszczono nieprawidłowe ubranie na backendzie');
+          } catch (err) {
+            console.error('❌ Błąd czyszczenia:', err);
+          }
+
           saveCurrentClothingToStorage(userId, null);
           clothingStorage.save(null);
           if (onClothingChange) onClothingChange(null);
@@ -546,6 +562,33 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
 
     loadData();
   }, []);
+
+  // ✅ NOWY: Nasłuchuj na wylogowanie
+  useEffect(() => {
+    const handleLogout = () => {
+      const userId = getUserId();
+      console.log('🚪 Wylogowanie - czyszczenie danych ubrań');
+      clearUserClothingData(userId);
+      setOwnedClothes([]);
+      if (onClothingChange) onClothingChange(null);
+    };
+
+    const handleUnauthorized = () => {
+      const userId = getUserId();
+      console.log('⚠️ Sesja nieautoryzowana - czyszczenie danych');
+      clearUserClothingData(userId);
+      setOwnedClothes([]);
+      if (onClothingChange) onClothingChange(null);
+    };
+
+    window.addEventListener('logout', handleLogout);
+    window.addEventListener('unauthorized', handleUnauthorized);
+
+    return () => {
+      window.removeEventListener('logout', handleLogout);
+      window.removeEventListener('unauthorized', handleUnauthorized);
+    };
+  }, [onClothingChange]);
 
   // ============================================
   // Renderowanie - Loading state
