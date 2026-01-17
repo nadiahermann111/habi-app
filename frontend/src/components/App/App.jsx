@@ -3,7 +3,7 @@ import Login from '../Login/Login';
 import Register from '../Register/Register';
 import Dashboard from '../Dashboard/Dashboard';
 import PWAInstallPrompt from '../PWAInstallPrompt/PWAInstallPrompt';
-import { authAPI, tokenUtils } from "../../services/api.jsx";
+import { authAPI } from "../../services/api.jsx";
 import './App.css';
 
 function App() {
@@ -52,12 +52,14 @@ function App() {
           console.warn('⚠️ Niezgodność ID użytkownika - wylogowanie');
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          setUser(null);
           setCurrentView('login');
         }
       } catch (error) {
         console.error('❌ Token nieważny lub błąd weryfikacji:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        setUser(null);
         setCurrentView('login');
       }
     } else {
@@ -65,6 +67,7 @@ function App() {
       // Wyczyść ewentualne niepełne dane
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      setUser(null);
       setCurrentView('login');
     }
 
@@ -72,42 +75,54 @@ function App() {
   };
 
   const handleLoginSuccess = (userData) => {
-    console.log('✅ Logowanie zakończone sukcesem:', userData);
+    console.log('✅ App.jsx: Logowanie zakończone sukcesem:', userData);
     setUser(userData);
     setCurrentView('dashboard');
   };
 
   const handleRegisterSuccess = (userData) => {
-    console.log('✅ Rejestracja zakończona sukcesem:', userData);
+    console.log('✅ App.jsx: Rejestracja zakończona sukcesem:', userData);
     setUser(userData);
     setCurrentView('dashboard');
   };
 
   const handleLogout = () => {
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('🚪 App.jsx: Wylogowanie START');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🚪 App.jsx: WYLOGOWANIE START');
 
-  // Wyczyść stan
-  setUser(null);
-  setIsAuthenticated(false);
+    // 1. Wyczyść stan użytkownika
+    console.log('   🔄 Resetowanie stanu użytkownika...');
+    setUser(null);
 
-  // Wyczyść localStorage (zachowaj tylko migration flag)
-  const keysToKeep = ['slotMachine_cleaned_v5'];
-  Object.keys(localStorage).forEach(key => {
-    if (!keysToKeep.includes(key)) {
-      localStorage.removeItem(key);
-    }
-  });
+    // 2. Wyczyść localStorage (zachowaj tylko migration flag)
+    console.log('   🗑️ Czyszczenie localStorage...');
+    const keysToKeep = ['slotMachine_cleaned_v5'];
+    const removedKeys = [];
 
-  console.log('✅ App.jsx: Wylogowanie zakończone');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-};
+    Object.keys(localStorage).forEach(key => {
+      if (!keysToKeep.includes(key)) {
+        localStorage.removeItem(key);
+        removedKeys.push(key);
+      }
+    });
+
+    console.log(`   ✓ Usunięto ${removedKeys.length} kluczy:`, removedKeys);
+
+    // 3. Przekieruj do ekranu logowania
+    console.log('   🔄 Przekierowanie do ekranu logowania...');
+    setCurrentView('login');
+
+    console.log('✅ App.jsx: WYLOGOWANIE ZAKOŃCZONE');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  };
 
   const switchToRegister = () => {
+    console.log('🔄 Przełączanie na rejestrację');
     setCurrentView('register');
   };
 
   const switchToLogin = () => {
+    console.log('🔄 Przełączanie na logowanie');
     setCurrentView('login');
   };
 
@@ -138,7 +153,7 @@ function App() {
         />
       )}
 
-      {currentView === 'dashboard' && (
+      {currentView === 'dashboard' && user && (
         <Dashboard
           user={user}
           onLogout={handleLogout}
