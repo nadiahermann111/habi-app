@@ -23,19 +23,16 @@ const Dashboard = ({ user, onLogout }) => {
   // ============================================
 
   useEffect(() => {
-    const savedClothing = clothingStorage.load();
-    if (savedClothing) {
-      console.log('👗 Wczytano ubranie z localStorage:', savedClothing);
-      setCurrentClothing(savedClothing);
-    }
-  }, []);
-
-  useEffect(() => {
     console.log('📍 Current view changed to:', currentView);
   }, [currentView]);
 
   useEffect(() => {
-    fetchProfile();
+    const initializeDashboard = async () => {
+      await fetchProfile();
+      await fetchCurrentClothing(); // ✅ Pobierz ubranie z backendu
+    };
+
+    initializeDashboard();
   }, []);
 
   // ============================================
@@ -53,6 +50,62 @@ const Dashboard = ({ user, onLogout }) => {
       console.error('❌ Błąd profilu:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ============================================
+  // FETCH CURRENT CLOTHING FROM BACKEND
+  // ============================================
+
+  const fetchCurrentClothing = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('⚠️ Brak tokenu - pomijam pobieranie ubrania');
+        return;
+      }
+
+      console.log('👗 Pobieranie aktualnego ubrania z backendu...');
+
+      const response = await fetch('https://habi-backend.onrender.com/api/clothing/owned', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        console.warn('⚠️ Nie udało się pobrać ubrania z backendu');
+        return;
+      }
+
+      const data = await response.json();
+      const clothingId = data.current_clothing_id;
+      const ownedClothes = data.owned_clothing_ids || [];
+
+      console.log(`👔 Backend zwrócił: clothingId=${clothingId}, owned=${JSON.stringify(ownedClothes)}`);
+
+      // ✅ Walidacja: Sprawdź czy użytkownik faktycznie posiada to ubranie
+      if (clothingId !== null && clothingId !== undefined) {
+        if (ownedClothes.includes(clothingId)) {
+          console.log(`✅ Ustawiam ubranie: ${clothingId}`);
+          setCurrentClothing(clothingId);
+          clothingStorage.save(clothingId);
+        } else {
+          console.warn(`⚠️ Backend zwraca ubranie ${clothingId} którego użytkownik nie posiada - ignoruję`);
+          setCurrentClothing(null);
+          clothingStorage.save(null);
+        }
+      } else {
+        console.log('👔 Brak ubrania - użytkownik nosi domyślny strój');
+        setCurrentClothing(null);
+        clothingStorage.save(null);
+      }
+
+    } catch (error) {
+      console.error('❌ Błąd pobierania ubrania:', error);
+      // W przypadku błędu - ustaw null zamiast crashować
+      setCurrentClothing(null);
     }
   };
 
@@ -392,6 +445,5 @@ const Dashboard = ({ user, onLogout }) => {
     </div>
   );
 };
-
 
 export default Dashboard;
