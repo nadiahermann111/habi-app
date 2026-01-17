@@ -13,12 +13,12 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
   const [canPlay, setCanPlay] = useState(true);
   const [timeUntilReset, setTimeUntilReset] = useState('');
   const previousUserIdRef = useRef(null);
-  const isCheckingRef = useRef(false); // ✅ NOWE: Zapobiegaj race conditions
+  const isCheckingRef = useRef(false);
 
   const symbols = ['🍌', '🍎', '🍇', '🍊', '🍓', '🥥', '🍋', '🍑'];
 
   // ============================================
-  // Storage helpers
+  // Storage helpers (FALLBACK dla offline mode)
   // ============================================
 
   const getStorageKey = (targetUserId) => {
@@ -27,7 +27,6 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     return `slotMachine_lastPlay_user_${actualUserId}`;
   };
 
-  // ✅ Pobierz dzisiejszą datę w STAŁYM formacie YYYY-MM-DD
   const getTodayString = () => {
     const now = new Date();
     const year = now.getFullYear();
@@ -37,7 +36,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
   };
 
   const cleanupLegacyKeys = () => {
-    const migrationKey = 'slotMachine_cleaned_v7'; // ✅ Zwiększona wersja
+    const migrationKey = 'slotMachine_cleaned_v7';
     if (localStorage.getItem(migrationKey)) return;
 
     console.log('🧹 Czyszczenie starych kluczy automatu...');
@@ -49,7 +48,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
         key.startsWith('slotMachineLastPlay_') ||
         key.startsWith('slotMachine_v') ||
         key === 'slotMachineLastPlay' ||
-        key.startsWith('slotMachine_cleaned_') // ✅ Usuń wszystkie stare wersje cleanup
+        key.startsWith('slotMachine_cleaned_')
       )) {
         keysToRemove.push(key);
       }
@@ -68,36 +67,31 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     cleanupLegacyKeys();
   }, []);
 
-  // ✅ POPRAWIONY: Reset stanu przy zmianie użytkownika
   useEffect(() => {
     if (userId && userId !== previousUserIdRef.current) {
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log(`👤 Zmiana użytkownika: ${previousUserIdRef.current} → ${userId}`);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-      // Reset wszystkich stanów
       setShowResult(false);
       setWonCoins(0);
       setIsSpinning(false);
       setTimeUntilReset('');
 
       previousUserIdRef.current = userId;
-      isCheckingRef.current = false; // Reset flagi
+      isCheckingRef.current = false;
 
-      // Sprawdź limit dla nowego użytkownika
-      checkDailyLimit(userId);
+      checkDailyLimitFromBackend(userId);
     }
   }, [userId]);
 
-  // ✅ POPRAWIONY: Sprawdź limit przy otwarciu
   useEffect(() => {
     if (isOpen && userId) {
       console.log(`🎰 Automat otwarty dla userId: ${userId}`);
       setShowResult(false);
 
-      // Sprawdź limit tylko jeśli nie jest w trakcie sprawdzania
       if (!isCheckingRef.current) {
-        checkDailyLimit(userId);
+        checkDailyLimitFromBackend(userId);
       }
     }
   }, [isOpen, userId]);
@@ -113,11 +107,10 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
   }, [userId, canPlay]);
 
   // ============================================
-  // Sprawdzanie limitu dziennego
+  // Sprawdzanie limitu - BACKEND
   // ============================================
 
-  const checkDailyLimit = (targetUserId) => {
-    // ✅ Zapobiegaj wielokrotnym wywołaniom
+  const checkDailyLimitFromBackend = async (targetUserId) => {
     if (isCheckingRef.current) {
       console.log('⚠️ checkDailyLimit już się wykonuje, pomijam');
       return;
@@ -134,40 +127,81 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
       return;
     }
 
+    try {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        console.warn('⚠️ Brak tokenu - używam localStorage jako fallback');
+        checkDailyLimitFromLocalStorage(actualUserId);
+        isCheckingRef.current = false;
+        return;
+      }
+
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📅 Sprawdzanie limitu automatu (BACKEND):');
+      console.log(`   User ID: ${actualUserId}`);
+
+      const response = await fetch('https://habi-backend.onrender.com/api/slot-machine/check', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(`   Backend odpowiedź:`, data);
+
+      if (data.can_play) {
+        console.log('   ✅ Użytkownik może grać');
+        setCanPlay(true);
+        setTimeUntilReset('');
+      } else {
+        console.log('   ❌ Użytkownik już dzisiaj grał');
+        setCanPlay(false);
+        calculateTimeUntilReset();
+      }
+
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    } catch (error) {
+      console.error('❌ Błąd sprawdzania limitu na backendzie:', error);
+      console.log('📱 Fallback do localStorage');
+      checkDailyLimitFromLocalStorage(actualUserId);
+    } finally {
+      setTimeout(() => {
+        isCheckingRef.current = false;
+      }, 100);
+    }
+  };
+
+  // Fallback do localStorage (tryb offline)
+  const checkDailyLimitFromLocalStorage = (actualUserId) => {
     const storageKey = getStorageKey(actualUserId);
     if (!storageKey) {
-      console.warn('⚠️ Nie można utworzyć klucza storage');
       setCanPlay(true);
-      isCheckingRef.current = false;
       return;
     }
 
     const lastPlayDate = localStorage.getItem(storageKey);
     const today = getTodayString();
 
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📅 Sprawdzanie limitu automatu:');
-    console.log(`   User ID: ${actualUserId}`);
-    console.log(`   Storage key: ${storageKey}`);
+    console.log('📱 Tryb offline - używam localStorage');
     console.log(`   Ostatnia gra: ${lastPlayDate || 'NIGDY'}`);
     console.log(`   Dzisiaj: ${today}`);
 
     if (lastPlayDate === today) {
-      console.log('   ❌ Użytkownik już dzisiaj grał');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('   ❌ Limit localStorage aktywny');
       setCanPlay(false);
       calculateTimeUntilReset();
     } else {
-      console.log('   ✅ Użytkownik może grać');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('   ✅ Można grać (localStorage)');
       setCanPlay(true);
       setTimeUntilReset('');
     }
-
-    // ✅ Odblokuj flagę po krótkiej chwili
-    setTimeout(() => {
-      isCheckingRef.current = false;
-    }, 100);
   };
 
   const calculateTimeUntilReset = () => {
@@ -207,7 +241,7 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     return 5;
   };
 
-  const spinReels = () => {
+  const spinReels = async () => {
     if (isSpinning || !canPlay) {
       console.log('⚠️ Nie można kręcić:', { isSpinning, canPlay });
       return;
@@ -222,23 +256,58 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🎰 ROZPOCZĘCIE GRY');
     console.log(`   User ID: ${userId}`);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-    // ✅ Zapisz datę NATYCHMIAST po kliknięciu
+    try {
+      const token = localStorage.getItem('token');
+
+      if (token) {
+        // ✅ Zapisz na backendzie
+        console.log('📤 Zapisywanie gry na backendzie...');
+
+        const response = await fetch('https://habi-backend.onrender.com/api/slot-machine/play', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ detail: 'Błąd serwera' }));
+          throw new Error(errorData.detail || 'Błąd zapisu gry');
+        }
+
+        const data = await response.json();
+        console.log('✅ Backend potwierdził:', data);
+      } else {
+        console.warn('⚠️ Brak tokenu - zapis tylko lokalny');
+      }
+
+    } catch (error) {
+      console.error('❌ Błąd zapisywania na backendzie:', error);
+      alert(`Błąd: ${error.message}\n\nSpróbuj ponownie później.`);
+
+      // Przywróć możliwość gry jeśli nie udało się zapisać
+      setCanPlay(true);
+      return;
+    }
+
+    // ✅ Zapisz lokalnie jako backup
     const storageKey = getStorageKey(userId);
     const today = getTodayString();
 
     if (storageKey) {
       localStorage.setItem(storageKey, today);
-      console.log(`💾 NATYCHMIASTOWY ZAPIS w localStorage`);
-      console.log(`   Key: ${storageKey}`);
-      console.log(`   Value: ${today}`);
-
-      // Natychmiast zablokuj możliwość ponownej gry
-      setCanPlay(false);
-      calculateTimeUntilReset();
+      console.log(`💾 Backup w localStorage: ${storageKey} = ${today}`);
     }
 
+    // Natychmiast zablokuj możliwość ponownej gry
+    setCanPlay(false);
+    calculateTimeUntilReset();
+
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    // Rozpocznij animację kręcenia
     setIsSpinning(true);
     setShowResult(false);
     setWonCoins(0);
@@ -357,16 +426,21 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
     onClose();
   };
 
-  // ✅ NOWE: Funkcja debugowania (usuń w produkcji)
+  // ✅ Funkcja debugowania (USUŃ W PRODUKCJI!)
   const handleDebugReset = () => {
     if (!userId) return;
 
+    console.log('🔧 DEBUG: Reset limitu automatu');
+
+    // Reset localStorage
     const storageKey = getStorageKey(userId);
     if (storageKey) {
       localStorage.removeItem(storageKey);
-      console.log('🔧 DEBUG: Usunięto klucz:', storageKey);
-      checkDailyLimit(userId);
+      console.log('   ✓ Usunięto klucz localStorage:', storageKey);
     }
+
+    // Ponowne sprawdzenie limitu
+    checkDailyLimitFromBackend(userId);
   };
 
   // ============================================
@@ -439,18 +513,22 @@ const SlotMachine = ({ isOpen, onClose, onWinCoins, userCoins, userId, username 
               {timeUntilReset && (
                 <p className="locked-time">Następna gra za: {timeUntilReset}</p>
               )}
-              {/* ✅ DEBUGOWANIE: Przycisk resetujący (usuń w produkcji) */}
-              <button
-                onClick={handleDebugReset}
-                style={{
-                  fontSize: '10px',
-                  padding: '2px 5px',
-                  marginTop: '5px',
-                  opacity: 0.3
-                }}
-              >
-                🔧 Debug: Reset
-              </button>
+
+              {/* 🔧 DEBUG - USUŃ TO PRZED WDROŻENIEM PRODUKCYJNYM! */}
+              {process.env.NODE_ENV === 'development' && (
+                <button
+                  onClick={handleDebugReset}
+                  style={{
+                    fontSize: '10px',
+                    padding: '2px 5px',
+                    marginTop: '5px',
+                    opacity: 0.3,
+                    cursor: 'pointer'
+                  }}
+                >
+                  🔧 Debug: Reset limitu
+                </button>
+              )}
             </div>
           )}
 
