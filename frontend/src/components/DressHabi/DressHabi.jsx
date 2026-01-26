@@ -94,7 +94,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
     if (userId) {
       localStorage.removeItem(`ownedClothes_${userId}`);
       localStorage.removeItem(`currentClothing_${userId}`);
-      console.log(`🗑️ Wyczyszczono dane ubrań dla użytkownika ${userId}`);
+      console.log(`Wyczyszczono dane ubrań dla użytkownika ${userId}`);
     }
 
     // Usuń też stare klucze bez userId (legacy)
@@ -108,7 +108,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
   const saveOwnedClothesToStorage = (userId, clothes) => {
     if (userId) {
       localStorage.setItem(`ownedClothes_${userId}`, JSON.stringify(clothes));
-      console.log(`💾 Zapisano ubrania dla użytkownika ${userId}:`, clothes);
+      console.log(` Zapisano ubrania dla użytkownika ${userId}:`, clothes);
     }
   };
 
@@ -134,10 +134,10 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
     if (userId) {
       if (clothingId === null || clothingId === undefined) {
         localStorage.removeItem(`currentClothing_${userId}`);
-        console.log(`🗑️ Usunięto currentClothing dla użytkownika ${userId}`);
+        console.log(` Usunięto currentClothing dla użytkownika ${userId}`);
       } else {
         localStorage.setItem(`currentClothing_${userId}`, JSON.stringify(clothingId));
-        console.log(`💾 Zapisano currentClothing dla użytkownika ${userId}:`, clothingId);
+        console.log(` Zapisano currentClothing dla użytkownika ${userId}:`, clothingId);
       }
     }
   };
@@ -167,12 +167,12 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       if (soundFile) {
         const audio = new Audio(soundFile);
         audio.volume = 0.6;
-        audio.play().catch(err => console.log('🔇 Nie udało się odtworzyć dźwięku:', err));
+        audio.play().catch(err => console.log('Nie udało się odtworzyć dźwięku:', err));
       } else {
-        console.log('🔇 Brak dźwięku dla przedmiotu ID:', itemId);
+        console.log('Brak dźwięku dla przedmiotu ID:', itemId);
       }
     } catch (error) {
-      console.log('🔇 Błąd odtwarzania:', error);
+      console.log('Błąd odtwarzania:', error);
     }
   };
 
@@ -201,7 +201,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
 
       if (Array.isArray(data) && data.length > 0) {
         setClothingItems(data);
-        console.log('✅ Pobrano listę ubrań:', data.length);
+        console.log('Pobrano listę ubrań:', data.length);
       } else {
         // Fallback do hardcoded listy
         const fallbackItems = [
@@ -217,10 +217,10 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
           { id: 10, name: 'Strój Playboy', cost: 500, icon: "🐰", category: 'Premium' }
         ];
         setClothingItems(fallbackItems);
-        console.log('⚠️ Użyto fallback listy ubrań');
+        console.log('Użyto fallback listy ubrań');
       }
     } catch (error) {
-      console.error('❌ Błąd fetchClothingItems:', error);
+      console.error('Błąd fetchClothingItems:', error);
       setError(`Nie udało się pobrać listy ubrań: ${error.message}`);
     }
   };
@@ -233,7 +233,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
     const userId = getUserId();
 
     if (!userId) {
-      console.log('⚠️ Brak userId - użytkownik niezalogowany');
+      console.log(' Brak userId - użytkownik niezalogowany');
       setOwnedClothes([]);
       if (onClothingChange) onClothingChange(null);
       return;
@@ -241,7 +241,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
 
     const token = tokenUtils.getToken();
     if (!token) {
-      console.log('⚠️ Brak tokenu - czyszczenie danych');
+      console.log('Brak tokenu - czyszczenie danych');
       clearUserClothingData(userId);
       setOwnedClothes([]);
       if (onClothingChange) onClothingChange(null);
@@ -249,7 +249,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
     }
 
     try {
-      console.log(`🔄 Pobieranie garderoby dla użytkownika ${userId}...`);
+      console.log(` Pobieranie garderoby dla użytkownika ${userId}...`);
 
       const response = await fetch(`${API_BASE_URL}/api/clothing/owned`, {
         headers: {
@@ -260,7 +260,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
 
       // Obsługa błędu 401 (wygasła sesja)
       if (response.status === 401) {
-        console.error('❌ Sesja wygasła - przekierowanie do logowania');
+        console.error('Sesja wygasła - przekierowanie do logowania');
         tokenUtils.removeToken();
         clearUserClothingData(userId);
         window.location.href = '/login';
@@ -272,9 +272,8 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       }
 
       const data = await response.json();
-      console.log('📦 Response z backendu:', data);
+      console.log('Response z backendu:', data);
 
-      // ✅ BACKEND JEST ŹRÓDŁEM PRAWDY
       const backendOwnedClothes = data.owned_clothing_ids || [];
       const backendCurrentClothing = data.current_clothing_id;
 
@@ -287,21 +286,20 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
 
       // Synchronizuj aktualnie noszone ubranie
       if (backendCurrentClothing === null || backendCurrentClothing === undefined) {
-        console.log('👔 Backend: brak ubrania');
+        console.log('Backend: brak ubrania');
         saveCurrentClothingToStorage(userId, null);
         clothingStorage.save(null);
         if (onClothingChange) onClothingChange(null);
       } else {
-        // ✅ KLUCZOWA WALIDACJA: Sprawdź czy użytkownik faktycznie posiada to ubranie
+        // Sprawdź czy użytkownik faktycznie posiada to ubranie
         if (backendOwnedClothes.includes(backendCurrentClothing)) {
           console.log(`👔 Backend: założono ID ${backendCurrentClothing}`);
           saveCurrentClothingToStorage(userId, backendCurrentClothing);
           clothingStorage.save(backendCurrentClothing);
           if (onClothingChange) onClothingChange(backendCurrentClothing);
         } else {
-          console.warn(`⚠️ Backend zwraca ubranie ${backendCurrentClothing} którego użytkownik nie posiada - CZYSZCZENIE`);
+          console.warn(`Backend zwraca ubranie ${backendCurrentClothing} którego użytkownik nie posiada - CZYSZCZENIE`);
 
-          // ✅ NAPRAW TO NA BACKENDZIE
           try {
             const token = tokenUtils.getToken();
             await fetch(`${API_BASE_URL}/api/clothing/wear`, {
@@ -311,9 +309,9 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
                 'Content-Type': 'application/json'
               }
             });
-            console.log('✅ Wyczyszczono nieprawidłowe ubranie na backendzie');
+            console.log('Wyczyszczono nieprawidłowe ubranie na backendzie');
           } catch (err) {
-            console.error('❌ Błąd czyszczenia:', err);
+            console.error('Błąd czyszczenia:', err);
           }
 
           saveCurrentClothingToStorage(userId, null);
@@ -323,14 +321,14 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       }
 
     } catch (error) {
-      console.error('❌ Błąd fetchOwnedClothing:', error);
+      console.error('Błąd fetchOwnedClothing:', error);
 
       // W przypadku błędu sieciowego, użyj cache jeśli dostępny
       const cachedOwned = getOwnedClothesFromStorage(userId);
       const cachedCurrent = getCurrentClothingFromStorage(userId);
 
       if (cachedOwned.length > 0) {
-        console.log('📱 Używam cache - tryb offline');
+        console.log('Używam cache - tryb offline');
         setOwnedClothes(cachedOwned);
 
         if (cachedCurrent && cachedOwned.includes(cachedCurrent)) {
@@ -355,7 +353,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
     const token = tokenUtils.getToken();
 
     if (!token || !userId) {
-      console.warn('⚠️ Brak tokenu lub userId - zapis tylko lokalny');
+      console.warn('Brak tokenu lub userId - zapis tylko lokalny');
       saveCurrentClothingToStorage(userId, clothingId);
       clothingStorage.save(clothingId);
       if (onClothingChange) onClothingChange(clothingId);
@@ -363,7 +361,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
     }
 
     try {
-      console.log(`📤 Zmiana ubrania na: ${clothingId} (user: ${userId})`);
+      console.log(`Zmiana ubrania na: ${clothingId} (user: ${userId})`);
 
       const response = await fetch(`${API_BASE_URL}/api/clothing/wear/${clothingId}`, {
         method: 'POST',
@@ -374,7 +372,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       });
 
       if (response.status === 401) {
-        console.error('❌ Sesja wygasła');
+        console.error('Sesja wygasła');
         tokenUtils.removeToken();
         window.location.href = '/login';
         return;
@@ -386,18 +384,18 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       }
 
       const data = await response.json();
-      console.log('✅ Ubranie zaktualizowane:', data);
+      console.log('Ubranie zaktualizowane:', data);
 
       // Aktualizuj lokalnie TYLKO po potwierdzeniu z backendu
       saveCurrentClothingToStorage(userId, clothingId);
       clothingStorage.save(clothingId);
       if (onClothingChange) {
-        console.log(`✅ onClothingChange(${clothingId})`);
+        console.log(`onClothingChange(${clothingId})`);
         onClothingChange(clothingId);
       }
 
     } catch (error) {
-      console.error('❌ Błąd updateCurrentClothing:', error);
+      console.error('Błąd updateCurrentClothing:', error);
       setError(`Nie udało się zmienić ubrania: ${error.message}`);
 
       // Odśwież dane z backendu w przypadku błędu
@@ -410,12 +408,12 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
    */
   const handlePurchase = async (item) => {
     if (processingItemId) {
-      console.log('⏳ Transakcja w toku...');
+      console.log('Transakcja w toku...');
       return;
     }
 
     const userId = getUserId();
-    console.log(`🛒 Zakup ${item.name} za ${item.cost} monet (user: ${userId})`);
+    console.log(`Zakup ${item.name} za ${item.cost} monet (user: ${userId})`);
     setError(null);
 
     // Walidacje
@@ -435,7 +433,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       const token = tokenUtils.getToken();
       if (!token) throw new Error('Brak tokenu autoryzacji');
 
-      console.log(`🔄 API: zakup przedmiotu ${item.id}...`);
+      console.log(`API: zakup przedmiotu ${item.id}...`);
 
       const response = await fetch(`${API_BASE_URL}/api/clothing/purchase/${item.id}`, {
         method: 'POST',
@@ -446,7 +444,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       });
 
       if (response.status === 401) {
-        console.error('❌ Sesja wygasła');
+        console.error('Sesja wygasła');
         tokenUtils.removeToken();
         window.location.href = '/login';
         return;
@@ -458,7 +456,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       }
 
       const data = await response.json();
-      console.log(`✅ Zakup udany!`, data);
+      console.log(`Zakup udany!`, data);
 
       // Odtwórz dźwięk
       playSound(item.id);
@@ -474,7 +472,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       saveOwnedClothesToStorage(userId, updatedOwned);
 
       // Automatycznie załóż kupione ubranie
-      console.log(`👗 Automatyczne założenie ${item.name} (ID: ${item.id})`);
+      console.log(`Automatyczne założenie ${item.name} (ID: ${item.id})`);
       await updateCurrentClothing(item.id);
 
       // Wyślij event o zmianie monet
@@ -492,7 +490,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
       setTimeout(() => setPurchaseAnimation(null), 1500);
 
     } catch (error) {
-      console.error('❌ Błąd handlePurchase:', error);
+      console.error('Błąd handlePurchase:', error);
       setError(error.message || 'Błąd podczas zakupu');
     } finally {
       setProcessingItemId(null);
@@ -504,7 +502,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
    */
   const handleClothingSelect = async (item) => {
     if (ownedClothes.includes(item.id) && currentClothing !== item.id) {
-      console.log(`👗 Zmiana na ${item.name} (ID: ${item.id})`);
+      console.log(`Zmiana na ${item.name} (ID: ${item.id})`);
 
       // Odtwórz dźwięk
       playSound(item.id);
@@ -536,7 +534,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
     const userId = getUserId();
 
     if (userId !== currentUserId) {
-      console.log(`👤 Zmiana użytkownika: ${currentUserId} → ${userId}`);
+      console.log(`Zmiana użytkownika: ${currentUserId} → ${userId}`);
 
       // Wyczyść dane starego użytkownika
       if (currentUserId) {
@@ -563,11 +561,10 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
     loadData();
   }, []);
 
-  // ✅ NOWY: Nasłuchuj na wylogowanie
   useEffect(() => {
     const handleLogout = () => {
       const userId = getUserId();
-      console.log('🚪 Wylogowanie - czyszczenie danych ubrań');
+      console.log('Wylogowanie - czyszczenie danych ubrań');
       clearUserClothingData(userId);
       setOwnedClothes([]);
       if (onClothingChange) onClothingChange(null);
@@ -575,7 +572,7 @@ const DressHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing, onClothi
 
     const handleUnauthorized = () => {
       const userId = getUserId();
-      console.log('⚠️ Sesja nieautoryzowana - czyszczenie danych');
+      console.log('Sesja nieautoryzowana - czyszczenie danych');
       clearUserClothingData(userId);
       setOwnedClothes([]);
       if (onClothingChange) onClothingChange(null);

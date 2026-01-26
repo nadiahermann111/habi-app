@@ -27,7 +27,7 @@ const getUserIdFromToken = () => {
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.user_id || payload.sub || payload.id;
   } catch (error) {
-    console.error('❌ Błąd odczytu user_id z tokenu:', error);
+    console.error(' Błąd odczytu user_id z tokenu:', error);
     return null;
   }
 };
@@ -37,7 +37,7 @@ export const clothingStorage = {
     const userId = getUserIdFromToken();
 
     if (!userId) {
-      console.warn('⚠️ Brak user_id - nie można zapisać ubrania');
+      console.warn('Brak user_id - nie można zapisać ubrania');
       return;
     }
 
@@ -45,10 +45,10 @@ export const clothingStorage = {
 
     if (clothingId) {
       localStorage.setItem(key, clothingId.toString());
-      console.log(`💾 Zapisano ubranie dla użytkownika ${userId}:`, clothingId);
+      console.log(`Zapisano ubranie dla użytkownika ${userId}:`, clothingId);
     } else {
       localStorage.removeItem(key);
-      console.log(`🗑️ Usunięto ubranie dla użytkownika ${userId}`);
+      console.log(`Usunięto ubranie dla użytkownika ${userId}`);
     }
   },
 
@@ -56,7 +56,7 @@ export const clothingStorage = {
     const userId = getUserIdFromToken();
 
     if (!userId) {
-      console.warn('⚠️ Brak user_id - nie można załadować ubrania');
+      console.warn('Brak user_id - nie można załadować ubrania');
       return null;
     }
 
@@ -64,7 +64,7 @@ export const clothingStorage = {
     const saved = localStorage.getItem(key);
 
     if (saved) {
-      console.log(`📂 Załadowano ubranie dla użytkownika ${userId}:`, saved);
+      console.log(`Załadowano ubranie dla użytkownika ${userId}:`, saved);
     }
 
     return saved ? parseInt(saved) : null;
@@ -74,7 +74,7 @@ export const clothingStorage = {
     const userId = getUserIdFromToken();
 
     if (!userId) {
-      console.warn('⚠️ Brak user_id - czyszczenie wszystkich kluczy');
+      console.warn('Brak user_id - czyszczenie wszystkich kluczy');
       // Wyczyść wszystkie możliwe klucze
       Object.keys(localStorage)
         .filter(key => key.startsWith('currentHabiClothing') || key.startsWith('ownedClothes'))
@@ -91,7 +91,7 @@ export const clothingStorage = {
     localStorage.removeItem('currentClothing');
     localStorage.removeItem('ownedClothes');
 
-    console.log(`🗑️ Wyczyszczono ubrania dla użytkownika ${userId}`);
+    console.log(`🗑Wyczyszczono ubrania dla użytkownika ${userId}`);
   },
 
   clearAll: () => {
@@ -102,11 +102,11 @@ export const clothingStorage = {
         key === 'currentClothing'
       )
       .forEach(key => localStorage.removeItem(key));
-    console.log('🗑️ Wyczyszczono wszystkie ubrania');
+    console.log(' Wyczyszczono wszystkie ubrania');
   }
 };
 
 export const clearClothingOnLogout = () => {
   clothingStorage.clear();
-  console.log('👋 Wyczyszczono dane ubrań przy wylogowaniu');
+  console.log('Wyczyszczono dane ubrań przy wylogowaniu');
 };

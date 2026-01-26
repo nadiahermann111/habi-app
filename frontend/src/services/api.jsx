@@ -8,7 +8,7 @@ export const tokenUtils = {
 
   setToken: (token) => {
     localStorage.setItem('token', token);
-    console.log('✅ Token zapisany');
+    console.log('Token zapisany');
   },
 
   removeToken: () => {
@@ -17,7 +17,7 @@ export const tokenUtils = {
     localStorage.removeItem('habits_cache');
     localStorage.removeItem('offline_completions');
     localStorage.removeItem('offline_coins');
-    console.log('🗑️ Token i cache usunięte');
+    console.log('Token i cache usunięte');
   },
 
   getAuthHeaders: () => {
@@ -35,7 +35,7 @@ export const tokenUtils = {
 // Globalny handler błędów 401 (Unauthorized)
 // ============================================
 const handleUnauthorized = () => {
-  console.error('❌ Sesja wygasła lub token nieprawidłowy');
+  console.error('Sesja wygasła lub token nieprawidłowy');
 
   // Usuń wszystkie dane
   tokenUtils.removeToken();

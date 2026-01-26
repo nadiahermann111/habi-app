@@ -22,48 +22,48 @@ function App() {
     const token = localStorage.getItem('token');
     const userDataStr = localStorage.getItem('user');
 
-    console.log('   Token:', token ? '✅ obecny' : '❌ brak');
+    console.log('   Token:', token ? ' obecny' : ' brak');
 
     let savedUser = null;
     if (userDataStr) {
       try {
         savedUser = JSON.parse(userDataStr);
-        console.log('   User:', savedUser ? `✅ ${savedUser.username} (ID: ${savedUser.id})` : '❌ brak');
+        console.log('   User:', savedUser ? ` ${savedUser.username} (ID: ${savedUser.id})` : '❌ brak');
       } catch (e) {
-        console.error('   ❌ Błąd parsowania danych użytkownika');
+        console.error('   Błąd parsowania danych użytkownika');
         // Wyczyść uszkodzone dane
         localStorage.removeItem('user');
       }
     } else {
-      console.log('   User: ❌ brak');
+      console.log('   User:  brak');
     }
 
     if (token && savedUser && savedUser.id) {
       try {
-        console.log('🔄 Weryfikacja tokenu z serwerem...');
+        console.log('Weryfikacja tokenu z serwerem...');
         const profile = await authAPI.getProfile();
 
         // Sprawdź czy ID użytkownika się zgadza
         if (profile.id === savedUser.id) {
-          console.log('✅ Token ważny, użytkownik zweryfikowany');
+          console.log('Token ważny, użytkownik zweryfikowany');
           setUser(profile);
           setCurrentView('dashboard');
         } else {
-          console.warn('⚠️ Niezgodność ID użytkownika - wylogowanie');
+          console.warn('Niezgodność ID użytkownika - wylogowanie');
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           setUser(null);
           setCurrentView('login');
         }
       } catch (error) {
-        console.error('❌ Token nieważny lub błąd weryfikacji:', error);
+        console.error('Token nieważny lub błąd weryfikacji:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
         setCurrentView('login');
       }
     } else {
-      console.log('❌ Brak danych autoryzacji - przekierowanie do logowania');
+      console.log('Brak danych autoryzacji - przekierowanie do logowania');
       // Wyczyść ewentualne niepełne dane
       localStorage.removeItem('token');
       localStorage.removeItem('user');
@@ -75,27 +75,26 @@ function App() {
   };
 
   const handleLoginSuccess = (userData) => {
-    console.log('✅ App.jsx: Logowanie zakończone sukcesem:', userData);
+    console.log('App.jsx: Logowanie zakończone sukcesem:', userData);
     setUser(userData);
     setCurrentView('dashboard');
   };
 
   const handleRegisterSuccess = (userData) => {
-    console.log('✅ App.jsx: Rejestracja zakończona sukcesem:', userData);
+    console.log('App.jsx: Rejestracja zakończona sukcesem:', userData);
     setUser(userData);
     setCurrentView('dashboard');
   };
 
   const handleLogout = () => {
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🚪 App.jsx: WYLOGOWANIE START');
+    console.log('App.jsx: WYLOGOWANIE START');
 
     // 1. Wyczyść stan użytkownika
-    console.log('   🔄 Resetowanie stanu użytkownika...');
+    console.log('Resetowanie stanu użytkownika...');
     setUser(null);
 
     // 2. Wyczyść localStorage (zachowaj tylko migration flag)
-    console.log('   🗑️ Czyszczenie localStorage...');
+    console.log('Czyszczenie localStorage...');
     const keysToKeep = ['slotMachine_cleaned_v5'];
     const removedKeys = [];
 
@@ -109,20 +108,19 @@ function App() {
     console.log(`   ✓ Usunięto ${removedKeys.length} kluczy:`, removedKeys);
 
     // 3. Przekieruj do ekranu logowania
-    console.log('   🔄 Przekierowanie do ekranu logowania...');
+    console.log('Przekierowanie do ekranu logowania...');
     setCurrentView('login');
 
-    console.log('✅ App.jsx: WYLOGOWANIE ZAKOŃCZONE');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('App.jsx: WYLOGOWANIE ZAKOŃCZONE');
   };
 
   const switchToRegister = () => {
-    console.log('🔄 Przełączanie na rejestrację');
+    console.log('Przełączanie na rejestrację');
     setCurrentView('register');
   };
 
   const switchToLogin = () => {
-    console.log('🔄 Przełączanie na logowanie');
+    console.log('Przełączanie na logowanie');
     setCurrentView('login');
   };
 

@@ -1,12 +1,38 @@
-# React + Vite
+# Habi - Habit Tracker App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplikacja do śledzenia nawyków z wirtualną małpką.
 
-Currently, two official plugins are available:
+## Demo na żywo
+https://nadiahermann111.github.io/habi-app/
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Uruchomienie lokalne
+```bash
+# Sklonuj repozytorium
+git clone https://github.com/nadiahermann111/habi-app.git
+cd habi-app
 
-## Expanding the ESLint configuration
+# Zainstaluj zależności
+npm install
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+# Uruchom serwer deweloperski
+npm run dev
+
+# Aplikacja dostępna na http://localhost:5173
+```
+
+## Dostępne komendy
+
+- `npm run dev` - uruchomienie w trybie deweloperskim
+- `npm run build` - build produkcyjny
+- `npm run preview` - podgląd wersji produkcyjnej
+- `npm run lint` - sprawdzenie kodu
+
+## Technologie
+
+- React 18 + Vite
+- FastAPI backend
+- SQLite database
+
+## Backend
+
+Backend hostowany na Render: `https://habi-backend.onrender.com`

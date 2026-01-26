@@ -3,7 +3,7 @@ import FoodControl from '../FoodControl/FoodControl';
 import CoinSlot from '../CoinSlot/CoinSlot';
 import HabiLogo from './habi-logo.png';
 
-// ✅ STATYCZNE IMPORTY WSZYSTKICH OBRAZKÓW
+// STATYCZNE IMPORTY WSZYSTKICH OBRAZKÓW
 import HabiAdultHappy from '../HabiClothes/HabiAdultHappy.png';
 import HabiPiercingHappy from '../HabiClothes/HabiPiercingHappy.png';
 import HabiBowHappy from '../HabiClothes/HabiBowHappy.png';
@@ -16,7 +16,7 @@ import HabiJeansHappy from '../HabiClothes/HabiJeansHappy.png';
 import HabiShrekHappy from '../HabiClothes/HabiShrekHappy.png';
 import HabiPlayboyHappy from '../HabiClothes/HabiPlayboyHappy.png';
 
-// 🔊 IMPORTY DŹWIĘKÓW JEDZENIA
+// IMPORTY DŹWIĘKÓW JEDZENIA
 import Food1Sound from '../Sounds/Food1.mp3';
 import Food2Sound from '../Sounds/Food2.mp3';
 import Food3Sound from '../Sounds/Food3.mp3';
@@ -78,15 +78,15 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
       if (soundFile) {
         const audio = new Audio(soundFile);
         audio.volume = 0.6; // głośność 60%
-        audio.play().catch(err => console.log('🔇 Nie udało się odtworzyć dźwięku:', err));
-        console.log(`🔊 Odtwarzam Food${randomIndex + 1}.mp3`);
+        audio.play().catch(err => console.log('Nie udalo sie odtworzyc dzwieku:', err));
+        console.log(`Odtwarzam Food${randomIndex + 1}.mp3`);
       }
     } catch (error) {
-      console.log('🔇 Błąd odtwarzania:', error);
+      console.log('Blad odtwarzania:', error);
     }
   };
 
-  // ✅ FUNKCJA ZWRACAJĄCA OBRAZEK
+  // FUNKCJA ZWRACAJĄCA OBRAZEK
   const getHabiImage = () => {
     if (!currentClothing) return HabiAdultHappy;
     return clothingImages[currentClothing] || HabiAdultHappy;
@@ -111,7 +111,7 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
         throw new Error('Brak tokenu autoryzacji');
       }
 
-      console.log(`🔄 Wydawanie ${amount} monet za jedzenie...`);
+      console.log(`Wydawanie ${amount} monet za jedzenie...`);
 
       const response = await fetch(`${API_BASE_URL}/api/coins/add`, {
         method: 'POST',
@@ -123,7 +123,7 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
       });
 
       const data = await response.json();
-      console.log('📦 Odpowiedź serwera:', data);
+      console.log('Odpowiedz serwera:', data);
 
       if (response.ok) {
         return {
@@ -131,14 +131,14 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
           remainingCoins: data.coins
         };
       } else {
-        console.error('❌ Błąd serwera:', data);
+        console.error('Blad serwera:', data);
         return {
           success: false,
           error: data.detail || data.message || 'Błąd wydawania monet'
         };
       }
     } catch (error) {
-      console.error('❌ Błąd spendCoins:', error);
+      console.error('Blad spendCoins:', error);
       return {
         success: false,
         error: error.message || 'Błąd połączenia z serwerem'
@@ -148,11 +148,11 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
 
   const handlePurchase = async (item) => {
     if (processingItemId) {
-      console.log('⏳ Transakcja w toku, czekaj...');
+      console.log('Transakcja w toku, czekaj...');
       return;
     }
 
-    console.log(`🛒 Próba zakupu ${item.name} za ${item.cost} monet`);
+    console.log(`Proba zakupu ${item.name} za ${item.cost} monet`);
     setError(null);
 
     if (currentCoins < item.cost) {
@@ -167,7 +167,7 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
       const result = await spendCoins(item.cost);
 
       if (result.success) {
-        console.log(`✅ Zakup udany! Pozostało monet: ${result.remainingCoins}`);
+        console.log(`Zakup udany! Pozostalo monet: ${result.remainingCoins}`);
 
         playRandomFoodSound();
 
@@ -194,11 +194,11 @@ const FeedHabi = ({ onBack, userCoins, onCoinsUpdate, currentClothing }) => {
         setTimeout(() => setPurchaseAnimation(null), 1500);
 
       } else {
-        console.error('❌ Zakup nieudany:', result.error);
+        console.error('Zakup nieudany:', result.error);
         setError(result.error);
       }
     } catch (error) {
-      console.error('❌ Błąd handlePurchase:', error);
+      console.error('Blad handlePurchase:', error);
       const errorMsg = 'Błąd podczas zakupu - sprawdź połączenie internetowe';
       setError(errorMsg);
     } finally {

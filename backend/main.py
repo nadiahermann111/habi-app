@@ -12,17 +12,17 @@ import asyncio
 try:
     from database import init_db, update_habit_statistics, DATABASE_PATH
 
-    print("✅ database.py imported successfully")
-    print(f"🔗 main.py używa bazy: {DATABASE_PATH}")
+    print("database.py imported successfully")
+    print(f"main.py uzywa bazy: {DATABASE_PATH}")
 except Exception as e:
-    print(f"❌ Failed to import database.py: {e}")
+    print(f"Failed to import database.py: {e}")
 
 try:
     import aiosqlite
 
-    print("✅ aiosqlite imported successfully")
+    print("aiosqlite imported successfully")
 except Exception as e:
-    print(f"❌ Failed to import aiosqlite: {e}")
+    print(f"Failed to import aiosqlite: {e}")
 
 try:
     from schemas import (
@@ -30,16 +30,16 @@ try:
         HabitCreate, HabitResponse, HabitUpdate, HabitCompletionResponse
     )
 
-    print("✅ schemas.py imported successfully")
+    print("schemas.py imported successfully")
 except Exception as e:
-    print(f"❌ Failed to import schemas.py: {e}")
+    print(f"Failed to import schemas.py: {e}")
 
 try:
     from auth import hash_password, verify_password, create_token, verify_token
 
-    print("✅ auth.py imported successfully")
+    print("auth.py imported successfully")
 except Exception as e:
-    print(f"❌ Failed to import auth.py: {e}")
+    print(f"Failed to import auth.py: {e}")
 
 
 async def ensure_clothing_column_exists():
@@ -60,13 +60,13 @@ async def ensure_clothing_column_exists():
                 column_names = [column[1] for column in columns]
 
                 if 'current_clothing_id' not in column_names:
-                    print("➕ Dodawanie kolumny current_clothing_id...")
+                    print("Dodawanie kolumny current_clothing_id...")
 
                     try:
                         # Próba dodania kolumny
                         await db.execute("ALTER TABLE users ADD COLUMN current_clothing_id INTEGER DEFAULT NULL")
                         await db.commit()
-                        print("✅ Kolumna current_clothing_id dodana pomyślnie")
+                        print("Kolumna current_clothing_id dodana pomyslnie")
                         return
 
                     except Exception as alter_error:
@@ -76,13 +76,13 @@ async def ensure_clothing_column_exists():
                         column_names = [column[1] for column in columns]
 
                         if 'current_clothing_id' in column_names:
-                            print("✅ Kolumna current_clothing_id już istnieje (dodana przez inny proces)")
+                            print("Kolumna current_clothing_id juz istnieje (dodana przez inny proces)")
                             return
                         else:
                             # Jeśli kolumny nadal nie ma, spróbuj ponownie
                             raise alter_error
                 else:
-                    print("✅ Kolumna current_clothing_id już istnieje")
+                    print("Kolumna current_clothing_id juz istnieje")
                     return
 
         except Exception as e:
@@ -91,14 +91,14 @@ async def ensure_clothing_column_exists():
 
             # Jeśli błąd to "duplicate column name" - kolumna już istnieje, wszystko OK
             if "duplicate column" in error_msg or "already exists" in error_msg:
-                print("✅ Kolumna current_clothing_id już istnieje")
+                print("Kolumna current_clothing_id juz istnieje")
                 return
 
             if retry_count < max_retries:
-                print(f"⚠️ Próba {retry_count} nie powiodła się, ponawiam... ({e})")
+                print(f"Proba {retry_count} nie powiodla sie, ponawiam... ({e})")
                 await asyncio.sleep(0.5)  # Krótkie opóźnienie przed retry
             else:
-                print(f"❌ Nie udało się dodać kolumny current_clothing_id po {max_retries} próbach: {e}")
+                print(f"Nie udalo sie dodac kolumny current_clothing_id po {max_retries} probach: {e}")
                 # Nie przerywaj uruchamiania aplikacji - może kolumna już istnieje
                 return
 
@@ -119,12 +119,12 @@ async def ensure_slot_machine_column_exists():
                 column_names = [column[1] for column in columns]
 
                 if 'last_slot_machine_play' not in column_names:
-                    print("➕ Dodawanie kolumny last_slot_machine_play...")
+                    print("Dodawanie kolumny last_slot_machine_play...")
 
                     try:
                         await db.execute("ALTER TABLE users ADD COLUMN last_slot_machine_play DATE DEFAULT NULL")
                         await db.commit()
-                        print("✅ Kolumna last_slot_machine_play dodana pomyślnie")
+                        print("Kolumna last_slot_machine_play dodana pomyslnie")
                         return
 
                     except Exception as alter_error:
@@ -133,12 +133,12 @@ async def ensure_slot_machine_column_exists():
                         column_names = [column[1] for column in columns]
 
                         if 'last_slot_machine_play' in column_names:
-                            print("✅ Kolumna last_slot_machine_play już istnieje (dodana przez inny proces)")
+                            print("Kolumna last_slot_machine_play juz istnieje (dodana przez inny proces)")
                             return
                         else:
                             raise alter_error
                 else:
-                    print("✅ Kolumna last_slot_machine_play już istnieje")
+                    print("Kolumna last_slot_machine_play juz istnieje")
                     return
 
         except Exception as e:
@@ -146,14 +146,14 @@ async def ensure_slot_machine_column_exists():
             error_msg = str(e).lower()
 
             if "duplicate column" in error_msg or "already exists" in error_msg:
-                print("✅ Kolumna last_slot_machine_play już istnieje")
+                print("Kolumna last_slot_machine_play juz istnieje")
                 return
 
             if retry_count < max_retries:
-                print(f"⚠️ Próba {retry_count} nie powiodła się, ponawiam... ({e})")
+                print(f"Proba {retry_count} nie powiodla sie, ponawiam... ({e})")
                 await asyncio.sleep(0.5)
             else:
-                print(f"❌ Nie udało się dodać kolumny last_slot_machine_play po {max_retries} próbach: {e}")
+                print(f"Nie udalo sie dodac kolumny last_slot_machine_play po {max_retries} probach: {e}")
                 return
 
 
@@ -168,26 +168,26 @@ async def lifespan(app: FastAPI):
     # uruchamianie aplikacji
     try:
         await init_db()
-        print("✅ Database initialized")
+        print("Database initialized")
 
-        # ✅ Dodaj kolumny jeśli nie istnieją
+        # Dodaj kolumny jeśli nie istnieją
         await ensure_clothing_column_exists()
         await ensure_slot_machine_column_exists()
 
     except Exception as e:
-        print(f"❌ Database initialization failed: {e}")
+        print(f"Database initialization failed: {e}")
         # Nie przerywaj - aplikacja może nadal działać
 
     yield
 
     # Zamykanie aplikacji
-    print("👋 Shutting down")
+    print("Shutting down")
 
 
 # inicjalizacja aplikacji FastAPI
 app = FastAPI(
     title="Habi API",
-    description="API dla aplikacji do śledzenia nawyków z wirtualną małpką",
+    description="API dla aplikacji do sledzenia nawykow z wirtualna malpka",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -214,7 +214,7 @@ app.add_middleware(
 @app.get("/")
 async def root():
     """Główny endpoint sprawdzający czy API działa."""
-    return {"message": "Habi API działa!", "version": "1.0.0"}
+    return {"message": "Habi API dziala!", "version": "1.0.0"}
 
 
 @app.get("/api/health")
@@ -272,12 +272,12 @@ async def register(user_data: UserRegister):
         # sprawdzenie unikalności emaila
         cursor = await db.execute("SELECT id FROM users WHERE email = ?", (user_data.email,))
         if await cursor.fetchone():
-            raise HTTPException(status_code=400, detail="Email już jest zajęty")
+            raise HTTPException(status_code=400, detail="Email juz jest zajety")
 
         # sprawdzenie czy nazwa użytkownika już istnieje w bazie
         cursor = await db.execute("SELECT id FROM users WHERE username = ?", (user_data.username,))
         if await cursor.fetchone():
-            raise HTTPException(status_code=400, detail="Username już jest zajęty")
+            raise HTTPException(status_code=400, detail="Username juz jest zajety")
 
         # tworzenie nowego użytkownika z zahashowanym hasłem
         hashed_password = hash_password(user_data.password)
@@ -337,11 +337,11 @@ async def login(login_data: UserLogin):
         user = await cursor.fetchone()
 
         if not user:
-            raise HTTPException(status_code=401, detail="Nieprawidłowy email lub hasło")
+            raise HTTPException(status_code=401, detail="Nieprawidlowy email lub haslo")
 
         # weryfikacja hasła
         if not verify_password(login_data.password, user["password_hash"]):
-            raise HTTPException(status_code=401, detail="Nieprawidłowy email lub hasło")
+            raise HTTPException(status_code=401, detail="Nieprawidlowy email lub haslo")
 
         # generowanie tokenu autoryzacyjnego
         token = create_token(user["id"])
@@ -379,7 +379,7 @@ async def get_profile(authorization: str = Header(None)):
     user_id = verify_token(token)
 
     if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+        raise HTTPException(status_code=401, detail="Nieprawidlowy token")
 
     async with aiosqlite.connect(DATABASE_PATH) as db:
         db.row_factory = aiosqlite.Row
@@ -390,7 +390,7 @@ async def get_profile(authorization: str = Header(None)):
         user = await cursor.fetchone()
 
         if not user:
-            raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
+            raise HTTPException(status_code=404, detail="Uzytkownik nie znaleziony")
 
         return UserResponse(
             id=user["id"],
@@ -421,7 +421,7 @@ async def get_user_coins(authorization: str = Header(None)):
     user_id = verify_token(token)
 
     if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+        raise HTTPException(status_code=401, detail="Nieprawidlowy token")
 
     async with aiosqlite.connect(DATABASE_PATH) as db:
         db.row_factory = aiosqlite.Row
@@ -432,7 +432,7 @@ async def get_user_coins(authorization: str = Header(None)):
         user = await cursor.fetchone()
 
         if not user:
-            raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
+            raise HTTPException(status_code=404, detail="Uzytkownik nie znaleziony")
 
         return {"coins": user["coins"], "user_id": user_id}
 
@@ -462,12 +462,12 @@ async def add_coins(data: dict, authorization: str = Header(None)):
     user_id = verify_token(token)
 
     if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+        raise HTTPException(status_code=401, detail="Nieprawidlowy token")
 
     amount = data.get('amount', 0)
 
     if amount == 0:
-        raise HTTPException(status_code=400, detail="Kwota nie może być równa 0")
+        raise HTTPException(status_code=400, detail="Kwota nie moze byc rowna 0")
 
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
@@ -481,7 +481,7 @@ async def add_coins(data: dict, authorization: str = Header(None)):
         user = await cursor.fetchone()
 
         if not user:
-            raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
+            raise HTTPException(status_code=404, detail="Uzytkownik nie znaleziony")
 
         current_coins = user["coins"]
         new_coins = current_coins + amount
@@ -490,12 +490,12 @@ async def add_coins(data: dict, authorization: str = Header(None)):
         if amount < 0 and current_coins < abs(amount):
             raise HTTPException(
                 status_code=400,
-                detail=f"Niewystarczająco monet. Potrzebujesz {abs(amount)}, masz {current_coins}"
+                detail=f"Niewystarczajaco monet. Potrzebujesz {abs(amount)}, masz {current_coins}"
             )
 
         # zabezpieczenie przed ujemną liczbą monet
         if new_coins < 0:
-            raise HTTPException(status_code=400, detail="Liczba monet nie może być ujemna")
+            raise HTTPException(status_code=400, detail="Liczba monet nie moze byc ujemna")
 
         # aktualizacja liczby monet
         await db.execute(
@@ -544,11 +544,11 @@ async def spend_coins(data: dict, authorization: str = Header(None)):
     user_id = verify_token(token)
 
     if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+        raise HTTPException(status_code=401, detail="Nieprawidlowy token")
 
     amount = data.get('amount', 0)
     if amount <= 0:
-        raise HTTPException(status_code=400, detail="Kwota musi być większa od 0")
+        raise HTTPException(status_code=400, detail="Kwota musi byc wieksza od 0")
 
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
@@ -562,12 +562,12 @@ async def spend_coins(data: dict, authorization: str = Header(None)):
         user = await cursor.fetchone()
 
         if not user:
-            raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
+            raise HTTPException(status_code=404, detail="Uzytkownik nie znaleziony")
 
         if user["coins"] < amount:
             raise HTTPException(
                 status_code=400,
-                detail=f"Niewystarczająco monet. Potrzebujesz {amount}, masz {user['coins']}"
+                detail=f"Niewystarczajaco monet. Potrzebujesz {amount}, masz {user['coins']}"
             )
 
         # odjęcie monet
@@ -635,14 +635,14 @@ async def create_habit(habit_data: HabitCreate, authorization: str = Header(None
     user_id = verify_token(token)
 
     if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+        raise HTTPException(status_code=401, detail="Nieprawidlowy token")
 
     # walidacja danych nawyku
     if not habit_data.name.strip():
         raise HTTPException(status_code=400, detail="Nazwa nawyku jest wymagana")
 
     if habit_data.coin_value < 1 or habit_data.coin_value > 5:
-        raise HTTPException(status_code=400, detail="Wartość monet musi być między 1 a 5")
+        raise HTTPException(status_code=400, detail="Wartosc monet musi byc miedzy 1 a 5")
 
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
@@ -671,7 +671,7 @@ async def create_habit(habit_data: HabitCreate, authorization: str = Header(None
             "name": habit["name"],
             "description": habit["description"] or "",
             "coin_value": habit["reward_coins"],
-            "icon": habit["icon"] or "🎯",
+            "icon": habit["icon"] or "target",
             "is_active": bool(habit["is_active"]),
             "created_at": habit["created_at"],
             "completion_dates": []
@@ -699,7 +699,7 @@ async def get_user_habits(authorization: str = Header(None)):
     user_id = verify_token(token)
 
     if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+        raise HTTPException(status_code=401, detail="Nieprawidlowy token")
 
     async with aiosqlite.connect(DATABASE_PATH) as db:
         db.row_factory = aiosqlite.Row
@@ -712,7 +712,7 @@ async def get_user_habits(authorization: str = Header(None)):
                       h.reward_coins,
                       h.is_active,
                       h.created_at,
-                      COALESCE(h.icon, '🎯')         as icon,
+                      COALESCE(h.icon, 'target')         as icon,
                       GROUP_CONCAT(hc.completed_at) as completion_dates
                FROM habits h
                         LEFT JOIN habit_completions hc ON h.id = hc.habit_id
@@ -735,7 +735,7 @@ async def get_user_habits(authorization: str = Header(None)):
                 "name": habit["name"],
                 "description": habit["description"] or "",
                 "coin_value": habit["reward_coins"],
-                "icon": habit["icon"] or "🎯",
+                "icon": habit["icon"] or "target",
                 "is_active": bool(habit["is_active"]),
                 "created_at": habit["created_at"],
                 "completion_dates": completion_dates
@@ -767,7 +767,7 @@ async def complete_habit(habit_id: int, authorization: str = Header(None)):
     user_id = verify_token(token)
 
     if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+        raise HTTPException(status_code=401, detail="Nieprawidlowy token")
 
     today = date.today().isoformat()
 
@@ -793,7 +793,7 @@ async def complete_habit(habit_id: int, authorization: str = Header(None)):
         existing_completion = await cursor.fetchone()
 
         if existing_completion:
-            raise HTTPException(status_code=400, detail="Nawyk już wykonany dzisiaj")
+            raise HTTPException(status_code=400, detail="Nawyk juz wykonany dzisiaj")
 
         coins_earned = habit["reward_coins"]
 
@@ -857,7 +857,7 @@ async def delete_habit(habit_id: int, authorization: str = Header(None)):
     user_id = verify_token(token)
 
     if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+        raise HTTPException(status_code=401, detail="Nieprawidlowy token")
 
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
@@ -877,7 +877,7 @@ async def delete_habit(habit_id: int, authorization: str = Header(None)):
         )
         await db.commit()
 
-        return {"message": "Nawyk usunięty pomyślnie"}
+        return {"message": "Nawyk usuniety pomyslnie"}
 
 
 # ============================================
@@ -906,7 +906,7 @@ async def get_owned_clothing(authorization: str = Header(None)):
     """
     Pobiera ubrania posiadane przez użytkownika + aktualnie noszone ubranie.
 
-    ✅ WALIDACJA: Sprawdza czy current_clothing_id faktycznie należy do użytkownika.
+    WALIDACJA: Sprawdza czy current_clothing_id faktycznie należy do użytkownika.
     Jeśli nie - automatycznie czyści.
 
     Args:
@@ -925,7 +925,7 @@ async def get_owned_clothing(authorization: str = Header(None)):
     user_id = verify_token(token)
 
     if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+        raise HTTPException(status_code=401, detail="Nieprawidlowy token")
 
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
@@ -939,7 +939,7 @@ async def get_owned_clothing(authorization: str = Header(None)):
         owned = await cursor.fetchall()
         owned_clothing_ids = [item["clothing_id"] for item in owned]
 
-        # ✅ Pobierz aktualnie noszone ubranie - z walidacją
+        # Pobierz aktualnie noszone ubranie - z walidacją
         current_clothing_id = None
         try:
             cursor = await db.execute(
@@ -949,10 +949,10 @@ async def get_owned_clothing(authorization: str = Header(None)):
             user = await cursor.fetchone()
             current_clothing_id = user["current_clothing_id"] if user else None
 
-            # ✅ KLUCZOWA WALIDACJA: Sprawdź czy użytkownik faktycznie posiada to ubranie
+            # KLUCZOWA WALIDACJA: Sprawdź czy użytkownik faktycznie posiada to ubranie
             if current_clothing_id and current_clothing_id not in owned_clothing_ids:
                 print(
-                    f"⚠️ User {user_id} ma current_clothing_id={current_clothing_id} którego nie posiada - CZYSZCZENIE")
+                    f"WARNING: User {user_id} ma current_clothing_id={current_clothing_id} ktorego nie posiada - CZYSZCZENIE")
 
                 # Automatycznie wyczyść nieprawidłowe ubranie
                 await db.execute(
@@ -961,10 +961,10 @@ async def get_owned_clothing(authorization: str = Header(None)):
                 )
                 await db.commit()
                 current_clothing_id = None
-                print(f"✅ Wyczyszczono nieprawidłowe current_clothing_id dla user {user_id}")
+                print(f"Wyczyszczono nieprawidlowe current_clothing_id dla user {user_id}")
 
         except Exception as e:
-            print(f"⚠️ Błąd pobierania current_clothing_id: {e}")
+            print(f"Blad pobierania current_clothing_id: {e}")
             current_clothing_id = None
 
         return {
@@ -996,7 +996,7 @@ async def purchase_clothing(clothing_id: int, authorization: str = Header(None))
     user_id = verify_token(token)
 
     if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+        raise HTTPException(status_code=401, detail="Nieprawidlowy token")
 
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
@@ -1020,7 +1020,7 @@ async def purchase_clothing(clothing_id: int, authorization: str = Header(None))
         if await cursor.fetchone():
             raise HTTPException(
                 status_code=400,
-                detail=f"Już posiadasz {clothing['name']}!"
+                detail=f"Juz posiadasz {clothing['name']}!"
             )
 
         # Sprawdzenie czy użytkownik ma wystarczająco monet
@@ -1031,7 +1031,7 @@ async def purchase_clothing(clothing_id: int, authorization: str = Header(None))
         user = await cursor.fetchone()
 
         if not user:
-            raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
+            raise HTTPException(status_code=404, detail="Uzytkownik nie znaleziony")
 
         if user["coins"] < clothing["cost"]:
             raise HTTPException(
@@ -1074,7 +1074,7 @@ async def wear_clothing(clothing_id: int, authorization: str = Header(None)):
     """
     Zmienia aktualnie noszone ubranie dla użytkownika.
 
-    ✅ WALIDACJA: Sprawdza czy użytkownik faktycznie posiada to ubranie.
+    WALIDACJA: Sprawdza czy użytkownik faktycznie posiada to ubranie.
 
     Args:
         clothing_id (int): ID ubrania do założenia
@@ -1093,13 +1093,13 @@ async def wear_clothing(clothing_id: int, authorization: str = Header(None)):
     user_id = verify_token(token)
 
     if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+        raise HTTPException(status_code=401, detail="Nieprawidlowy token")
 
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
         db.row_factory = aiosqlite.Row
 
-        # ✅ Sprawdź czy użytkownik posiada to ubranie
+        # Sprawdź czy użytkownik posiada to ubranie
         cursor = await db.execute(
             "SELECT id FROM user_clothing WHERE user_id = ? AND clothing_id = ?",
             (user_id, clothing_id)
@@ -1109,19 +1109,19 @@ async def wear_clothing(clothing_id: int, authorization: str = Header(None)):
         if not owned:
             raise HTTPException(
                 status_code=403,
-                detail="Nie możesz założyć ubrania, którego nie posiadasz"
+                detail="Nie mozesz zalozyc ubrania, ktorego nie posiadasz"
             )
 
-        # ✅ Zaktualizuj aktualnie noszone ubranie
+        # Zaktualizuj aktualnie noszone ubranie
         try:
             await db.execute(
                 "UPDATE users SET current_clothing_id = ? WHERE id = ?",
                 (clothing_id, user_id)
             )
             await db.commit()
-            print(f"✅ User {user_id} założył ubranie {clothing_id}")
+            print(f"User {user_id} zalozyl ubranie {clothing_id}")
         except Exception as e:
-            print(f"⚠️ Błąd aktualizacji current_clothing_id: {e}")
+            print(f"Blad aktualizacji current_clothing_id: {e}")
             # Jeśli kolumna nie istnieje, spróbuj ją dodać
             await ensure_clothing_column_exists()
             # Spróbuj ponownie
@@ -1139,7 +1139,7 @@ async def wear_clothing(clothing_id: int, authorization: str = Header(None)):
         clothing = await cursor.fetchone()
 
         return {
-            "message": f"Założono {clothing['name'] if clothing else 'ubranie'}",
+            "message": f"Zalozono {clothing['name'] if clothing else 'ubranie'}",
             "current_clothing_id": clothing_id,
             "user_id": user_id
         }
@@ -1166,25 +1166,25 @@ async def remove_clothing(authorization: str = Header(None)):
     user_id = verify_token(token)
 
     if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+        raise HTTPException(status_code=401, detail="Nieprawidlowy token")
 
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute("PRAGMA foreign_keys = ON")
 
-        # ✅ Usuń aktualnie noszone ubranie
+        # Usuń aktualnie noszone ubranie
         try:
             await db.execute(
                 "UPDATE users SET current_clothing_id = NULL WHERE id = ?",
                 (user_id,)
             )
             await db.commit()
-            print(f"✅ User {user_id} zdjął ubranie")
+            print(f"User {user_id} zdjal ubranie")
         except Exception as e:
-            print(f"⚠️ Błąd usuwania current_clothing_id: {e}")
+            print(f"Blad usuwania current_clothing_id: {e}")
             # Jeśli kolumna nie istnieje, to już domyślnie NULL
 
         return {
-            "message": "Ubranie zdjęte - powrót do domyślnego wyglądu",
+            "message": "Ubranie zdjete - powrot do domyslnego wygladu",
             "current_clothing_id": None
         }
 
@@ -1211,7 +1211,7 @@ async def check_slot_machine_limit(authorization: str = Header(None)):
     user_id = verify_token(token)
 
     if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+        raise HTTPException(status_code=401, detail="Nieprawidlowy token")
 
     async with aiosqlite.connect(DATABASE_PATH) as db:
         db.row_factory = aiosqlite.Row
@@ -1224,7 +1224,7 @@ async def check_slot_machine_limit(authorization: str = Header(None)):
             user = await cursor.fetchone()
 
             if not user:
-                raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
+                raise HTTPException(status_code=404, detail="Uzytkownik nie znaleziony")
 
             last_play = user["last_slot_machine_play"]
             today = date.today()
@@ -1242,7 +1242,7 @@ async def check_slot_machine_limit(authorization: str = Header(None)):
             }
 
         except Exception as e:
-            print(f"❌ Błąd sprawdzania limitu automatu: {e}")
+            print(f"Blad sprawdzania limitu automatu: {e}")
             # Jeśli kolumna nie istnieje, spróbuj ją dodać
             await ensure_slot_machine_column_exists()
             # Domyślnie pozwól grać
@@ -1271,7 +1271,7 @@ async def record_slot_machine_play(authorization: str = Header(None)):
     user_id = verify_token(token)
 
     if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+        raise HTTPException(status_code=401, detail="Nieprawidlowy token")
 
     today = date.today()
 
@@ -1288,7 +1288,7 @@ async def record_slot_machine_play(authorization: str = Header(None)):
             user = await cursor.fetchone()
 
             if not user:
-                raise HTTPException(status_code=404, detail="Użytkownik nie znaleziony")
+                raise HTTPException(status_code=404, detail="Uzytkownik nie znaleziony")
 
             last_play = user["last_slot_machine_play"]
 
@@ -1296,7 +1296,7 @@ async def record_slot_machine_play(authorization: str = Header(None)):
             if last_play:
                 last_play_date = date.fromisoformat(last_play) if isinstance(last_play, str) else last_play
                 if last_play_date == today:
-                    raise HTTPException(status_code=400, detail="Już dzisiaj zagrałeś")
+                    raise HTTPException(status_code=400, detail="Juz dzisiaj zagrales")
 
             # Zapisz dzisiejszą datę
             await db.execute(
@@ -1305,7 +1305,7 @@ async def record_slot_machine_play(authorization: str = Header(None)):
             )
             await db.commit()
 
-            print(f"✅ User {user_id} zagrał w automat dnia {today}")
+            print(f"User {user_id} zagral w automat dnia {today}")
 
             return {
                 "success": True,
@@ -1316,7 +1316,7 @@ async def record_slot_machine_play(authorization: str = Header(None)):
         except HTTPException:
             raise
         except Exception as e:
-            print(f"❌ Błąd zapisywania gry w automat: {e}")
+            print(f"Blad zapisywania gry w automat: {e}")
             # Jeśli kolumna nie istnieje, spróbuj ją dodać
             await ensure_slot_machine_column_exists()
 
@@ -1359,7 +1359,7 @@ async def get_habit_statistics(authorization: str = Header(None)):
     user_id = verify_token(token)
 
     if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+        raise HTTPException(status_code=401, detail="Nieprawidlowy token")
 
     async with aiosqlite.connect(DATABASE_PATH) as db:
         db.row_factory = aiosqlite.Row
@@ -1436,7 +1436,7 @@ async def get_habit_calendar(habit_id: int, year: int, month: int, authorization
     user_id = verify_token(token)
 
     if not user_id:
-        raise HTTPException(status_code=401, detail="Nieprawidłowy token")
+        raise HTTPException(status_code=401, detail="Nieprawidlowy token")
 
     async with aiosqlite.connect(DATABASE_PATH) as db:
         db.row_factory = aiosqlite.Row

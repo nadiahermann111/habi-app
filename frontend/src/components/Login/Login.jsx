@@ -50,15 +50,14 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
     setError('');
 
     try {
-      console.log('🔐 Rozpoczęcie procesu logowania...', { email: formData.email });
+      console.log(' Rozpoczęcie procesu logowania...', { email: formData.email });
 
-      // ✅ WAŻNE: Wyczyść WSZYSTKIE stare dane przed logowaniem
-      console.log('🧹 Czyszczenie starych danych sesji...');
+      console.log(' Czyszczenie starych danych sesji...');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('authToken');
       localStorage.removeItem('userData');
-      console.log('✅ Stare dane sesji wyczyszczone');
+      console.log(' Stare dane sesji wyczyszczone');
 
       // Wywołanie API logowania
       const response = await authAPI.login({
@@ -66,26 +65,26 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
         password: formData.password
       });
 
-      console.log('✅ Logowanie udane:', response);
+      console.log('Logowanie udane:', response);
 
-      // ✅ Zapisz nowe dane autoryzacji
+      // Zapisz nowe dane autoryzacji
       if (response.token && response.user) {
         localStorage.setItem('token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
-        console.log(`💾 Zapisano dane: ${response.user.username} (ID: ${response.user.id})`);
+        console.log(`Zapisano dane: ${response.user.username} (ID: ${response.user.id})`);
 
         // Wywołaj callback z danymi użytkownika
         if (onLoginSuccess) {
-          console.log('✅ Wywołanie onLoginSuccess z danymi:', response.user);
+          console.log('Wywołanie onLoginSuccess z danymi:', response.user);
           onLoginSuccess(response.user);
         }
       } else {
-        console.error('❌ Brak tokenu lub danych użytkownika w odpowiedzi');
+        console.error(' Brak tokenu lub danych użytkownika w odpowiedzi');
         setError('Błąd logowania - niepełne dane z serwera');
       }
 
     } catch (err) {
-      console.error('❌ Błąd logowania:', err);
+      console.error(' Błąd logowania:', err);
 
       // Wyczyść dane w razie błędu
       localStorage.removeItem('token');

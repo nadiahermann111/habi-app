@@ -187,7 +187,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
   useEffect(() => {
     const verifyTokenOnStart = async () => {
       if (!tokenUtils.hasToken()) {
-        console.warn('⚠️ Brak tokenu - przekierowanie na login');
+        console.warn('Brak tokenu - przekierowanie na login');
         window.location.href = '/login';
         return;
       }
@@ -201,11 +201,11 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
             window.location.href = '/login';
           }, 2000);
         } else if (isValid === true) {
-          console.log('✅ Token ważny');
+          console.log('Token wazny');
         }
         // null = błąd sieciowy, nie wylogowuj
       } catch (error) {
-        console.error('Błąd weryfikacji tokenu:', error);
+        console.error('Blad weryfikacji tokenu:', error);
       }
     };
 
@@ -262,7 +262,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
         try {
           await habitAPI.completeHabit(completion.habitId);
         } catch (error) {
-          console.error('Błąd synchronizacji completion:', error);
+          console.error('Blad synchronizacji completion:', error);
         }
       }
 
@@ -274,7 +274,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       }
 
     } catch (error) {
-      console.error('Błąd synchronizacji offline:', error);
+      console.error('Blad synchronizacji offline:', error);
     }
   };
 
@@ -304,7 +304,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       setCompletedToday(completedIds);
 
     } catch (error) {
-      console.error('Błąd ładowania nawyków:', error);
+      console.error('Blad ladowania nawykow:', error);
 
       // Jeśli to błąd wygasłej sesji, nie próbuj cache
       if (error.message.includes('Sesja wygasła')) {
@@ -335,7 +335,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
           showNotification('error', 'Brak zapisanych danych', 'Błąd');
         }
       } catch (cacheError) {
-        console.error('Błąd cache:', cacheError);
+        console.error('Blad cache:', cacheError);
         setError('Nie udało się wczytać nawyków.');
         showNotification('error', 'Błąd wczytywania danych', 'Błąd');
       }
@@ -417,7 +417,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       setCurrentView('list');
 
     } catch (error) {
-      console.error('Błąd tworzenia nawyku:', error);
+      console.error('Blad tworzenia nawyku:', error);
 
       if (error.message.includes('Sesja wygasła')) {
         showNotification('error', 'Sesja wygasła', 'Wylogowano');
@@ -540,7 +540,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       }
 
     } catch (error) {
-      console.error('Błąd wykonywania nawyku:', error);
+      console.error('Blad wykonywania nawyku:', error);
 
       // Jeśli to błąd wygasłej sesji, nie próbuj fallback
       if (error.message.includes('Sesja wygasła')) {
@@ -632,7 +632,7 @@ const HabitTracker = ({ onBack, initialCoins = 0, onCoinsUpdate }) => {
       showNotification('success', `Nawyk "${habit.name}" został usunięty`, 'Usunięto');
 
     } catch (error) {
-      console.error('Błąd usuwania nawyku:', error);
+      console.error('Blad usuwania nawyku:', error);
 
       if (error.message.includes('Sesja wygasła')) {
         showNotification('error', 'Sesja wygasła', 'Wylogowano');
