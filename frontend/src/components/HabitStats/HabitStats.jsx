@@ -220,6 +220,7 @@ const HabitStats = ({ onBack }) => {
                 <div className="mini-calendar">
                   {(() => {
                     const today = new Date();
+
                     const days = [];
                     for (let i = 30; i >= 0; i--) {
                       const date = new Date(today);
