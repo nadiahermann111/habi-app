@@ -29,7 +29,7 @@ const Dashboard = ({ user, onLogout }) => {
   useEffect(() => {
     const initializeDashboard = async () => {
       await fetchProfile();
-      await fetchCurrentClothing(); //  Pobierz ubranie z backendu
+      await fetchCurrentClothing();
     };
 
     initializeDashboard();
@@ -75,7 +75,7 @@ const Dashboard = ({ user, onLogout }) => {
       });
 
       if (!response.ok) {
-        console.warn('⚠️ Nie udało się pobrać ubrania z backendu');
+        console.warn('Nie udało się pobrać ubrania z backendu');
         return;
       }
 
@@ -103,7 +103,7 @@ const Dashboard = ({ user, onLogout }) => {
       }
 
     } catch (error) {
-      console.error('❌ Błąd pobierania ubrania:', error);
+      console.error('Błąd pobierania ubrania:', error);
       // W przypadku błędu - ustaw null zamiast crashować
       setCurrentClothing(null);
     }
@@ -123,7 +123,7 @@ const Dashboard = ({ user, onLogout }) => {
         console.log(`Wylogowywanie: ${user.username} (ID: ${user.id})`);
       }
     } catch (e) {
-      console.warn(' Błąd parsowania user data');
+      console.warn('Błąd parsowania user data');
     }
 
     // 1. Wyczyść dane ubrań
@@ -138,12 +138,12 @@ const Dashboard = ({ user, onLogout }) => {
     allKeys.forEach(key => {
       if (!keysToKeep.includes(key)) {
         localStorage.removeItem(key);
-        console.log(`      ✓ Usunięto: ${key}`);
+        console.log(`Usunięto: ${key}`);
       }
     });
 
     // 3. Zresetuj stan komponentu
-    console.log('   🔄 Resetowanie stanu Dashboard...');
+    console.log('Resetowanie stanu Dashboard...');
     setProfile(null);
     setCurrentView('dashboard');
     setIsSlotMachineOpen(false);
@@ -193,7 +193,7 @@ const Dashboard = ({ user, onLogout }) => {
         detail: { newLevel, reductionAmount }
       }));
 
-      alert(`Habi stracił ${reductionAmount}% szczęścia! 😢 Poziom sytości: ${newLevel}%`);
+      alert(`Habi stracił ${reductionAmount}% szczęścia! Poziom sytości: ${newLevel}%`);
     } catch (error) {
       alert('Błąd zmiany poziomu szczęścia Habi');
       console.error('Error reducing Habi happiness:', error);
@@ -214,9 +214,9 @@ const Dashboard = ({ user, onLogout }) => {
 
   const handleWinCoins = async (amount) => {
     console.log('handleWinCoins START');
-    console.log(`   User ID: ${profile?.id}`);
-    console.log(`   Amount to add: ${amount}`);
-    console.log(`   Current coins: ${profile?.coins}`);
+    console.log(`User ID: ${profile?.id}`);
+    console.log(`Amount to add: ${amount}`);
+    console.log(`Current coins: ${profile?.coins}`);
 
     try {
       const token = localStorage.getItem('token');
@@ -256,17 +256,17 @@ const Dashboard = ({ user, onLogout }) => {
       }));
 
       // Event
-      console.log('📡 Wysyłanie eventu coinsUpdated');
+      console.log('Wysyłanie eventu coinsUpdated');
       window.dispatchEvent(new CustomEvent('coinsUpdated', {
         detail: { coins: result.coins }
       }));
 
       console.log('handleWinCoins SUCCESS');
-      console.log(`   New total: ${result.coins} monet`);
+      console.log(`New total: ${result.coins} monet`);
 
     } catch (error) {
-      console.error(' handleWinCoins ERROR');
-      console.error('   Error:', error.message);
+      console.error('handleWinCoins ERROR');
+      console.error('Error:', error.message);
 
       alert('Nie udało się dodać wygranych monet. Spróbuj ponownie później.');
       throw error;
@@ -292,22 +292,22 @@ const Dashboard = ({ user, onLogout }) => {
   // ============================================
 
   const handleNavigateToHabits = () => {
-    console.log('🎯 Navigating to habits');
+    console.log('Navigating to habits');
     setCurrentView('habits');
   };
 
   const handleNavigateToStats = () => {
-    console.log('📊 Navigating to stats');
+    console.log('Navigating to stats');
     setCurrentView('stats');
   };
 
   const handleNavigateToFeed = () => {
-    console.log('🍌 Navigating to feed');
+    console.log('Navigating to feed');
     setCurrentView('feed');
   };
 
   const handleNavigateToDress = () => {
-    console.log('👗 Navigating to dress');
+    console.log('Navigating to dress');
     setCurrentView('dress');
   };
 

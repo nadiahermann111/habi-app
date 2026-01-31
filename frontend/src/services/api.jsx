@@ -127,7 +127,7 @@ export const authAPI = {
     if (data.token) {
       tokenUtils.setToken(data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      console.log('✅ Zalogowano pomyślnie');
+      console.log('Zalogowano pomyślnie');
     }
 
     return data;

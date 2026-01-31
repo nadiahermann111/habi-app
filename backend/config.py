@@ -9,12 +9,12 @@ from database import init_database, fetch_all, fetch_one_value
 async def lifespan(app: FastAPI):
     # Startup - inicjalizacja bazy danych
     await init_database()
-    print("✅ Database initialized")
+    print("Database initialized")
 
     yield
 
     # Shutdown
-    print("🔄 Shutting down...")
+    print("Shutting down...")
 
 
 app = FastAPI(

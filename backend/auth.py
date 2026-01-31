@@ -2,7 +2,6 @@
 ============================================
 MODUŁ ZARZĄDZANIA AUTORYZACJĄ (BACKEND)
 ============================================
-
 Centralne miejsce do zarządzania:
 - Haszowaniem i weryfikacją haseł
 - Tworzeniem i weryfikacją tokenów JWT
@@ -11,19 +10,19 @@ Centralne miejsce do zarządzania:
 """
 
 import os
-from jose import jwt, JWTError  # python-jose zamiast PyJWT
-from passlib.context import CryptContext  # passlib zamiast bcrypt
+from jose import jwt, JWTError #PyJWT
+from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from functools import wraps
 from fastapi import HTTPException, Header
+
 
 # ============================================
 # KONFIGURACJA
 # ============================================
 
 # Klucz sekretny do podpisywania tokenów JWT
-# W produkcji MUSI być w zmiennej środowiskowej!
 SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "twoj-super-tajny-klucz-zmien-mnie-w-produkcji")
 
 # Algorytm używany do podpisywania tokenów
@@ -66,7 +65,6 @@ def hash_password(password: str) -> str:
 
     # Haszowanie hasła używając passlib
     hashed = pwd_context.hash(password)
-
     return hashed
 
 
@@ -94,9 +92,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
         # Weryfikacja hasła używając passlib
         return pwd_context.verify(plain_password, hashed_password)
-
     except Exception as e:
-        print(f"❌ Błąd weryfikacji hasła: {e}")
+        print(f"Błąd weryfikacji hasła: {e}")
         return False
 
 
@@ -144,8 +141,7 @@ def create_token(user_id: int, additional_data: Optional[Dict[str, Any]] = None)
     # Zakoduj token używając python-jose
     token = jwt.encode(payload, SECRET_KEY, algorithm=JWT_ALGORITHM)
 
-    print(f"✅ Token utworzony dla user_id: {user_id}, wygasa: {expiration.strftime('%Y-%m-%d %H:%M:%S')}")
-
+    print(f"Token utworzony dla user_id: {user_id}, wygasa: {expiration.strftime('%Y-%m-%d %H:%M:%S')}")
     return token
 
 
@@ -166,7 +162,7 @@ def verify_token(token: str) -> Optional[int]:
         123
     """
     if not token:
-        print("⚠️ Brak tokenu")
+        print("Brak tokenu")
         return None
 
     try:
@@ -177,22 +173,20 @@ def verify_token(token: str) -> Optional[int]:
         user_id = payload.get("user_id")
 
         if not user_id:
-            print("⚠️ Brak user_id w tokenie")
+            print("Brak user_id w tokenie")
             return None
 
-        print(f"✅ Token zweryfikowany dla user_id: {user_id}")
+        print(f"Token zweryfikowany dla user_id: {user_id}")
         return user_id
 
     except jwt.ExpiredSignatureError:
-        print("⚠️ Token wygasł")
+        print("Token wygasł")
         return None
-
     except JWTError as e:
-        print(f"⚠️ Nieprawidłowy token: {e}")
+        print(f"Nieprawidłowy token: {e}")
         return None
-
     except Exception as e:
-        print(f"❌ Błąd weryfikacji tokenu: {e}")
+        print(f"Błąd weryfikacji tokenu: {e}")
         return None
 
 
@@ -218,17 +212,14 @@ def decode_token(token: str) -> Optional[Dict[str, Any]]:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[JWT_ALGORITHM])
         return payload
-
     except jwt.ExpiredSignatureError:
-        print("⚠️ Token wygasł")
+        print("Token wygasł")
         return None
-
     except JWTError as e:
-        print(f"⚠️ Nieprawidłowy token: {e}")
+        print(f"Nieprawidłowy token: {e}")
         return None
-
     except Exception as e:
-        print(f"❌ Błąd dekodowania tokenu: {e}")
+        print(f"Błąd dekodowania tokenu: {e}")
         return None
 
 
@@ -243,14 +234,12 @@ def get_token_expiration(token: str) -> Optional[datetime]:
         datetime | None: Data wygaśnięcia tokenu lub None jeśli token jest nieprawidłowy
     """
     payload = decode_token(token)
-
     if not payload or 'exp' not in payload:
         return None
 
     # Konwersja timestamp do datetime
     expiration_timestamp = payload['exp']
     expiration_date = datetime.fromtimestamp(expiration_timestamp)
-
     return expiration_date
 
 
@@ -265,7 +254,6 @@ def is_token_expired(token: str) -> bool:
         bool: True jeśli token wygasł lub jest nieprawidłowy, False jeśli jest ważny
     """
     expiration = get_token_expiration(token)
-
     if not expiration:
         return True
 
@@ -299,14 +287,12 @@ def extract_token_from_header(authorization: str) -> Optional[str]:
 
     # Usuń "Bearer " z początku
     token = authorization.replace("Bearer ", "")
-
     return token if token else None
 
 
 def get_current_user_id(authorization: str = Header(None)) -> int:
     """
     Pobiera ID aktualnie zalogowanego użytkownika z nagłówka Authorization.
-
     Używane jako dependency w endpointach FastAPI.
 
     Args:
@@ -328,12 +314,10 @@ def get_current_user_id(authorization: str = Header(None)) -> int:
         raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
     token = extract_token_from_header(authorization)
-
     if not token:
         raise HTTPException(status_code=401, detail="Nieprawidłowy format tokenu")
 
     user_id = verify_token(token)
-
     if not user_id:
         raise HTTPException(status_code=401, detail="Nieprawidłowy lub wygasły token")
 
@@ -353,7 +337,6 @@ def require_auth(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         authorization = kwargs.get('authorization')
-
         if not authorization or not authorization.startswith("Bearer "):
             raise HTTPException(status_code=401, detail="Brak tokenu autoryzacji")
 
@@ -365,7 +348,6 @@ def require_auth(func):
 
         # Dodaj user_id do kwargs
         kwargs['user_id'] = user_id
-
         return await func(*args, **kwargs)
 
     return wrapper
@@ -419,7 +401,6 @@ def validate_email(email: str) -> tuple[bool, str]:
 
     # Prosty regex dla email
     email_regex = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
-
     if not re.match(email_regex, email):
         return False, "Nieprawidłowy format email"
 
@@ -441,11 +422,11 @@ def debug_token(token: str) -> None:
         token (str): Token JWT do zbadania
     """
     print("\n" + "="*50)
-    print("🔍 INFORMACJE O TOKENIE")
+    print("INFORMACJE O TOKENIE")
     print("="*50)
 
     if not token:
-        print("❌ Brak tokenu")
+        print("Brak tokenu")
         return
 
     # Spróbuj zdekodować bez weryfikacji (do debugowania)
@@ -453,28 +434,28 @@ def debug_token(token: str) -> None:
         # python-jose wymaga options zamiast verify=False
         payload = jwt.decode(token, SECRET_KEY, algorithms=[JWT_ALGORITHM], options={"verify_signature": False})
 
-        print(f"📋 Payload:")
+        print(f"Payload:")
         for key, value in payload.items():
             if key in ['iat', 'exp']:
                 # Formatuj daty
                 date = datetime.fromtimestamp(value)
-                print(f"   {key}: {date.strftime('%Y-%m-%d %H:%M:%S')} ({value})")
+                print(f"  {key}: {date.strftime('%Y-%m-%d %H:%M:%S')} ({value})")
             else:
-                print(f"   {key}: {value}")
+                print(f"  {key}: {value}")
 
         # Sprawdź czy token jest wygasły
         expiration = get_token_expiration(token)
         if expiration:
             is_expired = datetime.utcnow() > expiration
-            status = "❌ WYGASŁY" if is_expired else "✅ WAŻNY"
-            print(f"\n🕐 Status: {status}")
+            status = "WYGASŁY" if is_expired else "WAŻNY"
+            print(f"\nStatus: {status}")
 
             if not is_expired:
                 time_left = expiration - datetime.utcnow()
-                print(f"⏰ Czas do wygaśnięcia: {time_left.days} dni, {time_left.seconds // 3600} godzin")
+                print(f"Czas do wygaśnięcia: {time_left.days} dni, {time_left.seconds // 3600} godzin")
 
     except Exception as e:
-        print(f"❌ Błąd dekodowania tokenu: {e}")
+        print(f"Błąd dekodowania tokenu: {e}")
 
     print("="*50 + "\n")
 
@@ -484,7 +465,7 @@ def test_password_hash() -> None:
     Testuje funkcje haszowania i weryfikacji haseł.
     """
     print("\n" + "="*50)
-    print("🧪 TEST HASZOWANIA HASEŁ")
+    print("TEST HASZOWANIA HASEŁ")
     print("="*50)
 
     test_password = "test_password_123"
@@ -492,17 +473,17 @@ def test_password_hash() -> None:
     # Test haszowania
     print(f"\n1. Haszowanie hasła: '{test_password}'")
     hashed = hash_password(test_password)
-    print(f"   ✅ Hash: {hashed[:50]}...")
+    print(f"   Hash: {hashed[:50]}...")
 
     # Test weryfikacji - poprawne hasło
     print(f"\n2. Weryfikacja poprawnego hasła")
     result = verify_password(test_password, hashed)
-    print(f"   {'✅ SUKCES' if result else '❌ BŁĄD'}")
+    print(f"   {'SUKCES' if result else 'BŁĄD'}")
 
     # Test weryfikacji - niepoprawne hasło
     print(f"\n3. Weryfikacja niepoprawnego hasła")
     result = verify_password("wrong_password", hashed)
-    print(f"   {'✅ SUKCES - odrzucono' if not result else '❌ BŁĄD - przyjęto'}")
+    print(f"   {'SUKCES - odrzucono' if not result else 'BŁĄD - przyjęto'}")
 
     print("\n" + "="*50 + "\n")
 
@@ -512,7 +493,7 @@ def test_jwt_token() -> None:
     Testuje funkcje tworzenia i weryfikacji tokenów JWT.
     """
     print("\n" + "="*50)
-    print("🧪 TEST TOKENÓW JWT")
+    print("TEST TOKENÓW JWT")
     print("="*50)
 
     test_user_id = 123
@@ -520,12 +501,12 @@ def test_jwt_token() -> None:
     # Test tworzenia tokenu
     print(f"\n1. Tworzenie tokenu dla user_id: {test_user_id}")
     token = create_token(test_user_id, {"username": "test_user"})
-    print(f"   ✅ Token: {token[:50]}...")
+    print(f"   Token: {token[:50]}...")
 
     # Test weryfikacji tokenu
     print(f"\n2. Weryfikacja tokenu")
     verified_user_id = verify_token(token)
-    print(f"   {'✅ SUKCES' if verified_user_id == test_user_id else '❌ BŁĄD'}")
+    print(f"   {'SUKCES' if verified_user_id == test_user_id else 'BŁĄD'}")
     print(f"   Odczytane user_id: {verified_user_id}")
 
     # Test dekodowania tokenu
@@ -550,7 +531,7 @@ if __name__ == "__main__":
     Użycie:
         python auth.py
     """
-    print("\n🚀 URUCHAMIANIE TESTÓW MODUŁU AUTH\n")
+    print("\nURUCHAMIANIE TESTÓW MODUŁU AUTH\n")
 
     # Testy haszowania haseł
     test_password_hash()
@@ -558,4 +539,4 @@ if __name__ == "__main__":
     # Testy tokenów JWT
     test_jwt_token()
 
-    print("✅ Wszystkie testy zakończone\n")
+    print("Wszystkie testy zakończone\n")
